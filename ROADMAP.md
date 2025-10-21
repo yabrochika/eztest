@@ -24,10 +24,11 @@
 - ✅ User login (credentials provider)
 - ✅ Session management (JWT tokens)
 - ✅ Password hashing (bcryptjs)
-- 📋 Password reset via email
-- 📋 User profile management
+- ✅ Password reset via email (with token validation)
+- ✅ Password change in account settings
+- ✅ User profile management (name, bio, phone, location)
+- ✅ User account deletion (soft delete with 30-day archive)
 - 📋 Avatar/profile picture upload
-- 📋 User account deletion
 
 #### 1.2 Authorization & Roles
 - ✅ System-level roles (ADMIN, PROJECT_MANAGER, TESTER, VIEWER)

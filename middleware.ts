@@ -21,6 +21,11 @@ export default withAuth(
           return true;
         }
 
+        // Settings routes require authentication
+        if (pathname.startsWith('/settings/')) {
+          return !!token;
+        }
+
         // All other routes require authentication
         return !!token;
       },

@@ -18,6 +18,10 @@ model User {
   password      String
   role          UserRole  @default(TESTER)
   avatar        String?
+  bio           String?
+  phone         String?
+  location      String?
+  deletedAt     DateTime? // Soft delete timestamp (null = active, has value = archived for deletion)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -27,8 +31,26 @@ model User {
   testResults   TestResult[]
   comments      Comment[]
   createdProjects Project[] @relation("CreatedBy")
+  passwordResetTokens PasswordResetToken[]
 
   @@index([email])
+  @@index([deletedAt])
+}
+
+// Password Reset Tokens
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique // Random token sent via email
+  expiresAt DateTime // Token expiration time (1 hour)
+  usedAt    DateTime? // When token was used (null = unused)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
 }
 
 enum UserRole {

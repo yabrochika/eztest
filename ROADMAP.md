@@ -2,614 +2,632 @@
 
 **Version**: 0.1.0
 **Last Updated**: October 2024
-**Status**: Active Development
-
-## Overview
-
-This roadmap outlines the planned features, enhancements, and improvements for EZTest over the next 12+ months. Items are organized by priority and timeline.
+**Purpose**: Feature tracking and development reference for building EZTest
 
 ---
 
-## Current Status (v0.1.0)
+## Status Legend
+
+- ✅ **DONE** - Fully implemented and tested
+- 🔄 **IN_PROGRESS** - Currently being built
+- 📋 **PLANNED** - Scheduled for development
+- 🔲 **TODO** - Not yet scheduled
+
+---
+
+## Core Modules
+
+### 1. Authentication & Security
+
+#### 1.1 User Management
+- ✅ User registration (email/password)
+- ✅ User login (credentials provider)
+- ✅ Session management (JWT tokens)
+- ✅ Password hashing (bcryptjs)
+- 📋 Password reset via email
+- 📋 User profile management
+- 📋 Avatar/profile picture upload
+- 📋 User account deletion
+
+#### 1.2 Authorization & Roles
+- ✅ System-level roles (ADMIN, PROJECT_MANAGER, TESTER, VIEWER)
+- ✅ Project-level roles (OWNER, ADMIN, TESTER, VIEWER)
+- ✅ Role-based access control (middleware)
+- ✅ Session-based authorization
+- 📋 Custom roles (enterprise feature)
+- 📋 Field-level permissions
+- 📋 Resource-based access control (RBAC)
+- 📋 Permission inheritance
+
+#### 1.3 Authentication Methods
+- ✅ Email/password authentication
+- ✅ NextAuth.js integration
+- 📋 Multi-Factor Authentication (TOTP)
+- 📋 Backup codes for MFA
+- 📋 OAuth (Google)
+- 📋 OAuth (GitHub)
+- 📋 SAML 2.0 support
+- 📋 Azure AD integration
+- 📋 LDAP integration
+
+#### 1.4 Security
+- ✅ HTTPS ready
+- ✅ Secure password hashing
+- ✅ JWT token signing
+- 📋 Rate limiting
+- 📋 CSRF protection
+- 📋 Input validation
+- 📋 SQL injection prevention (via Prisma)
+- 📋 Session revocation
+- 📋 Encryption at rest
+- 📋 Encryption in transit
+- 📋 API key authentication
+
+---
+
+### 2. Project Management
+
+#### 2.1 Projects (Core)
+- 📋 Create project
+- 📋 Read project details
+- 📋 Update project settings
+- 📋 Delete project
+- 📋 Archive project
+- 📋 Duplicate project from template
+
+#### 2.2 Project Metadata
+- 📋 Project key (unique identifier)
+- 📋 Project description
+- 📋 Project visibility (public/private)
+- 📋 Project tags/categories
+- 📋 Project owner assignment
+
+#### 2.3 Team Management
+- 📋 Add team member to project
+- 📋 Remove team member from project
+- 📋 Change member role
+- 📋 View team members
+- 📋 Invite by email
+- 📋 Bulk member operations
+
+#### 2.4 Project Templates
+- 📋 Create project from template
+- 📋 Save project as template
+- 📋 Predefined templates (Agile, Waterfall, etc.)
+
+---
+
+### 3. Test Organization
+
+#### 3.1 Test Suites (Hierarchical)
+- 📋 Create test suite
+- 📋 Nested test suites (hierarchy)
+- 📋 Update suite details
+- 📋 Delete suite (cascade handling)
+- 📋 Reorder suites
+- 📋 Suite description and metadata
+
+#### 3.2 Test Cases
+- 📋 Create test case
+- 📋 Edit test case
+- 📋 Delete test case
+- 📋 Test case title, description
+- 📋 Test priority (CRITICAL, HIGH, MEDIUM, LOW)
+- 📋 Test status (ACTIVE, DEPRECATED, DRAFT)
+- 📋 Estimated execution time
+- 📋 Preconditions and postconditions
+
+#### 3.3 Test Steps
+- 📋 Add test step
+- 📋 Edit test step
+- 📋 Delete test step
+- 📋 Step number (sequential order)
+- 📋 Action description
+- 📋 Expected result
+
+#### 3.4 Test Case Management
+- 📋 Search test cases
+- 📋 Filter by status, priority, suite
+- 📋 Bulk edit operations
+- 📋 Copy test case
+- 📋 Import test cases (CSV)
+- 📋 Export test cases
+- 📋 Test case versioning
+- 📋 Test case history
+
+---
+
+### 4. Test Execution & Results
+
+#### 4.1 Test Runs
+- 📋 Create test run
+- 📋 Edit test run details
+- 📋 Delete test run
+- 📋 Run name and description
+- 📋 Run status (PLANNED, IN_PROGRESS, COMPLETED, CANCELLED)
+- 📋 Assign test run to team member
+- 📋 Environment selection (Production, Staging, QA, etc.)
+- 📋 Start/end timestamps
+
+#### 4.2 Test Results
+- 📋 Log test result
+- 📋 Result status (PASSED, FAILED, BLOCKED, SKIPPED, RETEST)
+- 📋 Result comment/notes
+- 📋 Execution duration
+- 📋 Error message and stack trace
+- 📋 Result timestamp
+
+#### 4.3 Result Management
+- 📋 View result history per test case
+- 📋 Compare results between runs
+- 📋 Result filtering and sorting
+- 📋 Bulk result operations
+- 📋 Result analytics
+
+---
+
+### 5. Requirements Traceability
+
+#### 5.1 Requirements
+- 📋 Create requirement
+- 📋 Edit requirement
+- 📋 Delete requirement
+- 📋 Requirement key (REQ-001, etc.)
+- 📋 Requirement title and description
+- 📋 Requirement status (DRAFT, APPROVED, IMPLEMENTED, VERIFIED, DEPRECATED)
+- 📋 Requirement priority
+
+#### 5.2 Traceability
+- 📋 Link test case to requirement
+- 📋 Unlink test case from requirement
+- 📋 View all linked test cases per requirement
+- 📋 Traceability matrix
+- 📋 Coverage analysis
+- 📋 Gap analysis report
+
+---
+
+### 6. Collaboration & Communication
+
+#### 6.1 Comments
+- 📋 Add comment to test case
+- 📋 Add comment to test result
+- 📋 Edit comment
+- 📋 Delete comment
+- 📋 Comment threads/replies
+- 📋 User mentions (@mentions)
+- 📋 Comment timestamp and author
+- 📋 Comment history
+
+#### 6.2 Attachments
+- 📋 Upload file to test case
+- 📋 Upload file to test result
+- 📋 Upload screenshots
+- 📋 Download attachment
+- 📋 Delete attachment
+- 📋 Attachment versioning
+- 📋 File size validation
+- 📋 Multiple file uploads
+
+#### 6.3 Notifications
+- 📋 Email notifications (on comment, result, etc.)
+- 📋 In-app notifications
+- 📋 Slack integration
+- 📋 Custom alert rules
+- 📋 Notification preferences per user
+
+#### 6.4 Activity Log
+- 📋 Track all user actions
+- 📋 Audit log storage
+- 📋 Activity feed per project
+- 📋 Change history viewing
+- 📋 Who changed what and when
+
+---
+
+### 7. Dashboard & Reporting
+
+#### 7.1 Dashboard
+- 🔄 Overview widgets
+  - 📋 Total projects count
+  - 📋 Total test cases
+  - 📋 Recent test runs
+  - 📋 Pass/fail rate
+- 📋 Project-level dashboard
+  - 📋 Test execution progress
+  - 📋 Test metrics (passed, failed, blocked)
+  - 📋 Recent activity
+  - 📋 Team statistics
+
+#### 7.2 Reports
+- 📋 Test execution report
+- 📋 Test case coverage report
+- 📋 Requirement coverage report
+- 📋 Team productivity report
+- 📋 Custom report builder
+- 📋 PDF export
+- 📋 Excel export
+- 📋 Scheduled reports
+
+#### 7.3 Analytics
+- 📋 Pass/fail rate trends
+- 📋 Test execution timeline
+- 📋 Performance metrics
+- 📋 Defect trends
+- 📋 Team productivity metrics
+- 📋 Historical comparisons
+- 📋 Charting and visualization
+
+---
+
+### 8. File Management
+
+#### 8.1 Upload & Storage
+- 📋 File upload to test case
+- 📋 File upload to test result
+- 📋 Local storage implementation
+- 📋 Cloud storage support (S3, Azure Blob)
+- 📋 File size validation
+- 📋 Allowed file types validation
+
+#### 8.2 File Operations
+- 📋 Download file
+- 📋 Delete file
+- 📋 File preview (images, PDFs)
+- 📋 File versioning
+- 📋 File encryption
+
+---
+
+### 9. API & Integration
+
+#### 9.1 REST API
+- ✅ Health check endpoint
+- ✅ User registration endpoint
+- ✅ Authentication endpoints (NextAuth)
+- 📋 Projects endpoints (CRUD)
+- 📋 Test suites endpoints (CRUD)
+- 📋 Test cases endpoints (CRUD)
+- 📋 Test runs endpoints (CRUD)
+- 📋 Test results endpoints (CRUD)
+- 📋 Requirements endpoints (CRUD)
+- 📋 Comments endpoints (CRUD)
+- 📋 Attachments endpoints (CRUD)
+
+#### 9.2 API Features
+- 📋 Pagination
+- 📋 Filtering
+- 📋 Sorting
+- 📋 Search
+- 📋 Rate limiting
+- 📋 API versioning
+
+#### 9.3 External Integrations
+- 📋 Webhook support
+- 📋 Jira integration
+- 📋 GitHub Issues integration
+- 📋 Azure DevOps integration
+- 📋 Linear integration
+- 📋 Slack integration (for results)
+- 📋 Email service integration
+- 📋 Custom webhook support
+
+#### 9.4 Automation
+- 📋 Selenium integration
+- 📋 Cypress integration
+- 📋 Custom automation framework support
+- 📋 Result auto-import from CI/CD
+- 📋 Automated test runs
+- 📋 Test scheduling
+
+---
+
+### 10. User Interface
+
+#### 10.1 Layout & Navigation
+- 🔄 Root layout (header, sidebar)
+- 🔄 Navigation menu
+- 📋 Breadcrumb navigation
+- 📋 Search bar (global)
+- 📋 User profile menu
+
+#### 10.2 Core Pages
+- 🔄 Home page
+- 🔄 Login page
+- 🔄 Registration page
+- 🔄 Dashboard
+- 📋 Projects list page
+- 📋 Project detail page
+- 📋 Test suites page
+- 📋 Test cases page
+- 📋 Test runs page
+- 📋 Requirements page
+- 📋 Team management page
+- 📋 Settings page
+
+#### 10.3 Components
+- 🔄 UI component library (Shadcn UI)
+  - 📋 Buttons
+  - 📋 Forms
+  - 📋 Tables
+  - 📋 Modals
+  - 📋 Cards
+  - 📋 Inputs
+  - 📋 Dropdowns
+  - 📋 Dialogs
+  - 📋 Alerts
+  - 📋 Badges
+  - 📋 Tabs
+  - 📋 Separators
+  - 📋 Avatars
+  - 📋 Checkboxes
+  - 📋 Radio buttons
+  - 📋 Switches
+  - 📋 Tooltips
+
+#### 10.4 UI/UX Features
+- 📋 Dark mode
+- 📋 Custom themes
+- 📋 Mobile responsiveness
+- 📋 Loading states
+- 📋 Error states
+- 📋 Empty states
+- 📋 Keyboard shortcuts
+- 📋 Accessibility (WCAG)
+
+---
+
+### 11. Data Export & Import
+
+#### 11.1 Export
+- 📋 Export projects to JSON
+- 📋 Export projects to XML
+- 📋 Export test cases to CSV
+- 📋 Export test cases to Excel
+- 📋 Export test results to CSV
+- 📋 Export reports to PDF
+
+#### 11.2 Import
+- 📋 Import test cases from CSV
+- 📋 Import test cases from Excel
+- 📋 Import projects from JSON
+- 📋 Import projects from XML
+- 📋 Data migration tools
+
+---
+
+### 12. Performance & Optimization
+
+#### 12.1 Database Optimization
+- 📋 Query performance tuning
+- 📋 Index optimization
+- 📋 Pagination for large datasets
+- 📋 Connection pooling
+- 📋 Caching layer (Redis)
+
+#### 12.2 API Performance
+- 📋 Response time optimization
+- 📋 Request caching
+- 📋 Batch operations
+- 📋 GraphQL endpoint (alternative)
+- 📋 WebSocket support
+
+#### 12.3 Frontend Performance
+- 📋 Code splitting
+- 📋 Image optimization
+- 📋 Lazy loading
+- 📋 Service Worker support
+- 📋 Offline capabilities
+
+#### 12.4 Infrastructure Scaling
+- 📋 Horizontal scaling (multiple servers)
+- 📋 Load balancing
+- 📋 Database read replicas
+- 📋 Multi-region support
+- 📋 CDN integration
+
+---
+
+### 13. Testing & Quality
+
+#### 13.1 Testing
+- 📋 Unit tests
+- 📋 Integration tests
+- 📋 E2E tests (Cypress/Playwright)
+- 📋 Performance tests
+- 📋 Load tests
+- 📋 Security tests
+
+#### 13.2 Code Quality
+- ✅ ESLint configuration
+- ✅ TypeScript configuration
+- 📋 ESLint strict mode
+- 📋 TypeScript strict mode
+- 📋 Code formatting (Prettier)
+- 📋 Pre-commit hooks
+- 📋 Test coverage reporting
+
+#### 13.3 CI/CD
+- 📋 GitHub Actions setup
+- 📋 Automated testing on PR
+- 📋 Automated deployments
+- 📋 Release automation
+- 📋 Rollback procedures
+
+---
+
+### 14. Monitoring & Operations
+
+#### 14.1 Health & Monitoring
+- 📋 Application health checks
+- 📋 Database health monitoring
+- 📋 Performance monitoring (APM)
+- 📋 Error tracking (Sentry)
+- 📋 Log aggregation (ELK)
+- 📋 Uptime monitoring
+- 📋 Alert system
+
+#### 14.2 Backup & Disaster Recovery
+- 📋 Automated database backups
+- 📋 Backup retention policies
+- 📋 Backup testing/verification
+- 📋 Disaster recovery plan
+- 📋 Recovery time procedures
+
+#### 14.3 Deployment
+- ✅ Docker containerization
+- ✅ Docker Compose setup
+- 📋 Kubernetes deployment
+- 📋 Infrastructure as Code (Terraform)
+- 📋 Staging environment
+- 📋 Production environment
+
+---
+
+### 15. Documentation
+
+#### 15.1 Developer Documentation
+- ✅ Architecture documentation
+- ✅ Database schema documentation
+- ✅ API documentation
+- ✅ Code patterns guide
+- 📋 Component storybook
+- 📋 API auto-generation
+
+#### 15.2 User Documentation
+- 📋 User guide
+- 📋 Video tutorials
+- 📋 FAQ section
+- 📋 Troubleshooting guide
+- 📋 Getting started guide
+
+#### 15.3 Operations Documentation
+- ✅ Deployment guide
+- ✅ Environment configuration
+- 📋 Maintenance procedures
+- 📋 Monitoring guide
+- 📋 Upgrade procedures
+
+---
+
+## Feature Matrix
+
+| Module | Sub-Module | Feature | Status |
+|--------|-----------|---------|--------|
+| **Auth** | User Mgmt | Registration | ✅ |
+| | | Login | ✅ |
+| | | Session Mgmt | ✅ |
+| | | Password Reset | 📋 |
+| | Authorization | Roles (System) | ✅ |
+| | | Roles (Project) | ✅ |
+| | | Access Control | ✅ |
+| | Auth Methods | Email/Password | ✅ |
+| | | OAuth/SSO | 📋 |
+| | | MFA | 📋 |
+| | Security | Rate Limiting | 📋 |
+| | | Input Validation | 📋 |
+| **Projects** | Management | CRUD | 📋 |
+| | | Templates | 📋 |
+| | Team | Member Mgmt | 📋 |
+| | | Permissions | 📋 |
+| **Tests** | Organization | Suites | 📋 |
+| | | Cases | 📋 |
+| | | Steps | 📋 |
+| | Execution | Runs | 📋 |
+| | | Results | 📋 |
+| **Requirements** | Management | CRUD | 📋 |
+| | Traceability | Linking | 📋 |
+| | | Reports | 📋 |
+| **Collaboration** | Comments | Threads | 📋 |
+| | | Mentions | 📋 |
+| | Attachments | Upload | 📋 |
+| | | Download | 📋 |
+| | Notifications | Email | 📋 |
+| | | In-App | 📋 |
+| | Activity Log | Tracking | 📋 |
+| | | History | 📋 |
+| **Dashboard** | Widgets | Metrics | 📋 |
+| | | Activity | 📋 |
+| | Reports | Generation | 📋 |
+| | | Export | 📋 |
+| | Analytics | Trends | 📋 |
+| | | Charts | 📋 |
+| **API** | REST | Endpoints | 📋 |
+| | | Pagination | 📋 |
+| | Integrations | Webhooks | 📋 |
+| | | Jira | 📋 |
+| | | GitHub | 📋 |
+| | Automation | CI/CD | 📋 |
+
+---
+
+## Build Sequence
+
+### Phase 1: Foundation (Current)
+1. ✅ Authentication & Security (core)
+2. ✅ Basic UI framework
+3. ✅ Technical documentation
+
+### Phase 2: Core Features (Next)
+1. 📋 Project Management module
+2. 📋 Test Organization (suites, cases, steps)
+3. 📋 Test Execution & Results
+4. 📋 Dashboard (basic metrics)
+5. 📋 API endpoints for above
+
+### Phase 3: Collaboration
+1. 📋 Comments & Mentions
+2. 📋 Attachments
+3. 📋 Activity Logging
+4. 📋 Notifications
+
+### Phase 4: Advanced Features
+1. 📋 Requirements & Traceability
+2. 📋 Reports & Analytics
+3. 📋 External Integrations
+4. 📋 Test Automation
+
+### Phase 5: Enterprise & Operations
+1. 📋 Advanced Auth (MFA, SSO)
+2. 📋 Performance Optimization
+3. 📋 Monitoring & Operations
+4. 📋 Data Export/Import
+
+---
+
+## Current Implementation Status
 
 ### ✅ Completed
-- Core authentication system (email/password)
-- Two-tier role-based access control
-- Database schema with 11 models
-- Basic UI with Shadcn components
-- Docker deployment setup
-- NextAuth.js integration
-- Prisma ORM with PostgreSQL
+- User authentication (email/password)
+- Session management (JWT)
+- Role-based access control (2-tier)
+- Password hashing (bcryptjs)
+- UI framework (Next.js, Tailwind, Shadcn)
+- Database schema (11 models)
+- Middleware authentication
+- Basic dashboard page
 
 ### 🔄 In Progress
-- Basic dashboard
-- UI component library
-- Development documentation
+- Technical documentation
+- Code patterns guide
+- Development workflows
 
-### ❌ Not Started
-- All feature modules below
-
----
-
-## Phase 1: Core Features (Next 2-3 Months)
-
-### 1.1 Project Management
-- [ ] Create projects (CRUD)
-- [ ] Project settings and configuration
-- [ ] Team member management
-- [ ] Project archiving
-- [ ] Project templates
-
-**Estimated Effort**: 2 weeks
-**Priority**: CRITICAL
-**Dependencies**: Authentication (done)
-
-### 1.2 Test Organization
-- [ ] Create test suites (hierarchical)
-- [ ] Create test cases with steps
-- [ ] Test case versioning
-- [ ] Test case search and filtering
-- [ ] Bulk test case operations
-- [ ] Import test cases (CSV/Excel)
-
-**Estimated Effort**: 3 weeks
-**Priority**: CRITICAL
-**Dependencies**: Project management
-
-### 1.3 Test Execution
-- [ ] Create test runs
-- [ ] Execute tests and log results
-- [ ] Track test metrics (pass/fail rate)
-- [ ] Test result history
-- [ ] Result comparison
-
-**Estimated Effort**: 2 weeks
-**Priority**: CRITICAL
-**Dependencies**: Test organization
-
-### 1.4 Dashboard & Reporting
-- [ ] Project dashboard with metrics
-- [ ] Test execution dashboard
-- [ ] Quick statistics (total tests, pass rate, etc.)
-- [ ] Recent activity feed
-- [ ] Basic reports
-
-**Estimated Effort**: 1.5 weeks
-**Priority**: HIGH
-**Dependencies**: All core features
-
-**Tasks**:
-```markdown
-- [ ] Project CRUD endpoints
-- [ ] Test suite management UI
-- [ ] Test case editor with steps
-- [ ] Test run creation and execution
-- [ ] Results logging
-- [ ] Dashboard components
-- [ ] Metrics calculations
-- [ ] Testing and bug fixes
-```
+### 📋 To Be Built
+- All modules listed above under TODO and PLANNED
 
 ---
 
-## Phase 2: Collaboration & Documentation (Months 4-5)
-
-### 2.1 Comments & Annotations
-- [ ] Add comments to test cases
-- [ ] Comment threads and replies
-- [ ] Mention users (@mentions)
-- [ ] Comment notifications
-- [ ] Comment history and editing
-
-**Estimated Effort**: 1.5 weeks
-**Priority**: MEDIUM
-
-### 2.2 Requirements Traceability
-- [ ] Create requirements
-- [ ] Link requirements to test cases
-- [ ] Traceability matrix
-- [ ] Coverage reports
-- [ ] Gap analysis
-
-**Estimated Effort**: 2 weeks
-**Priority**: MEDIUM
-
-### 2.3 File Attachments
-- [ ] Upload screenshots/files
-- [ ] Attachment management
-- [ ] File versioning
-- [ ] Attachment storage (local/S3)
-- [ ] Preview capabilities
-
-**Estimated Effort**: 1.5 weeks
-**Priority**: MEDIUM
-
-### 2.4 Activity Log & Audit Trail
-- [ ] Track all user actions
-- [ ] Audit log storage
-- [ ] Activity feed per project
-- [ ] Change history viewing
-- [ ] Compliance reporting
-
-**Estimated Effort**: 1 week
-**Priority**: MEDIUM
-
----
-
-## Phase 3: Advanced Features (Months 6-8)
-
-### 3.1 Test Automation Integration
-- [ ] API for automation tools
-- [ ] Selenium integration
-- [ ] Cypress integration
-- [ ] Custom webhook support
-- [ ] Result auto-import
-
-**Estimated Effort**: 3 weeks
-**Priority**: HIGH
-
-### 3.2 Reporting & Analytics
-- [ ] Advanced filtering and sorting
-- [ ] Custom reports
-- [ ] Report scheduling
-- [ ] PDF export
-- [ ] Charts and graphs
-
-**Estimated Effort**: 2.5 weeks
-**Priority**: HIGH
-
-### 3.3 Test Metrics & Trends
-- [ ] Trend analysis (pass rate over time)
-- [ ] Performance metrics
-- [ ] Defect trends
-- [ ] Team productivity metrics
-- [ ] Historical comparisons
-
-**Estimated Effort**: 2 weeks
-**Priority**: MEDIUM
-
-### 3.4 Notifications & Alerts
-- [ ] Email notifications
-- [ ] In-app notifications
-- [ ] Slack integration
-- [ ] Custom alert rules
-- [ ] Notification preferences
-
-**Estimated Effort**: 1.5 weeks
-**Priority**: MEDIUM
-
----
-
-## Phase 4: Enterprise Features (Months 9-12)
-
-### 4.1 Multi-Factor Authentication (MFA)
-- [ ] TOTP support (Google Authenticator, Authy)
-- [ ] Backup codes
-- [ ] MFA enforcement policies
-- [ ] Recovery options
-
-**Estimated Effort**: 1.5 weeks
-**Priority**: HIGH
-
-### 4.2 SSO & OAuth Integration
-- [ ] Google OAuth
-- [ ] GitHub OAuth
-- [ ] Azure AD integration
-- [ ] SAML 2.0 support
-- [ ] LDAP integration
-
-**Estimated Effort**: 2.5 weeks
-**Priority**: MEDIUM
-
-### 4.3 Advanced Permissions
-- [ ] Fine-grained role permissions
-- [ ] Custom roles
-- [ ] Field-level permissions
-- [ ] Resource-based access control (RBAC)
-- [ ] Permission inheritance
-
-**Estimated Effort**: 2 weeks
-**Priority**: MEDIUM
-
-### 4.4 Data Export & Import
-- [ ] Export projects (JSON/XML)
-- [ ] Import projects
-- [ ] Data migration tools
-- [ ] Backup/restore
-- [ ] Integration with external tools
-
-**Estimated Effort**: 1.5 weeks
-**Priority**: LOW
-
-### 4.5 Defect Tracking Integration
-- [ ] Jira integration
-- [ ] GitHub Issues integration
-- [ ] Azure DevOps integration
-- [ ] Linear integration
-- [ ] Custom webhook defect sync
-
-**Estimated Effort**: 2 weeks
-**Priority**: MEDIUM
-
----
-
-## Phase 5: Performance & Scalability (Ongoing)
-
-### 5.1 Database Optimization
-- [ ] Query performance tuning
-- [ ] Index optimization
-- [ ] Pagination for large datasets
-- [ ] Caching layer (Redis)
-- [ ] Database connection pooling
-
-**Estimated Effort**: Ongoing
-**Priority**: HIGH
-
-### 5.2 API Performance
-- [ ] Response time optimization
-- [ ] API rate limiting
-- [ ] Request caching
-- [ ] GraphQL endpoint (alternative to REST)
-- [ ] WebSocket support
-
-**Estimated Effort**: 2 weeks
-**Priority**: MEDIUM
-
-### 5.3 Frontend Performance
-- [ ] Code splitting optimization
-- [ ] Image optimization
-- [ ] Lazy loading
-- [ ] Service Worker support
-- [ ] Offline capabilities
-
-**Estimated Effort**: 1.5 weeks
-**Priority**: MEDIUM
-
-### 5.4 Horizontal Scaling
-- [ ] Load balancing setup
-- [ ] Session storage centralization
-- [ ] File storage (S3/cloud)
-- [ ] Database read replicas
-- [ ] Multi-region support
-
-**Estimated Effort**: 2.5 weeks
-**Priority**: LOW (future)
-
----
-
-## Technical Debt & Maintenance
-
-### Testing
-- [ ] Unit tests (current: 0%)
-- [ ] Integration tests
-- [ ] E2E tests
-- [ ] Performance benchmarks
-- [ ] Test coverage reporting
-
-**Priority**: HIGH
-**Estimated**: 4 weeks
-
-### Code Quality
-- [ ] ESLint strict mode
-- [ ] TypeScript strict mode
-- [ ] Code formatting (Prettier)
-- [ ] Pre-commit hooks
-- [ ] CI/CD pipeline
-
-**Priority**: HIGH
-**Estimated**: 2 weeks
-
-### Documentation
-- [ ] API documentation (auto-generated)
-- [ ] Component storybook
-- [ ] Video tutorials
-- [ ] Troubleshooting guides
-- [ ] FAQ section
-
-**Priority**: MEDIUM
-**Estimated**: 3 weeks
-
-### Dependencies
-- [ ] Next.js upgrades
-- [ ] React upgrades
-- [ ] Prisma upgrades
-- [ ] Security patches
-- [ ] Dependency audits
-
-**Priority**: ONGOING
-**Estimated**: 1 week/month
-
----
-
-## Known Limitations & TODOs
-
-### Current Limitations
-- [ ] Single-file upload only (should be multiple)
-- [ ] No file size limits enforcement
-- [ ] No user profile customization
-- [ ] No dark mode
-- [ ] No bulk operations
-- [ ] No search across all projects
-- [ ] No email notifications
-- [ ] No password reset functionality
-- [ ] No session revocation
-- [ ] No API keys for integrations
-
-### Browser Support
-- [ ] Chrome/Edge (latest 2 versions)
-- [ ] Firefox (latest 2 versions)
-- [ ] Safari (latest version)
-- [ ] Mobile browsers (iOS Safari, Chrome Mobile)
-
-### Known Issues
-- [ ] Performance degrades with 10k+ test cases
-- [ ] Attachment upload slow for large files
-- [ ] Memory usage high under load
-- [ ] Docker build takes >5 minutes
-
----
-
-## Security Roadmap
-
-### Phase 1: Foundation (Months 1-2)
-- [x] Password hashing (bcryptjs)
-- [x] JWT tokens
-- [x] HTTPS ready
-- [ ] Rate limiting
-- [ ] Input validation
-- [ ] CSRF protection
-- [ ] SQL injection prevention (via Prisma)
-
-### Phase 2: Hardening (Months 3-4)
-- [ ] Multi-Factor Authentication
-- [ ] Session management improvements
-- [ ] API key authentication
-- [ ] Audit logging
-- [ ] Encryption at rest (future)
-- [ ] Encryption in transit
-
-### Phase 3: Compliance (Months 5-6)
-- [ ] GDPR compliance
-- [ ] Data retention policies
-- [ ] PII handling guidelines
-- [ ] Security certifications
-- [ ] Penetration testing
-
----
-
-## UI/UX Improvements
-
-### Immediate (Next Month)
-- [ ] Complete dashboard layout
-- [ ] Mobile responsiveness
-- [ ] Loading states
-- [ ] Error messages
-- [ ] Onboarding flow
-
-### Short-term (2-3 Months)
-- [ ] Dark mode
-- [ ] Custom themes
-- [ ] Keyboard shortcuts
-- [ ] Search improvements
-- [ ] Drag-and-drop operations
-
-### Long-term (3+ Months)
-- [ ] Advanced filters
-- [ ] Saved views
-- [ ] Notifications UI
-- [ ] Real-time collaboration (cursors, etc.)
-- [ ] Customizable dashboards
-
----
-
-## Infrastructure & DevOps
-
-### CI/CD Pipeline
-- [ ] GitHub Actions setup
-- [ ] Automated testing on PR
-- [ ] Automated deployments
-- [ ] Release automation
-- [ ] Rollback procedures
-
-**Estimated**: 1.5 weeks
-**Priority**: HIGH
-
-### Monitoring & Logging
-- [ ] Application performance monitoring (APM)
-- [ ] Error tracking (Sentry)
-- [ ] Log aggregation (ELK stack)
-- [ ] Uptime monitoring
-- [ ] Alerting system
-
-**Estimated**: 2 weeks
-**Priority**: MEDIUM
-
-### Infrastructure
-- [ ] Terraform/IaC
-- [ ] Database backups automation
-- [ ] Disaster recovery plan
-- [ ] Load testing infrastructure
-- [ ] Staging environment
-
-**Estimated**: 2 weeks
-**Priority**: MEDIUM
-
----
-
-## Community & Support
-
-### Q4 2024
-- [ ] Public GitHub repository
-- [ ] Contribution guidelines
-- [ ] Issue templates
-- [ ] Pull request templates
-- [ ] Code of conduct
-
-### Q1 2025
-- [ ] Community forum
-- [ ] Discord server
-- [ ] Email support channel
-- [ ] Bug bounty program
-- [ ] Community contributions guide
-
-### Q2 2025
-- [ ] Plugin/extension marketplace
-- [ ] Community showcases
-- [ ] Case studies
-- [ ] Partnership program
-- [ ] Enterprise support plans
-
----
-
-## Milestones & Timeline
-
-### v0.1 - Foundation (Current)
-- **Status**: In Progress
-- **Target**: December 2024
-- **Goals**: Core auth, UI framework, documentation
-
-### v0.2 - Core Features
-- **Target**: January-February 2025
-- **Goals**: Projects, test cases, execution, basic dashboard
-- **Expected Release**: February 2025
-
-### v0.3 - Collaboration
-- **Target**: March-April 2025
-- **Goals**: Comments, requirements, attachments, audit log
-- **Expected Release**: April 2025
-
-### v0.4 - Advanced Features
-- **Target**: May-June 2025
-- **Goals**: Automation, reporting, metrics, notifications
-- **Expected Release**: June 2025
-
-### v0.5 - Enterprise
-- **Target**: July-September 2025
-- **Goals**: MFA, SSO, advanced permissions, integrations
-- **Expected Release**: September 2025
-
-### v1.0 - Production Ready
-- **Target**: October-December 2025
-- **Goals**: Performance optimization, security hardening, compliance
-- **Expected Release**: December 2025
-
----
-
-## Success Metrics
-
-### User Adoption
-- [ ] 100 active users by Q2 2025
-- [ ] 500+ test cases in production use
-- [ ] 10+ organizations using platform
-- [ ] 4.5+ star rating
-
-### Performance
-- [ ] API response time < 500ms p95
-- [ ] Page load time < 3s
-- [ ] 99.9% uptime
-- [ ] 0 security incidents
-
-### Quality
-- [ ] 80%+ test coverage
-- [ ] < 5 critical bugs per release
-- [ ] < 24 hour bug fix time
-- [ ] Zero data loss incidents
-
-### Community
-- [ ] 500+ GitHub stars
-- [ ] 20+ community contributors
-- [ ] 100+ Discord members
-- [ ] Monthly blog updates
-
----
-
-## Dependencies & Blockers
-
-### Current Blockers
-- None identified
-
-### Future Blockers (Potential)
-- [ ] Scaling to 1M+ test cases (database optimization needed)
-- [ ] Multi-tenant architecture (requires refactoring)
-- [ ] Real-time features (requires WebSocket infrastructure)
-
-### Dependencies
-- PostgreSQL performance (for large datasets)
-- Next.js stability (framework updates)
-- Third-party API availability (for integrations)
-
----
-
-## Budget & Resources
-
-### Team Requirements
-- **Current**: 1 developer (community-driven)
-- **Phase 1-2**: 2-3 developers
-- **Phase 3+**: 4-5 developers + DevOps
-
-### Infrastructure
-- **Development**: $50-100/month
-- **Production**: $200-500/month (scaling)
-- **Monitoring**: $100-200/month
-
-### Third-party Services
-- [ ] Error tracking (Sentry): $50/month
-- [ ] Email service: $20-50/month
-- [ ] CDN (Cloudflare): Free-$100/month
-- [ ] SSL certificate: Free (Let's Encrypt)
-
----
-
-## Feedback & Changes
-
-This roadmap is subject to change based on:
-- Community feedback
-- User requests
-- Market demands
-- Resource availability
-- Technical constraints
-
-### How to Contribute
-1. Open an issue with your suggestion
-2. Vote on existing feature requests
-3. Submit a pull request
-4. Participate in discussions
-
-### Feedback Channels
-- GitHub Issues: Feature requests
-- GitHub Discussions: Ideas and feedback
-- Discord: Community feedback
-- Email: feedback@eztest.example.com (future)
-
----
-
-## Related Documents
-
-- [README.md](./README.md) - Project overview
-- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) - System design
-- [docs/DATABASE.md](./docs/DATABASE.md) - Data models
-- [CHANGELOG.md](./CHANGELOG.md) - Version history (future)
-
----
-
-## Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 0.1 | Oct 2024 | Initial roadmap |
+## Notes for Developers
+
+- Use this roadmap as the single source of truth for what to build
+- Update status as features are completed
+- Each module should follow the architecture patterns in docs/CODE_PATTERNS.md
+- Reference docs/DATABASE.md for model structures
+- Follow API patterns in docs/API.md for new endpoints
+- Update this file after each major feature completion
 
 ---
 
 **Last Updated**: October 21, 2024
-**Next Review**: December 2024
-**Maintained By**: EZTest Team
-
----
-
-## Quick Links
-
-- **Issues**: https://github.com/houseoffoss/eztest/issues
-- **Discussions**: https://github.com/houseoffoss/eztest/discussions
-- **Wiki**: https://github.com/houseoffoss/eztest/wiki
-- **Project Board**: https://github.com/orgs/houseoffoss/projects (future)
+**Maintainer**: EZTest Team
 

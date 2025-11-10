@@ -20,13 +20,19 @@ function Tabs({
 
 function TabsList({
   className,
+  variant = "default",
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.List>) {
+}: React.ComponentProps<typeof TabsPrimitive.List> & {
+  variant?: "default" | "glass"
+}) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "inline-flex h-11 w-fit items-center justify-center rounded-xl bg-muted/50 backdrop-blur-sm p-1 shadow-sm border border-border/40",
+        "inline-flex h-11 w-fit items-center justify-center rounded-xl p-1 shadow-sm border backdrop-blur-sm",
+        variant === "glass"
+          ? "bg-white/10 border-white/25"
+          : "bg-muted/50 border-border/40",
         className
       )}
       {...props}

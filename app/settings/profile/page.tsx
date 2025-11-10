@@ -97,12 +97,12 @@ export default function ProfileSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12">
+      <div className="min-h-screen py-12">
         <div className="max-w-2xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="glass p-8">
             <div className="space-y-4">
-              <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3"></div>
+              <div className="h-8 bg-primary/10 rounded animate-pulse"></div>
+              <div className="h-4 bg-muted rounded animate-pulse w-2/3"></div>
             </div>
           </div>
         </div>
@@ -111,24 +111,24 @@ export default function ProfileSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12">
+    <div className="min-h-screen py-12">
       <div className="max-w-2xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Profile Settings</h1>
-          <p className="text-gray-600">Manage your account information</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Profile Settings</h1>
+          <p className="text-muted-foreground">Manage your account information</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="glass">
           <div className="p-8">
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800">{error}</p>
+              <div className="mb-6 p-4 rounded-md border border-red-500/40 bg-red-500/10">
+                <p className="text-red-300">{error}</p>
               </div>
             )}
 
             {success && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-800">{success}</p>
+              <div className="mb-6 p-4 rounded-md border border-green-500/40 bg-green-500/10">
+                <p className="text-green-300">{success}</p>
               </div>
             )}
 
@@ -136,23 +136,23 @@ export default function ProfileSettingsPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email (Read-only) */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Email Address
                   </label>
                   <input
                     type="email"
                     value={profile.email}
                     disabled
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                    className="w-full px-4 py-2 rounded-lg bg-secondary/40 text-muted-foreground cursor-not-allowed border border-border"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Email cannot be changed. <Link href="/settings/account" className="text-blue-600 hover:underline">Contact support</Link> for assistance.
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email cannot be changed. <Link href="/settings/account" className="text-primary hover:underline">Contact support</Link> for assistance.
                   </p>
                 </div>
 
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Full Name
                   </label>
                   <input
@@ -161,14 +161,14 @@ export default function ProfileSettingsPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                     placeholder="Enter your full name"
                   />
                 </div>
 
                 {/* Bio */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Bio
                   </label>
                   <textarea
@@ -176,14 +176,14 @@ export default function ProfileSettingsPage() {
                     value={formData.bio}
                     onChange={handleInputChange}
                     rows={4}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none"
                     placeholder="Tell us about yourself"
                   />
                 </div>
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Phone Number
                   </label>
                   <input
@@ -191,14 +191,14 @@ export default function ProfileSettingsPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                     placeholder="Your phone number"
                   />
                 </div>
 
                 {/* Location */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Location
                   </label>
                   <input
@@ -206,17 +206,17 @@ export default function ProfileSettingsPage() {
                     name="location"
                     value={formData.location}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                     placeholder="City, Country"
                   />
                 </div>
 
                 {/* Submit Button */}
-                <div className="pt-4 border-t border-gray-200">
+                <div className="pt-4 border-t border-border/40">
                   <button
                     type="submit"
                     disabled={saving}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                    className="w-full bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground font-medium py-2 px-4 rounded-lg transition-colors"
                   >
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
@@ -225,15 +225,15 @@ export default function ProfileSettingsPage() {
             )}
 
             {/* Account Settings Link */}
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h3 className="font-medium text-gray-900 mb-2">Account & Security</h3>
-                <p className="text-sm text-gray-600 mb-4">
+            <div className="mt-8 pt-8 border-t border-border/40">
+              <div className="rounded-lg p-4 border border-primary/30 bg-primary/5">
+                <h3 className="font-medium text-foreground mb-2">Account & Security</h3>
+                <p className="text-sm text-muted-foreground mb-4">
                   Change your password, manage account deletion, or other security settings.
                 </p>
                 <Link
                   href="/settings/account"
-                  className="text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-primary hover:text-primary/90 font-medium"
                 >
                   Go to Account Settings →
                 </Link>

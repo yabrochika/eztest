@@ -20,13 +20,13 @@ function ErrorContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-md p-8">
+  <div className="glass p-8">
           <div className="text-center mb-6">
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <svg
-                className="w-6 h-6 text-red-600"
+                className="w-6 h-6 text-red-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -40,23 +40,21 @@ function ErrorContent() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Authentication Error
-            </h1>
-            <p className="text-gray-600 mt-2">{getErrorMessage()}</p>
+            <h1 className="text-2xl font-bold text-foreground">Authentication Error</h1>
+            <p className="text-muted-foreground mt-2">{getErrorMessage()}</p>
           </div>
 
           <div className="space-y-4">
             <Link
               href="/auth/login"
-              className="block w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium text-center"
+              className="block w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-medium text-center"
             >
               Back to Login
             </Link>
 
             <Link
               href="/auth/register"
-              className="block w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium text-center"
+              className="block w-full bg-secondary text-secondary-foreground py-2 px-4 rounded-md hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-medium text-center"
             >
               Create Account
             </Link>

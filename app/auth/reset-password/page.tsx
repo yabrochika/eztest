@@ -34,7 +34,7 @@ export default function ResetPasswordPage() {
           const errorData = await response.json();
           setError(errorData.error || 'Invalid or expired token');
         }
-      } catch (err) {
+      } catch {
         setError('Failed to validate token');
       } finally {
         setValidating(false);
@@ -87,9 +87,9 @@ export default function ResetPasswordPage() {
 
   if (validating) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center py-12 px-4">
+      <div className="min-h-screen flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-lg shadow-xl p-8">
+          <div className="glass p-8">
             <div className="space-y-4">
               <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
               <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3"></div>
@@ -101,36 +101,36 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         {/* Card */}
-        <div className="bg-white rounded-lg shadow-xl p-8 backdrop-blur-sm bg-opacity-95">
+  <div className="glass p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Password</h1>
-            <p className="text-gray-600">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Create New Password</h1>
+            <p className="text-muted-foreground">
               Enter your new password below.
             </p>
           </div>
 
           {success ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-              <h3 className="font-medium text-green-900 mb-2">Password Reset Successful</h3>
-              <p className="text-green-800 text-sm mb-4">
+            <div className="rounded-lg p-4 text-center border border-green-500/40 bg-green-500/10">
+              <h3 className="font-medium text-green-200 mb-2">Password Reset Successful</h3>
+              <p className="text-green-200/90 text-sm mb-4">
                 Your password has been reset. You can now log in with your new password.
               </p>
-              <p className="text-green-700 text-sm">
+              <p className="text-green-200/90 text-sm">
                 Redirecting to login page...
               </p>
             </div>
           ) : !tokenValid ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <h3 className="font-medium text-red-900 mb-2">Invalid Reset Link</h3>
-              <p className="text-red-800 text-sm mb-4">
+            <div className="rounded-lg p-4 border border-red-500/40 bg-red-500/10">
+              <h3 className="font-medium text-red-200 mb-2">Invalid Reset Link</h3>
+              <p className="text-red-200 text-sm mb-4">
                 {error || 'The password reset link is invalid or has expired.'}
               </p>
               <Link
                 href="/auth/forgot-password"
-                className="text-red-600 hover:text-red-700 font-medium"
+                className="text-red-300 hover:text-red-200 font-medium"
               >
                 Request a new reset link
               </Link>
@@ -138,14 +138,14 @@ export default function ResetPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-800 text-sm">{error}</p>
+                <div className="rounded-lg p-4 border border-red-500/40 bg-red-500/10">
+                  <p className="text-red-200 text-sm">{error}</p>
                 </div>
               )}
 
               {/* New Password */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   New Password
                 </label>
                 <input
@@ -153,14 +153,14 @@ export default function ResetPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  className="w-full px-4 py-3 rounded-lg border border-border bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
                   placeholder="Enter new password (min 8 characters)"
                 />
               </div>
 
               {/* Confirm Password */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Confirm Password
                 </label>
                 <input
@@ -168,15 +168,15 @@ export default function ResetPasswordPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  className="w-full px-4 py-3 rounded-lg border border-border bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
                   placeholder="Confirm your password"
                 />
               </div>
 
               {/* Password Requirements */}
-              <div className="bg-blue-50 p-3 rounded-lg text-sm text-gray-700">
-                <p className="font-medium mb-2">Password requirements:</p>
-                <ul className="list-disc list-inside space-y-1">
+              <div className="rounded-lg p-3 text-sm border border-primary/30 bg-primary/5">
+                <p className="font-medium mb-2 text-foreground">Password requirements:</p>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                   <li>At least 8 characters long</li>
                   <li>Must match in both fields</li>
                 </ul>
@@ -185,7 +185,7 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                className="w-full bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground font-medium py-3 px-4 rounded-lg transition-colors"
               >
                 {loading ? 'Resetting Password...' : 'Reset Password'}
               </button>
@@ -194,8 +194,8 @@ export default function ResetPasswordPage() {
 
           {/* Back to Login */}
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 font-medium">
+            <p className="text-muted-foreground">
+              <Link href="/auth/login" className="text-primary hover:text-primary/90 font-medium">
                 Back to Login
               </Link>
             </p>

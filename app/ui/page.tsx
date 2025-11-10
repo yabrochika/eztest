@@ -22,19 +22,19 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 export default function UIShowcase() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f0f9ff] to-white">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="border-b border-white/20 bg-white/70 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+	<header className="glass sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-2">
               <span className="text-2xl">🧪</span>
-              <span className="text-xl font-bold text-[#033977]">EZTest</span>
-              <span className="text-sm text-[#656c79]">/ UI Components</span>
+              <span className="text-xl font-bold text-primary">EZTest</span>
+              <span className="text-sm text-muted-foreground">/ UI Components</span>
             </div>
             <Link
               href="/"
-              className="text-[#656c79] hover:text-[#033977] font-medium text-sm transition-colors"
+              className="text-muted-foreground hover:text-primary font-medium text-sm transition-colors"
             >
               Back to Home
             </Link>
@@ -45,66 +45,66 @@ export default function UIShowcase() {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-12">
-          <h1 className="text-4xl font-bold text-[#033977] mb-4">UI Component Library</h1>
-          <p className="text-[#656c79] text-lg">
-            All components styled with EZTest theme colors: #033977 (Primary Blue), #f34923 (Accent Orange), #f0f9ff (Background), #656c79 (Gray)
+          <h1 className="text-4xl font-bold text-primary mb-4">UI Component Library</h1>
+          <p className="text-muted-foreground text-lg">
+            All components styled with EZTest tokens: primary, accent, muted, and glass surfaces.
           </p>
         </div>
 
         <div className="space-y-12">
           {/* Buttons */}
           <section>
-            <h2 className="text-2xl font-bold text-[#033977] mb-6">Buttons</h2>
-            <Card>
+            <h2 className="text-2xl font-bold text-primary mb-6">Buttons</h2>
+            <Card variant="glass">
               <CardHeader>
                 <CardTitle>Button Variants</CardTitle>
                 <CardDescription>Different button styles for various use cases</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-4">
-                <Button>Primary Button</Button>
-                <Button variant="accent">Accent Button (Orange)</Button>
-                <Button variant="secondary">Secondary Button</Button>
-                <Button variant="outline">Outline Button</Button>
-                <Button variant="ghost">Ghost Button</Button>
-                <Button variant="destructive">Destructive Button</Button>
-                <Button variant="link">Link Button</Button>
+                <Button variant="glass-primary">Primary Button</Button>
+                <Button variant="glass-accent">Accent Button (Orange)</Button>
+                <Button variant="glass">Secondary Button</Button>
+                <Button variant="glass">Outline Button</Button>
+                <Button variant="glass">Ghost Button</Button>
+                <Button variant="glass">Destructive Button</Button>
+                <Button variant="glass">Link Button</Button>
               </CardContent>
               <CardFooter>
-                <p className="text-sm text-[#656c79]">Size variants: sm, default, lg, icon</p>
+                <p className="text-sm text-muted-foreground">Size variants: sm, default, lg, icon</p>
               </CardFooter>
             </Card>
           </section>
 
           {/* Inputs */}
           <section>
-            <h2 className="text-2xl font-bold text-[#033977] mb-6">Form Inputs</h2>
-            <Card>
+            <h2 className="text-2xl font-bold text-primary mb-6">Form Inputs</h2>
+            <Card variant="glass">
               <CardHeader>
                 <CardTitle>Input Fields</CardTitle>
                 <CardDescription>Text inputs, textareas, and selects</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
+                    <div className="space-y-2">
                     <Label htmlFor="input-1">Text Input</Label>
-                    <Input id="input-1" placeholder="Enter text here..." />
+                    <Input variant="glass" id="input-1" placeholder="Enter text here..." />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="input-2">Email Input</Label>
-                    <Input id="input-2" type="email" placeholder="email@example.com" />
+                    <Input variant="glass" id="input-2" type="email" placeholder="email@example.com" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="textarea">Textarea</Label>
-                  <Textarea id="textarea" placeholder="Enter longer text here..." />
+                  <Textarea variant="glass" id="textarea" placeholder="Enter longer text here..." />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="select">Select</Label>
                   <Select>
-                    <SelectTrigger id="select">
+                    <SelectTrigger variant="glass" id="select">
                       <SelectValue placeholder="Select an option" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent variant="glass">
                       <SelectItem value="option1">Option 1</SelectItem>
                       <SelectItem value="option2">Option 2</SelectItem>
                       <SelectItem value="option3">Option 3</SelectItem>
@@ -117,34 +117,34 @@ export default function UIShowcase() {
 
           {/* Badges & Alerts */}
           <section>
-            <h2 className="text-2xl font-bold text-[#033977] mb-6">Badges & Alerts</h2>
+            <h2 className="text-2xl font-bold text-primary mb-6">Badges & Alerts</h2>
             <div className="grid gap-6 md:grid-cols-2">
-              <Card>
+              <Card variant="glass">
                 <CardHeader>
                   <CardTitle>Badges</CardTitle>
                   <CardDescription>Status indicators and labels</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-3">
-                  <Badge>Default</Badge>
-                  <Badge variant="secondary">Secondary</Badge>
-                  <Badge variant="outline">Outline</Badge>
-                  <Badge variant="destructive">Destructive</Badge>
+                  <Badge variant="glass">Default</Badge>
+                  <Badge variant="glass-secondary">Secondary</Badge>
+                  <Badge variant="glass-outline">Outline</Badge>
+                  <Badge variant="glass-destructive">Destructive</Badge>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card variant="glass">
                 <CardHeader>
                   <CardTitle>Alerts</CardTitle>
                   <CardDescription>Important notifications</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Alert>
+                  <Alert variant="glass">
                     <AlertTitle>Info Alert</AlertTitle>
                     <AlertDescription>
                       This is an informational alert message.
                     </AlertDescription>
                   </Alert>
-                  <Alert variant="destructive">
+                  <Alert variant="glass-destructive">
                     <AlertTitle>Error Alert</AlertTitle>
                     <AlertDescription>
                       This is an error alert message.
@@ -157,9 +157,9 @@ export default function UIShowcase() {
 
           {/* Dialogs & Dropdowns */}
           <section>
-            <h2 className="text-2xl font-bold text-[#033977] mb-6">Dialogs & Dropdowns</h2>
+            <h2 className="text-2xl font-bold text-primary mb-6">Dialogs & Dropdowns</h2>
             <div className="grid gap-6 md:grid-cols-2">
-              <Card>
+              <Card variant="glass">
                 <CardHeader>
                   <CardTitle>Dialog</CardTitle>
                   <CardDescription>Modal dialogs for user interactions</CardDescription>
@@ -167,9 +167,9 @@ export default function UIShowcase() {
                 <CardContent>
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button>Open Dialog</Button>
+                      <Button variant="glass">Open Dialog</Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent variant="glass">
                       <DialogHeader>
                         <DialogTitle>Dialog Title</DialogTitle>
                         <DialogDescription>
@@ -177,18 +177,18 @@ export default function UIShowcase() {
                         </DialogDescription>
                       </DialogHeader>
                       <div className="py-4">
-                        <p className="text-sm text-[#656c79]">Dialog content goes here.</p>
+                        <p className="text-sm text-muted-foreground">Dialog content goes here.</p>
                       </div>
                       <DialogFooter>
-                        <Button variant="outline">Cancel</Button>
-                        <Button>Confirm</Button>
+                        <Button variant="glass">Cancel</Button>
+                        <Button variant="glass-primary">Confirm</Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card variant="glass">
                 <CardHeader>
                   <CardTitle>Dropdown Menu</CardTitle>
                   <CardDescription>Contextual action menus</CardDescription>
@@ -196,9 +196,9 @@ export default function UIShowcase() {
                 <CardContent>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline">Open Menu</Button>
+                      <Button variant="glass">Open Menu</Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent>
+                    <DropdownMenuContent variant="glass">
                       <DropdownMenuLabel>My Account</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem>Profile</DropdownMenuItem>
@@ -215,8 +215,8 @@ export default function UIShowcase() {
 
           {/* Checkboxes, Radios & Switches */}
           <section>
-            <h2 className="text-2xl font-bold text-[#033977] mb-6">Selection Controls</h2>
-            <Card>
+            <h2 className="text-2xl font-bold text-primary mb-6">Selection Controls</h2>
+            <Card className="glass">
               <CardHeader>
                 <CardTitle>Checkboxes, Radio Buttons & Switches</CardTitle>
                 <CardDescription>Various selection controls</CardDescription>
@@ -226,13 +226,13 @@ export default function UIShowcase() {
                   <Label className="text-base font-semibold">Checkboxes</Label>
                   <div className="flex items-center space-x-2">
                     <Checkbox id="check1" />
-                    <label htmlFor="check1" className="text-sm text-[#656c79] cursor-pointer">
+                    <label htmlFor="check1" className="text-sm text-muted-foreground cursor-pointer">
                       Accept terms and conditions
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox id="check2" />
-                    <label htmlFor="check2" className="text-sm text-[#656c79] cursor-pointer">
+                    <label htmlFor="check2" className="text-sm text-muted-foreground cursor-pointer">
                       Subscribe to newsletter
                     </label>
                   </div>
@@ -245,19 +245,19 @@ export default function UIShowcase() {
                   <RadioGroup defaultValue="option1">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="option1" id="radio1" />
-                      <Label htmlFor="radio1" className="text-sm text-[#656c79] cursor-pointer">
+                      <Label htmlFor="radio1" className="text-sm text-muted-foreground cursor-pointer">
                         Option 1
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="option2" id="radio2" />
-                      <Label htmlFor="radio2" className="text-sm text-[#656c79] cursor-pointer">
+                      <Label htmlFor="radio2" className="text-sm text-muted-foreground cursor-pointer">
                         Option 2
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="option3" id="radio3" />
-                      <Label htmlFor="radio3" className="text-sm text-[#656c79] cursor-pointer">
+                      <Label htmlFor="radio3" className="text-sm text-muted-foreground cursor-pointer">
                         Option 3
                       </Label>
                     </div>
@@ -269,16 +269,16 @@ export default function UIShowcase() {
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">Switches</Label>
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="switch1" className="text-sm text-[#656c79]">
+                    <Label htmlFor="switch1" className="text-sm text-muted-foreground">
                       Enable notifications
                     </Label>
-                    <Switch id="switch1" />
+                    <Switch id="switch1" variant="glass" />
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="switch2" className="text-sm text-[#656c79]">
+                    <Label htmlFor="switch2" className="text-sm text-muted-foreground">
                       Enable dark mode
                     </Label>
-                    <Switch id="switch2" />
+                    <Switch id="switch2" variant="glass" />
                   </div>
                 </div>
               </CardContent>
@@ -287,27 +287,27 @@ export default function UIShowcase() {
 
           {/* Tabs */}
           <section>
-            <h2 className="text-2xl font-bold text-[#033977] mb-6">Tabs</h2>
-            <Card>
+            <h2 className="text-2xl font-bold text-primary mb-6">Tabs</h2>
+              <Card variant="glass">
               <CardHeader>
                 <CardTitle>Tab Navigation</CardTitle>
                 <CardDescription>Organize content in tabs</CardDescription>
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="tab1" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsList variant="glass" className="grid w-full grid-cols-3">
                     <TabsTrigger value="tab1">Tab 1</TabsTrigger>
                     <TabsTrigger value="tab2">Tab 2</TabsTrigger>
                     <TabsTrigger value="tab3">Tab 3</TabsTrigger>
                   </TabsList>
                   <TabsContent value="tab1" className="mt-4">
-                    <p className="text-[#656c79]">Content for Tab 1. This is where your first tab content would go.</p>
+                    <p className="text-muted-foreground">Content for Tab 1. This is where your first tab content would go.</p>
                   </TabsContent>
                   <TabsContent value="tab2" className="mt-4">
-                    <p className="text-[#656c79]">Content for Tab 2. This is where your second tab content would go.</p>
+                    <p className="text-muted-foreground">Content for Tab 2. This is where your second tab content would go.</p>
                   </TabsContent>
                   <TabsContent value="tab3" className="mt-4">
-                    <p className="text-[#656c79]">Content for Tab 3. This is where your third tab content would go.</p>
+                    <p className="text-muted-foreground">Content for Tab 3. This is where your third tab content would go.</p>
                   </TabsContent>
                 </Tabs>
               </CardContent>
@@ -316,8 +316,8 @@ export default function UIShowcase() {
 
           {/* Table */}
           <section>
-            <h2 className="text-2xl font-bold text-[#033977] mb-6">Table</h2>
-            <Card>
+            <h2 className="text-2xl font-bold text-primary mb-6">Table</h2>
+            <Card className="glass">
               <CardHeader>
                 <CardTitle>Data Table</CardTitle>
                 <CardDescription>Display tabular data</CardDescription>
@@ -338,33 +338,33 @@ export default function UIShowcase() {
                       <TableCell className="font-medium">TC-001</TableCell>
                       <TableCell>User login test</TableCell>
                       <TableCell>
-                        <Badge>Passed</Badge>
+                        <Badge variant="glass">Passed</Badge>
                       </TableCell>
                       <TableCell>High</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost">Edit</Button>
+                        <Button size="sm" variant="glass">Edit</Button>
                       </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">TC-002</TableCell>
                       <TableCell>Dashboard rendering</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">In Progress</Badge>
+                        <Badge variant="glass-secondary">In Progress</Badge>
                       </TableCell>
                       <TableCell>Medium</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost">Edit</Button>
+                        <Button size="sm" variant="glass">Edit</Button>
                       </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">TC-003</TableCell>
                       <TableCell>API integration test</TableCell>
                       <TableCell>
-                        <Badge variant="destructive">Failed</Badge>
+                        <Badge variant="glass-destructive">Failed</Badge>
                       </TableCell>
                       <TableCell>High</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost">Edit</Button>
+                        <Button size="sm" variant="glass">Edit</Button>
                       </TableCell>
                     </TableRow>
                   </TableBody>
@@ -375,9 +375,9 @@ export default function UIShowcase() {
 
           {/* Avatar & Tooltip */}
           <section>
-            <h2 className="text-2xl font-bold text-[#033977] mb-6">Avatar & Tooltip</h2>
+            <h2 className="text-2xl font-bold text-primary mb-6">Avatar & Tooltip</h2>
             <div className="grid gap-6 md:grid-cols-2">
-              <Card>
+              <Card variant="glass">
                 <CardHeader>
                   <CardTitle>Avatars</CardTitle>
                   <CardDescription>User profile pictures</CardDescription>
@@ -396,7 +396,7 @@ export default function UIShowcase() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card variant="glass">
                 <CardHeader>
                   <CardTitle>Tooltips</CardTitle>
                   <CardDescription>Helpful hints on hover</CardDescription>
@@ -405,9 +405,9 @@ export default function UIShowcase() {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="outline">Hover me</Button>
+                        <Button variant="glass">Hover me</Button>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent variant="glass">
                         <p>This is a helpful tooltip message</p>
                       </TooltipContent>
                     </Tooltip>
@@ -419,50 +419,50 @@ export default function UIShowcase() {
 
           {/* Cards */}
           <section>
-            <h2 className="text-2xl font-bold text-[#033977] mb-6">Cards</h2>
+            <h2 className="text-2xl font-bold text-primary mb-6">Cards</h2>
             <div className="grid gap-6 md:grid-cols-3">
-              <Card>
+              <Card variant="glass">
                 <CardHeader>
                   <CardTitle>Card 1</CardTitle>
                   <CardDescription>This is a simple card</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-[#656c79]">
+                  <p className="text-sm text-muted-foreground">
                     Cards are flexible containers with glass morphism effect.
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Button size="sm">Action</Button>
+                  <Button size="sm" variant="glass">Action</Button>
                 </CardFooter>
               </Card>
 
-              <Card>
+              <Card variant="glass">
                 <CardHeader>
                   <CardTitle>Card 2</CardTitle>
                   <CardDescription>Another card example</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-[#656c79]">
+                  <p className="text-sm text-muted-foreground">
                     With backdrop blur and transparency for a modern look.
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Button size="sm" variant="outline">Action</Button>
+                  <Button size="sm" variant="glass">Action</Button>
                 </CardFooter>
               </Card>
 
-              <Card>
+              <Card variant="glass">
                 <CardHeader>
                   <CardTitle>Card 3</CardTitle>
                   <CardDescription>Third card showcase</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-[#656c79]">
+                  <p className="text-sm text-muted-foreground">
                     Consistent styling across all components.
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Button size="sm" variant="secondary">Action</Button>
+                  <Button size="sm" variant="glass">Action</Button>
                 </CardFooter>
               </Card>
             </div>
@@ -471,14 +471,14 @@ export default function UIShowcase() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-white/20 bg-white/60 backdrop-blur-md mt-24">
+  <footer className="glass mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-xl">🧪</span>
-              <span className="font-semibold text-[#033977]">EZTest</span>
+              <span className="font-semibold text-primary">EZTest</span>
             </div>
-            <p className="text-sm text-[#656c79]">
+            <p className="text-sm text-muted-foreground">
               UI Component Library - All components ready for use
             </p>
           </div>

@@ -16,14 +16,14 @@ export default async function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f0f9ff] to-white">
+    <div className="min-h-screen">
       {/* Header with Glass Effect */}
-      <header className="border-b border-white/20 bg-white/70 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+      <header className="glass sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <Link href="/" className="flex items-center gap-2">
               <span className="text-2xl">🧪</span>
-              <span className="text-xl font-bold text-[#033977]">EZTest</span>
+              <span className="text-xl font-bold text-primary">EZTest</span>
             </Link>
             <div className="flex items-center gap-4">
               <Button variant="ghost" asChild>
@@ -41,16 +41,16 @@ export default async function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20">
         <div className="text-center mb-24 relative">
           {/* Simple Gradient Orb */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#033977]/5 rounded-full blur-3xl -z-10"></div>
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/20 rounded-full blur-3xl -z-10"></div>
 
           <Badge className="mb-8">
             <span>✨ Open Source & Self-Hosted</span>
           </Badge>
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-gray-900 mb-6 tracking-tight leading-tight">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 tracking-tight leading-tight">
             Test Management,
             <br />
-            <span className="text-[#033977]">Made Simple</span>
+            <span className="text-primary">Made Simple</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed">
             Lightweight, powerful test management platform that runs on minimal hardware.
@@ -72,7 +72,7 @@ export default async function Home() {
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
-          <Card className="group hover:shadow-xl hover:scale-105 transition-all duration-300">
+          <Card className="glass group hover:shadow-xl hover:scale-105 transition-all duration-300">
             <CardHeader>
               <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">📊</div>
               <CardTitle>Multi-Project Support</CardTitle>
@@ -82,7 +82,7 @@ export default async function Home() {
             </CardHeader>
           </Card>
 
-          <Card className="group hover:shadow-xl hover:scale-105 transition-all duration-300">
+          <Card className="glass group hover:shadow-xl hover:scale-105 transition-all duration-300">
             <CardHeader>
               <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">🗂️</div>
               <CardTitle>Hierarchical Tests</CardTitle>
@@ -92,7 +92,7 @@ export default async function Home() {
             </CardHeader>
           </Card>
 
-          <Card className="group hover:shadow-xl hover:scale-105 transition-all duration-300">
+          <Card className="glass group hover:shadow-xl hover:scale-105 transition-all duration-300">
             <CardHeader>
               <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">▶️</div>
               <CardTitle>Test Execution</CardTitle>
@@ -102,7 +102,7 @@ export default async function Home() {
             </CardHeader>
           </Card>
 
-          <Card className="group hover:shadow-xl hover:scale-105 transition-all duration-300">
+          <Card className="glass group hover:shadow-xl hover:scale-105 transition-all duration-300">
             <CardHeader>
               <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">🔗</div>
               <CardTitle>Traceability</CardTitle>
@@ -112,7 +112,7 @@ export default async function Home() {
             </CardHeader>
           </Card>
 
-          <Card className="group hover:shadow-xl hover:scale-105 transition-all duration-300">
+          <Card className="glass group hover:shadow-xl hover:scale-105 transition-all duration-300">
             <CardHeader>
               <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">💬</div>
               <CardTitle>Collaboration</CardTitle>
@@ -122,7 +122,7 @@ export default async function Home() {
             </CardHeader>
           </Card>
 
-          <Card className="group hover:shadow-xl hover:scale-105 transition-all duration-300">
+          <Card className="glass group hover:shadow-xl hover:scale-105 transition-all duration-300">
             <CardHeader>
               <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">⚡</div>
               <CardTitle>Lightweight</CardTitle>
@@ -134,7 +134,7 @@ export default async function Home() {
         </div>
 
         {/* Stats Section */}
-        <Card className="relative overflow-hidden bg-gradient-to-br from-[#033977] to-[#044a99] border-none text-white">
+        <Card className="glass relative overflow-hidden text-white border-none">
           <CardContent className="p-12 md:p-16 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose EZTest? 🤔</h2>
             <p className="text-white/90 text-lg mb-12 max-w-2xl mx-auto">
@@ -159,14 +159,14 @@ export default async function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-white/20 bg-white/70 backdrop-blur-md mt-24">
+      <footer className="glass mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             {/* Brand Column */}
             <div className="space-y-4">
               <Link href="/" className="flex items-center gap-2">
                 <span className="text-2xl">🧪</span>
-                <span className="text-xl font-bold text-[#033977]">EZTest</span>
+                <span className="text-xl font-bold text-primary">EZTest</span>
               </Link>
               <p className="text-sm text-muted-foreground">
                 Self-hostable test management platform for modern teams.
@@ -175,7 +175,7 @@ export default async function Home() {
 
             {/* Product Column */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-[#033977]">Product</h3>
+              <h3 className="font-semibold text-primary">Product</h3>
               <ul className="space-y-2 text-sm">
                 <li>
                   <Link href="/ui" className="text-muted-foreground hover:text-primary transition-colors">
@@ -202,7 +202,7 @@ export default async function Home() {
 
             {/* Resources Column */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-[#033977]">Resources</h3>
+              <h3 className="font-semibold text-primary">Resources</h3>
               <ul className="space-y-2 text-sm">
                 <li>
                   <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
@@ -229,7 +229,7 @@ export default async function Home() {
 
             {/* Company Column */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-[#033977]">Company</h3>
+              <h3 className="font-semibold text-primary">Company</h3>
               <ul className="space-y-2 text-sm">
                 <li>
                   <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">

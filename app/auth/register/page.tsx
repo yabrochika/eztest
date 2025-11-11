@@ -96,7 +96,7 @@ export default function RegisterPage() {
               Start Testing Smarter 🚀
             </h2>
             <p className="text-white/80 text-lg leading-relaxed max-w-md">
-              Join teams who have simplified their test management. No credit card required.
+              Join teams who have simplified their test management. No credit card required, start for free today.
             </p>
           </div>
           <div className="space-y-4">
@@ -105,7 +105,7 @@ export default function RegisterPage() {
                 <span className="text-2xl">🎯</span>
                 <div>
                   <h3 className="font-semibold mb-1">Complete Control</h3>
-                  <p className="text-muted-foreground text-sm">Self-host and own your data</p>
+                  <p className="text-muted-foreground text-sm">Self-host on your infrastructure, own your data completely</p>
                 </div>
               </div>
             </div>
@@ -114,7 +114,7 @@ export default function RegisterPage() {
                 <span className="text-2xl">⚡</span>
                 <div>
                   <h3 className="font-semibold mb-1">Lightweight & Fast</h3>
-                  <p className="text-muted-foreground text-sm">Minimal resources required</p>
+                  <p className="text-muted-foreground text-sm">Runs on minimal resources, no complex setup required</p>
                 </div>
               </div>
             </div>
@@ -123,7 +123,7 @@ export default function RegisterPage() {
                 <span className="text-2xl">🔓</span>
                 <div>
                   <h3 className="font-semibold mb-1">100% Open Source</h3>
-                  <p className="text-muted-foreground text-sm">Transparent and community-driven</p>
+                  <p className="text-muted-foreground text-sm">Free forever,transparent and community-driven</p>
                 </div>
               </div>
             </div>

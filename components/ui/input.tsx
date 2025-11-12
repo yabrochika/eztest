@@ -9,6 +9,7 @@ type InputProps = React.ComponentProps<"input"> & {
 function Input({ className, type, variant = "default", ...props }: InputProps) {
   return (
     <input
+      suppressHydrationWarning
       type={type}
       data-slot="input"
       className={cn(

@@ -1,6 +1,9 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { GlassPanel } from '@/components/design/GlassPanel';
+import { Navbar } from '@/components/design/Navbar';
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -10,9 +13,23 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen py-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="bg-white/[0.02] border-white/10 border-2 backdrop-blur-xl shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)] before:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-6">
+    <div className="min-h-screen bg-[#0a1628]">
+      <Navbar
+        items={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Projects', href: '/projects' },
+          { label: 'Runs', href: '/runs' },
+        ]}
+        actions={
+          <form action="/api/auth/signout" method="POST">
+            <Button type="submit" variant="glass-destructive" size="sm" className="px-5">
+              Sign Out
+            </Button>
+          </form>
+        }
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 py-10">
+        <GlassPanel contentClassName="p-6">
           <h1 className="text-3xl font-bold text-foreground mb-4">Welcome to EZTest</h1>
           <div className="space-y-5">
             <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4">
@@ -64,14 +81,17 @@ export default async function DashboardPage() {
               </ul>
             </div>
 
-            <form action="/api/auth/signout" method="POST">
-              <button
-                type="submit"
-                className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg transition-colors text-sm font-medium"
-              >
-                Sign Out
-              </button>
-            </form>
+            {/* Sign out moved to navbar */}
+          </div>
+        </GlassPanel>
+        {/* Glassy footer panel for dashboard */}
+        <div className="mt-12 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)] px-6 py-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} EZTest Dashboard</p>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="hidden sm:inline">Glass theme active</span>
+              <span className="text-primary">v0.1.0</span>
+            </div>
           </div>
         </div>
       </div>

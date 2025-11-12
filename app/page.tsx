@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Navbar } from '@/components/design/Navbar';
+import { GlassFooter } from '@/components/design/GlassFooter';
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
@@ -16,26 +17,19 @@ export default async function Home() {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header with Glass Effect */}
-      <header className="glass sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl">🧪</span>
-              <span className="text-xl font-bold text-primary">EZTest</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" asChild>
-                <Link href="/auth/login">Sign in</Link>
-              </Button>
-              <Button variant="accent" asChild>
-                <Link href="/auth/register">Get started</Link>
-              </Button>
-            </div>
+    <div className="min-h-screen bg-[#0a1628]">
+      <Navbar
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="glass" asChild>
+              <Link href="/auth/login">Sign in</Link>
+            </Button>
+            <Button variant="glass-accent" asChild>
+              <Link href="/auth/register">Get started</Link>
+            </Button>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20">
@@ -57,12 +51,12 @@ export default async function Home() {
             Perfect for teams who want control without complexity.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
-            <Button variant="accent" size="lg" asChild>
+            <Button variant="glass-accent" size="lg" asChild>
               <Link href="/auth/register">
                 Start Testing 🚀
               </Link>
             </Button>
-            <Button variant="outline" size="lg" asChild>
+            <Button variant="glass" size="lg" asChild>
               <Link href="/auth/login">
                 Sign In
               </Link>
@@ -158,123 +152,7 @@ export default async function Home() {
         </Card>
       </div>
 
-      {/* Footer */}
-      <footer className="glass mt-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            {/* Brand Column */}
-            <div className="space-y-4">
-              <Link href="/" className="flex items-center gap-2">
-                <span className="text-2xl">🧪</span>
-                <span className="text-xl font-bold text-primary">EZTest</span>
-              </Link>
-              <p className="text-sm text-muted-foreground">
-                Self-hostable test management platform for modern teams.
-              </p>
-            </div>
-
-            {/* Product Column */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-primary">Product</h3>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="/ui" className="text-muted-foreground hover:text-primary transition-colors">
-                    Features
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                    Pricing
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                    Documentation
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                    Changelog
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Resources Column */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-primary">Resources</h3>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                    GitHub
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                    Community
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                    Support
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                    Status
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Company Column */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-primary">Company</h3>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                    About
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                    Blog
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                    Careers
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                    Contact
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <Separator className="my-8" />
-
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} EZTest. All rights reserved.
-            </p>
-            <div className="flex items-center gap-6 text-sm">
-              <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                Privacy Policy
-              </Link>
-              <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                Terms of Service
-              </Link>
-              <Link href="/auth/register" className="text-muted-foreground hover:text-primary transition-colors">
-                License
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <GlassFooter />
     </div>
   );
 }

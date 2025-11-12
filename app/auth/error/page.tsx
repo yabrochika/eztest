@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { GlassPanel } from '@/components/design/GlassPanel';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -21,8 +23,8 @@ function ErrorContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-  <div className="bg-white/[0.02] border-white/10 border-2 backdrop-blur-xl shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)] before:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-8">
+    <div className="w-full max-w-md">
+  <GlassPanel contentClassName="p-8">
           <div className="text-center mb-6">
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <svg
@@ -45,21 +47,14 @@ function ErrorContent() {
           </div>
 
           <div className="space-y-4">
-            <Link
-              href="/auth/login"
-              className="block w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-medium text-center"
-            >
-              Back to Login
-            </Link>
-
-            <Link
-              href="/auth/register"
-              className="block w-full bg-secondary text-secondary-foreground py-2 px-4 rounded-md hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-medium text-center"
-            >
-              Create Account
-            </Link>
+            <Button asChild variant="glass-primary" className="w-full rounded-[10px]">
+              <Link href="/auth/login" className="flex justify-center">Back to Login</Link>
+            </Button>
+            <Button asChild variant="glass" className="w-full rounded-[10px]">
+              <Link href="/auth/register" className="flex justify-center">Create Account</Link>
+            </Button>
           </div>
-        </div>
+        </GlassPanel>
       </div>
     </div>
   );

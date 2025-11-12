@@ -27,9 +27,20 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a1628] min-h-screen text-white relative`}
       >
-        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,_#1a2e4a_0%,_#0a1628_50%)] pointer-events-none z-0"></div>
+        {/* Global glassmorphism background */}
+        <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
+          {/* Base radial backdrop */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(26,46,74,0.9)_0%,_rgba(10,22,40,1)_65%)]" />
+
+          {/* Soft primary (blue) glow */}
+          <div className="absolute -top-28 -left-32 h-[520px] w-[520px] rounded-full bg-primary/20 blur-3xl" />
+
+          {/* Soft accent (orange) glow */}
+          <div className="absolute -bottom-24 -right-28 h-[460px] w-[460px] rounded-full bg-accent/20 blur-3xl" />
+        </div>
+
         <div className="relative z-10">
-        {children}
+          {children}
         </div>
       </body>
     </html>

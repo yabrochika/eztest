@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { GlassPanel } from '@/components/design/GlassPanel';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -41,7 +43,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         {/* Card */}
-  <div className="bg-white/[0.02] border-white/10 border-2 backdrop-blur-xl shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)] before:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-8">
+  <GlassPanel contentClassName="p-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Reset Password</h1>
             <p className="text-muted-foreground">
@@ -91,13 +93,14 @@ export default function ForgotPasswordPage() {
                 />
               </div>
 
-              <button
+              <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground font-medium py-3 px-4 rounded-[10px] transition-colors"
+                variant="glass-primary"
+                className="w-full rounded-[10px]"
               >
                 {loading ? 'Sending...' : 'Send Reset Link'}
-              </button>
+              </Button>
             </form>
           )}
 
@@ -110,9 +113,9 @@ export default function ForgotPasswordPage() {
               </Link>
             </p>
           </div>
-        </div>
+  </GlassPanel>
 
-        {/* Help Text */}
+  {/* Help Text */}
         <div className="mt-6 text-center text-sm text-muted-foreground">
           <p>If you need further assistance, please contact support.</p>
         </div>

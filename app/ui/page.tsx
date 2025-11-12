@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 // UI primitives
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -27,9 +27,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -38,9 +38,9 @@ import {
   SelectLabel as UiSelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -50,11 +50,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { GlassPanel, PageHeader, StatCard, StatusBadge, PriorityBadge, ProgressBar, FilterBar, Assignee, EmptyState, ConfirmDialog, Section } from '@/components/design';
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { GlassPanel, PageHeader, StatCard, StatusBadge, PriorityBadge, ProgressBar, FilterBar, Assignee, EmptyState, ConfirmDialog, Section } from "@/components/design";
+import { GlassFooter } from "@/components/design/GlassFooter";
 
 export default function UIShowcase() {
   return (
@@ -65,14 +66,12 @@ export default function UIShowcase() {
           <div className="flex items-center justify-between">
             {/* Left: Logo pill */}
             <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 backdrop-blur-2xl px-3 py-2 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]">
-              {/* Glass avatar pill updated to transparent gradient */}
               <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/50 via-primary/30 to-accent/50 ring-1 ring-inset ring-white/15 backdrop-blur-sm flex items-center justify-center text-[13px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">G</div>
               <div className="leading-tight">
                 <div className="text-white font-semibold">Glass UI</div>
                 <div className="text-[12px] text-white/60">Blue · Orange</div>
               </div>
             </div>
-
             {/* Right: Nav */}
             <nav className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-2xl px-2 py-1 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]">
               <Link href="#" className="px-3 py-2 text-sm text-white/80 hover:text-white transition">Overview</Link>
@@ -437,20 +436,7 @@ export default function UIShowcase() {
         </div>
       </div>
 
-      {/* Footer */}
-  <footer className="glass mt-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🧪</span>
-              <span className="font-semibold text-primary">EZTest</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              UI Component Library - All components ready for use
-            </p>
-          </div>
-        </div>
-      </footer>
+      <GlassFooter variant="simple" description="UI Component Library - All components ready for use" />
     </div>
   );
 }

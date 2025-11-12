@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { GlassPanel } from '@/components/design/GlassPanel';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface AccountStatus {
@@ -176,8 +178,7 @@ export default function AccountSettingsPage() {
         )}
 
         {/* Change Password Section */}
-        <div className="bg-white/[0.02] border-white/10 border-2 backdrop-blur-xl shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)] before:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] mb-6">
-          <div className="p-8">
+        <GlassPanel className="mb-6" contentClassName="p-8">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-foreground">Password</h2>
@@ -257,14 +258,15 @@ export default function AccountSettingsPage() {
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <button
+                  <Button
                     type="submit"
                     disabled={changingPassword}
-                    className="flex-1 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground font-medium py-2 px-4 rounded-[10px] transition-colors"
+                    variant="glass-primary"
+                    className="flex-1 rounded-[10px]"
                   >
                     {changingPassword ? 'Changing Password...' : 'Change Password'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => {
                       setChangePasswordForm(false);
@@ -274,26 +276,26 @@ export default function AccountSettingsPage() {
                         confirmPassword: '',
                       });
                     }}
-                    className="flex-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-2 px-4 rounded-[10px] transition-colors"
+                    variant="glass"
+                    className="flex-1 rounded-[10px]"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </form>
             ) : (
-              <button
+              <Button
                 onClick={() => setChangePasswordForm(true)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-4 rounded-[10px] transition-colors"
+                variant="glass-primary"
+                className="rounded-[10px]"
               >
                 Change Password
-              </button>
+              </Button>
             )}
-          </div>
-        </div>
+        </GlassPanel>
 
         {/* Account Deletion Section */}
-        <div className="bg-white/[0.02] border-red-500/30 border-2 backdrop-blur-xl shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)] before:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]">
-          <div className="p-8">
+  <GlassPanel className="border-red-500/30" contentClassName="p-8">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-foreground mb-2">Delete Account</h2>
               <p className="text-muted-foreground text-sm">
@@ -333,16 +335,16 @@ export default function AccountSettingsPage() {
                   </ul>
                 </div>
 
-                <button
+                <Button
                   onClick={() => setShowDeleteDialog(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  variant="glass-destructive"
+                  className="rounded-[10px]"
                 >
                   Delete My Account
-                </button>
+                </Button>
               </>
             )}
-          </div>
-        </div>
+        </GlassPanel>
 
         {/* Navigation */}
         <div className="mt-8 text-center">
@@ -354,7 +356,7 @@ export default function AccountSettingsPage() {
 
       {/* Delete Account Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="max-w-md bg-white/[0.02] border-white/10 border-2 backdrop-blur-xl shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)] before:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]">
+        <DialogContent variant="glass" className="max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Account?</DialogTitle>
             <DialogDescription>
@@ -389,23 +391,25 @@ export default function AccountSettingsPage() {
 
           <DialogFooter className="justify-end pt-4">
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={() => {
                   setShowDeleteDialog(false);
                   setPassword('');
                   setError(null);
                 }}
-                className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-2 px-4 rounded-[10px] transition-colors"
+                variant="glass"
+                className="rounded-[10px]"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleDeleteAccount}
                 disabled={deleting || !password.trim()}
-                className="bg-red-600 hover:bg-red-700 disabled:bg-muted text-white font-medium py-2 px-4 rounded-[10px] transition-colors"
+                variant="glass-destructive"
+                className="rounded-[10px]"
               >
                 {deleting ? 'Deleting...' : 'Delete Account'}
-              </button>
+              </Button>
             </div>
           </DialogFooter>
         </DialogContent>

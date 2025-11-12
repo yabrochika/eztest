@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 // removed unused next-auth imports
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { GlassPanel } from '@/components/design/GlassPanel';
 
 interface Profile {
   id: string;
@@ -117,8 +119,7 @@ export default function ProfileSettingsPage() {
           <p className="text-muted-foreground">Manage your account information</p>
         </div>
 
-        <div className="bg-white/[0.02] border-white/10 border-2 backdrop-blur-xl shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)] before:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]">
-          <div className="p-8">
+        <GlassPanel contentClassName="p-8">
             {error && (
               <div className="mb-6 p-4 rounded-md border border-red-500/40 bg-red-500/10">
                 <p className="text-red-300">{error}</p>
@@ -212,13 +213,14 @@ export default function ProfileSettingsPage() {
 
                 {/* Submit Button */}
                 <div className="pt-4 border-t border-border/40">
-                  <button
+                  <Button
                     type="submit"
                     disabled={saving}
-                    className="w-full bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground font-medium py-2 px-4 rounded-lg transition-colors"
+                    variant="glass-primary"
+                    className="w-full rounded-[10px]"
                   >
                     {saving ? 'Saving...' : 'Save Changes'}
-                  </button>
+                  </Button>
                 </div>
               </form>
             )}
@@ -232,14 +234,13 @@ export default function ProfileSettingsPage() {
                 </p>
                 <Link
                   href="/settings/account"
-                  className="text-primary hover:text-primary/90 font-medium"
+                  className="text-primary hover:text-accent font-medium transition-colors"
                 >
                   Go to Account Settings →
                 </Link>
               </div>
             </div>
-          </div>
-        </div>
+        </GlassPanel>
       </div>
     </div>
   );

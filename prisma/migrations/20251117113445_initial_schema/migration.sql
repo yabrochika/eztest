@@ -114,9 +114,34 @@ CREATE TABLE "TestStep" (
 );
 
 -- CreateTable
+CREATE TABLE "TestPlan" (
+    "id" TEXT NOT NULL,
+    "projectId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "createdById" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "TestPlan_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TestPlanCase" (
+    "id" TEXT NOT NULL,
+    "testPlanId" TEXT NOT NULL,
+    "testCaseId" TEXT NOT NULL,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "addedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "TestPlanCase_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "TestRun" (
     "id" TEXT NOT NULL,
     "projectId" TEXT NOT NULL,
+    "testPlanId" TEXT,
     "name" TEXT NOT NULL,
     "description" TEXT,
     "status" "TestRunStatus" NOT NULL DEFAULT 'PLANNED',
@@ -124,6 +149,7 @@ CREATE TABLE "TestRun" (
     "environment" TEXT,
     "startedAt" TIMESTAMP(3),
     "completedAt" TIMESTAMP(3),
+    "createdById" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -297,10 +323,31 @@ CREATE INDEX "TestStep_testCaseId_idx" ON "TestStep"("testCaseId");
 CREATE UNIQUE INDEX "TestStep_testCaseId_stepNumber_key" ON "TestStep"("testCaseId", "stepNumber");
 
 -- CreateIndex
+CREATE INDEX "TestPlan_projectId_idx" ON "TestPlan"("projectId");
+
+-- CreateIndex
+CREATE INDEX "TestPlan_createdById_idx" ON "TestPlan"("createdById");
+
+-- CreateIndex
+CREATE INDEX "TestPlanCase_testPlanId_idx" ON "TestPlanCase"("testPlanId");
+
+-- CreateIndex
+CREATE INDEX "TestPlanCase_testCaseId_idx" ON "TestPlanCase"("testCaseId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "TestPlanCase_testPlanId_testCaseId_key" ON "TestPlanCase"("testPlanId", "testCaseId");
+
+-- CreateIndex
 CREATE INDEX "TestRun_projectId_idx" ON "TestRun"("projectId");
 
 -- CreateIndex
+CREATE INDEX "TestRun_testPlanId_idx" ON "TestRun"("testPlanId");
+
+-- CreateIndex
 CREATE INDEX "TestRun_assignedToId_idx" ON "TestRun"("assignedToId");
+
+-- CreateIndex
+CREATE INDEX "TestRun_createdById_idx" ON "TestRun"("createdById");
 
 -- CreateIndex
 CREATE INDEX "TestRun_status_idx" ON "TestRun"("status");
@@ -396,10 +443,28 @@ ALTER TABLE "TestCase" ADD CONSTRAINT "TestCase_createdById_fkey" FOREIGN KEY ("
 ALTER TABLE "TestStep" ADD CONSTRAINT "TestStep_testCaseId_fkey" FOREIGN KEY ("testCaseId") REFERENCES "TestCase"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "TestPlan" ADD CONSTRAINT "TestPlan_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TestPlan" ADD CONSTRAINT "TestPlan_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TestPlanCase" ADD CONSTRAINT "TestPlanCase_testPlanId_fkey" FOREIGN KEY ("testPlanId") REFERENCES "TestPlan"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TestPlanCase" ADD CONSTRAINT "TestPlanCase_testCaseId_fkey" FOREIGN KEY ("testCaseId") REFERENCES "TestCase"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "TestRun" ADD CONSTRAINT "TestRun_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "TestRun" ADD CONSTRAINT "TestRun_testPlanId_fkey" FOREIGN KEY ("testPlanId") REFERENCES "TestPlan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "TestRun" ADD CONSTRAINT "TestRun_assignedToId_fkey" FOREIGN KEY ("assignedToId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TestRun" ADD CONSTRAINT "TestRun_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TestResult" ADD CONSTRAINT "TestResult_testRunId_fkey" FOREIGN KEY ("testRunId") REFERENCES "TestRun"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -269,7 +269,13 @@ export default function TestCaseDetailPage() {
   };
 
   if (loading) {
-    return <Loader fullScreen text="Loading test case..." />;
+    return (
+      <div className="min-h-screen p-4 md:p-6 lg:p-8">
+        <div className="text-center py-12">
+          <p className="text-gray-400">Loading test case...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!testCase) {
@@ -314,7 +320,7 @@ export default function TestCaseDetailPage() {
       {/* Header */}
       <div className="mb-6">
         <Button
-          variant="ghost"
+          variant="glass"
           onClick={() => router.push(`/projects/${testCase.project.id}/testcases`)}
           className="mb-4"
         >
@@ -342,7 +348,7 @@ export default function TestCaseDetailPage() {
               {isEditing ? (
                 <Input
                   value={formData.title}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
                   className="text-3xl font-bold"
@@ -351,7 +357,7 @@ export default function TestCaseDetailPage() {
                 testCase.title
               )}
             </h1>
-            <p className="text-gray-400">
+            <p className="text-white/60">
               {testCase.project.name} ({testCase.project.key})
             </p>
           </div>
@@ -359,23 +365,23 @@ export default function TestCaseDetailPage() {
           <div className="flex gap-2">
             {isEditing ? (
               <>
-                <Button variant="ghost" onClick={() => setIsEditing(false)}>
+                <Button variant="glass" onClick={() => setIsEditing(false)}>
                   <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
-                <Button onClick={handleSave}>
+                <Button variant="glass-primary" onClick={handleSave}>
                   <Save className="w-4 h-4 mr-2" />
                   Save
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" onClick={() => setIsEditing(true)}>
+                <Button variant="glass" onClick={() => setIsEditing(true)}>
                   <Edit className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
                 <Button
-                  variant="destructive"
+                  variant="glass-destructive"
                   onClick={() => setDeleteDialogOpen(true)}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
@@ -391,18 +397,19 @@ export default function TestCaseDetailPage() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Details Card */}
-          <Card className="glass">
+          <Card variant="glass">
             <CardHeader>
               <CardTitle>Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {isEditing ? (
                 <>
-                  <div>
+                  <div className="space-y-2">
                     <Label>Description</Label>
                     <Textarea
+                      variant="glass"
                       value={formData.description}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                         setFormData({ ...formData, description: e.target.value })
                       }
                       rows={3}
@@ -411,18 +418,18 @@ export default function TestCaseDetailPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
+                    <div className="space-y-2">
                       <Label>Priority</Label>
                       <Select
                         value={formData.priority}
-                        onValueChange={(value) =>
+                        onValueChange={(value: string) =>
                           setFormData({ ...formData, priority: value })
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger variant="glass">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent variant="glass">
                           <SelectItem value="CRITICAL">Critical</SelectItem>
                           <SelectItem value="HIGH">High</SelectItem>
                           <SelectItem value="MEDIUM">Medium</SelectItem>
@@ -431,18 +438,18 @@ export default function TestCaseDetailPage() {
                       </Select>
                     </div>
 
-                    <div>
+                    <div className="space-y-2">
                       <Label>Status</Label>
                       <Select
                         value={formData.status}
-                        onValueChange={(value) =>
+                        onValueChange={(value: string) =>
                           setFormData({ ...formData, status: value })
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger variant="glass">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent variant="glass">
                           <SelectItem value="ACTIVE">Active</SelectItem>
                           <SelectItem value="DRAFT">Draft</SelectItem>
                           <SelectItem value="DEPRECATED">Deprecated</SelectItem>
@@ -451,23 +458,25 @@ export default function TestCaseDetailPage() {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <Label>Estimated Time (minutes)</Label>
                     <Input
+                      variant="glass"
                       type="number"
                       value={formData.estimatedTime}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                         setFormData({ ...formData, estimatedTime: e.target.value })
                       }
                       placeholder="Enter estimated time"
                     />
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <Label>Preconditions</Label>
                     <Textarea
+                      variant="glass"
                       value={formData.preconditions}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                         setFormData({ ...formData, preconditions: e.target.value })
                       }
                       rows={2}
@@ -475,11 +484,12 @@ export default function TestCaseDetailPage() {
                     />
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <Label>Postconditions</Label>
                     <Textarea
+                      variant="glass"
                       value={formData.postconditions}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                         setFormData({ ...formData, postconditions: e.target.value })
                       }
                       rows={2}
@@ -491,19 +501,19 @@ export default function TestCaseDetailPage() {
                 <>
                   {testCase.description && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">
+                      <h4 className="text-sm font-medium text-white/60 mb-1">
                         Description
                       </h4>
-                      <p className="text-white">{testCase.description}</p>
+                      <p className="text-white/90">{testCase.description}</p>
                     </div>
                   )}
 
                   {testCase.estimatedTime && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">
+                      <h4 className="text-sm font-medium text-white/60 mb-1">
                         Estimated Time
                       </h4>
-                      <div className="flex items-center gap-2 text-white">
+                      <div className="flex items-center gap-2 text-white/90">
                         <Clock className="w-4 h-4" />
                         <span>{testCase.estimatedTime} minutes</span>
                       </div>
@@ -512,10 +522,10 @@ export default function TestCaseDetailPage() {
 
                   {testCase.preconditions && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">
+                      <h4 className="text-sm font-medium text-white/60 mb-1">
                         Preconditions
                       </h4>
-                      <p className="text-white whitespace-pre-wrap">
+                      <p className="text-white/90 whitespace-pre-wrap">
                         {testCase.preconditions}
                       </p>
                     </div>
@@ -523,10 +533,10 @@ export default function TestCaseDetailPage() {
 
                   {testCase.postconditions && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-1">
+                      <h4 className="text-sm font-medium text-white/60 mb-1">
                         Postconditions
                       </h4>
-                      <p className="text-white whitespace-pre-wrap">
+                      <p className="text-white/90 whitespace-pre-wrap">
                         {testCase.postconditions}
                       </p>
                     </div>
@@ -537,13 +547,14 @@ export default function TestCaseDetailPage() {
           </Card>
 
           {/* Test Steps Card */}
-          <Card className="glass">
+          <Card variant="glass">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Test Steps</CardTitle>
                 {isEditing && (
                   <Button
                     size="sm"
+                    variant="glass"
                     onClick={() => setAddingStep(true)}
                     disabled={addingStep}
                   >
@@ -556,7 +567,7 @@ export default function TestCaseDetailPage() {
             <CardContent>
               <div className="space-y-3">
                 {steps.length === 0 ? (
-                  <p className="text-gray-400 text-center py-8">
+                  <p className="text-white/60 text-center py-8">
                     No test steps defined yet
                   </p>
                 ) : (
@@ -569,7 +580,7 @@ export default function TestCaseDetailPage() {
                         <div className="flex items-start gap-3 flex-1">
                           <div className="flex items-center gap-2">
                             {isEditing && (
-                              <GripVertical className="w-4 h-4 text-gray-400" />
+                              <GripVertical className="w-4 h-4 text-white/60" />
                             )}
                             <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-sm font-semibold text-blue-500">
                               {step.stepNumber}
@@ -577,13 +588,13 @@ export default function TestCaseDetailPage() {
                           </div>
                           <div className="flex-1 space-y-1">
                             <div>
-                              <h5 className="text-xs font-medium text-gray-400 mb-1">
+                              <h5 className="text-xs font-medium text-white/60 mb-1">
                                 Action
                               </h5>
                               {isEditing ? (
                                 <Input
                                   value={step.action}
-                                  onChange={(e) => {
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
                                     const updated = steps.map(s =>
                                       s.stepNumber === step.stepNumber
                                         ? { ...s, action: e.target.value }
@@ -594,17 +605,17 @@ export default function TestCaseDetailPage() {
                                   placeholder="Enter action"
                                 />
                               ) : (
-                                <p className="text-white">{step.action}</p>
+                                <p className="text-white/90">{step.action}</p>
                               )}
                             </div>
                             <div>
-                              <h5 className="text-xs font-medium text-gray-400 mb-1">
+                              <h5 className="text-xs font-medium text-white/60 mb-1">
                                 Expected Result
                               </h5>
                               {isEditing ? (
                                 <Input
                                   value={step.expectedResult}
-                                  onChange={(e) => {
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
                                     const updated = steps.map(s =>
                                       s.stepNumber === step.stepNumber
                                         ? { ...s, expectedResult: e.target.value }
@@ -615,7 +626,7 @@ export default function TestCaseDetailPage() {
                                   placeholder="Enter expected result"
                                 />
                               ) : (
-                                <p className="text-white">{step.expectedResult}</p>
+                                <p className="text-white/90">{step.expectedResult}</p>
                               )}
                             </div>
                           </div>
@@ -626,7 +637,7 @@ export default function TestCaseDetailPage() {
                             size="sm"
                             onClick={() => handleRemoveStep(step.stepNumber)}
                           >
-                            <Trash2 className="w-4 h-4 text-red-500" />
+                            <Trash2 className="w-4 h-4 text-red-400" />
                           </Button>
                         )}
                       </div>
@@ -636,33 +647,35 @@ export default function TestCaseDetailPage() {
 
                 {addingStep && (
                   <div className="border border-blue-500/50 rounded-lg p-4 space-y-3">
-                    <div>
+                    <div className="space-y-2">
                       <Label>Action</Label>
                       <Input
+                        variant="glass"
                         value={newStep.action}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                           setNewStep({ ...newStep, action: e.target.value })
                         }
                         placeholder="Enter action"
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label>Expected Result</Label>
                       <Input
+                        variant="glass"
                         value={newStep.expectedResult}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                           setNewStep({ ...newStep, expectedResult: e.target.value })
                         }
                         placeholder="Enter expected result"
                       />
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={handleAddStep}>
+                      <Button size="sm" variant="glass-primary" onClick={handleAddStep}>
                         Add
                       </Button>
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="glass"
                         onClick={() => {
                           setAddingStep(false);
                           setNewStep({ action: '', expectedResult: '' });
@@ -681,13 +694,13 @@ export default function TestCaseDetailPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Info Card */}
-          <Card className="glass">
+          <Card variant="glass">
             <CardHeader>
               <CardTitle>Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <h4 className="text-sm font-medium text-gray-400 mb-1">
+                <h4 className="text-sm font-medium text-white/60 mb-1">
                   Created By
                 </h4>
                 <div className="flex items-center gap-2">
@@ -695,15 +708,15 @@ export default function TestCaseDetailPage() {
                     {testCase.createdBy.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-white text-sm">{testCase.createdBy.name}</p>
-                    <p className="text-gray-400 text-xs">{testCase.createdBy.email}</p>
+                    <p className="text-white/90 text-sm">{testCase.createdBy.name}</p>
+                    <p className="text-white/60 text-xs">{testCase.createdBy.email}</p>
                   </div>
                 </div>
               </div>
 
               {testCase.suite && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-400 mb-1">
+                  <h4 className="text-sm font-medium text-white/60 mb-1">
                     Test Suite
                   </h4>
                   <Badge variant="outline">{testCase.suite.name}</Badge>
@@ -711,19 +724,19 @@ export default function TestCaseDetailPage() {
               )}
 
               <div>
-                <h4 className="text-sm font-medium text-gray-400 mb-1">
+                <h4 className="text-sm font-medium text-white/60 mb-1">
                   Statistics
                 </h4>
                 <div className="space-y-1 text-sm">
-                  <div className="flex justify-between text-white">
+                  <div className="flex justify-between text-white/90">
                     <span>Test Runs</span>
                     <span>{testCase._count.results}</span>
                   </div>
-                  <div className="flex justify-between text-white">
+                  <div className="flex justify-between text-white/90">
                     <span>Comments</span>
                     <span>{testCase._count.comments}</span>
                   </div>
-                  <div className="flex justify-between text-white">
+                  <div className="flex justify-between text-white/90">
                     <span>Attachments</span>
                     <span>{testCase._count.attachments}</span>
                   </div>
@@ -731,19 +744,19 @@ export default function TestCaseDetailPage() {
               </div>
 
               <div>
-                <h4 className="text-sm font-medium text-gray-400 mb-1">
+                <h4 className="text-sm font-medium text-white/60 mb-1">
                   Created
                 </h4>
-                <p className="text-white text-sm">
+                <p className="text-white/90 text-sm">
                   {new Date(testCase.createdAt).toLocaleDateString()}
                 </p>
               </div>
 
               <div>
-                <h4 className="text-sm font-medium text-gray-400 mb-1">
+                <h4 className="text-sm font-medium text-white/60 mb-1">
                   Last Updated
                 </h4>
-                <p className="text-white text-sm">
+                <p className="text-white/90 text-sm">
                   {new Date(testCase.updatedAt).toLocaleDateString()}
                 </p>
               </div>
@@ -754,7 +767,7 @@ export default function TestCaseDetailPage() {
 
       {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent variant="glass">
           <DialogHeader>
             <DialogTitle>Delete Test Case</DialogTitle>
             <DialogDescription>
@@ -764,12 +777,12 @@ export default function TestCaseDetailPage() {
           </DialogHeader>
           <DialogFooter>
             <Button
-              variant="ghost"
+              variant="glass"
               onClick={() => setDeleteDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteTestCase}>
+            <Button variant="glass-destructive" onClick={handleDeleteTestCase}>
               Delete
             </Button>
           </DialogFooter>

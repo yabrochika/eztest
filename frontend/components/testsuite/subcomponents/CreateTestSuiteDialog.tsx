@@ -9,24 +9,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/elements/dialog';
-import { TestCaseFormData, TestSuite } from '../types';
-import { TestCaseFormBuilder } from './TestCaseFormBuilder';
-import { getCreateTestCaseFormFields } from '../constants/testCaseFormConfig';
+import { TestSuite, TestSuiteFormData } from '../types';
+import { TestCaseFormBuilder } from '../../testcase/subcomponents/TestCaseFormBuilder';
+import { getCreateTestSuiteFormFields } from '../constants/testSuiteFormConfig';
 
-interface CreateTestCaseDialogProps {
+interface CreateTestSuiteDialogProps {
   open: boolean;
-  formData: TestCaseFormData;
+  formData: TestSuiteFormData;
   testSuites: TestSuite[];
   errors?: Record<string, string>;
   onOpenChange: (open: boolean) => void;
-  onFormChange: (data: TestCaseFormData) => void;
-  onFieldChange?: (field: keyof TestCaseFormData, value: string | number | null) => void;
+  onFormChange: (data: TestSuiteFormData) => void;
+  onFieldChange?: (field: keyof TestSuiteFormData, value: string | number | null) => void;
   onSubmit: () => void;
 }
 
-export type { CreateTestCaseDialogProps };
+export type { CreateTestSuiteDialogProps };
 
-export function CreateTestCaseDialog({
+export function CreateTestSuiteDialog({
   open,
   formData,
   testSuites,
@@ -35,23 +35,23 @@ export function CreateTestCaseDialog({
   onFormChange,
   onFieldChange,
   onSubmit,
-}: CreateTestCaseDialogProps) {
+}: CreateTestSuiteDialogProps) {
   const handleFieldChange = onFieldChange || ((field, value) => {
     onFormChange({ ...formData, [field]: value });
   });
 
-  const fields = getCreateTestCaseFormFields(testSuites);
+  const fields = getCreateTestSuiteFormFields(testSuites);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent variant="glass" className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent variant="glass" className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create Test Case</DialogTitle>
+          <DialogTitle>Create Test Suite</DialogTitle>
           <DialogDescription>
-            Add a new test case to this project
+            Organize your test cases into suites
           </DialogDescription>
         </DialogHeader>
-        
+
         <TestCaseFormBuilder
           fields={fields}
           formData={formData}

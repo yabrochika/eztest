@@ -6,11 +6,14 @@ import { Badge } from '@/elements/badge';
 import { Button } from '@/elements/button';
 import { Plus } from 'lucide-react';
 import { Breadcrumbs } from '@/components/design/Breadcrumbs';
-import { TestSuite, Project, TestSuiteFormData } from './types';
+import { Loader } from '@/elements/loader';
+import { FloatingAlert, type FloatingAlertMessage } from '@/components/utils/FloatingAlert';
+import { TestSuite, Project } from './types';
 import { TestSuiteTreeItem } from './subcomponents/TestSuiteTreeItem';
 import { CreateTestSuiteDialog } from './subcomponents/CreateTestSuiteDialog';
 import { DeleteTestSuiteDialog } from './subcomponents/DeleteTestSuiteDialog';
 import { EmptyTestSuiteState } from './subcomponents/EmptyTestSuiteState';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface TestSuiteListProps {
   projectId: string;
@@ -18,6 +21,7 @@ interface TestSuiteListProps {
 
 export default function TestSuiteList({ projectId }: TestSuiteListProps) {
   const router = useRouter();
+  const { hasPermission: hasPermissionCheck, isLoading: permissionsLoading } = usePermissions();
   const [project, setProject] = useState<Project | null>(null);
   const [testSuites, setTestSuites] = useState<TestSuite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,11 +29,7 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSuite, setSelectedSuite] = useState<TestSuite | null>(null);
   const [expandedSuites, setExpandedSuites] = useState<Set<string>>(new Set());
-  const [formData, setFormData] = useState<TestSuiteFormData>({
-    name: '',
-    description: '',
-    parentId: null,
-  });
+  const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
 
   useEffect(() => {
     fetchProject();
@@ -46,11 +46,26 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
   const fetchProject = async () => {
     try {
       const response = await fetch(`/api/projects/${projectId}`);
-      const data = await response.json();
-      if (data.data) {
-        setProject(data.data);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setAlert({
+          type: 'error',
+          title: 'Failed to Load Project',
+          message: errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+        });
+      } else {
+        const data = await response.json();
+        if (data.data) {
+          setProject(data.data);
+        }
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setAlert({
+        type: 'error',
+        title: 'Connection Error',
+        message: errorMessage,
+      });
       console.error('Error fetching project:', error);
     }
   };
@@ -59,46 +74,30 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
     try {
       setLoading(true);
       const response = await fetch(`/api/projects/${projectId}/testsuites`);
-      const data = await response.json();
-      if (data.data) {
-        setTestSuites(data.data);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setAlert({
+          type: 'error',
+          title: 'Failed to Load Test Suites',
+          message: errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+        });
+        setTestSuites([]);
+      } else {
+        const data = await response.json();
+        if (data.data) {
+          setTestSuites(data.data);
+        }
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setAlert({
+        type: 'error',
+        title: 'Connection Error',
+        message: errorMessage,
+      });
       console.error('Error fetching test suites:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCreateTestSuite = async () => {
-    if (!formData.name.trim()) {
-      alert('Suite name is required');
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/projects/${projectId}/testsuites`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description || undefined,
-          parentId: formData.parentId || undefined,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.data) {
-        setCreateDialogOpen(false);
-        setFormData({ name: '', description: '', parentId: null });
-        fetchTestSuites();
-      } else {
-        alert(data.error || 'Failed to create test suite');
-      }
-    } catch (error) {
-      console.error('Error creating test suite:', error);
-      alert('Failed to create test suite');
     }
   };
 
@@ -112,15 +111,31 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
 
       if (response.ok) {
         setDeleteDialogOpen(false);
+        const deletedSuiteName = selectedSuite.name;
         setSelectedSuite(null);
+        setAlert({
+          type: 'success',
+          title: 'Success',
+          message: `Test suite "${deletedSuiteName}" deleted successfully`,
+        });
+        setTimeout(() => setAlert(null), 5000);
         fetchTestSuites();
       } else {
         const data = await response.json();
-        alert(data.error || 'Failed to delete test suite');
+        setAlert({
+          type: 'error',
+          title: 'Failed to Delete Test Suite',
+          message: data.error || 'Failed to delete test suite',
+        });
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setAlert({
+        type: 'error',
+        title: 'Connection Error',
+        message: errorMessage,
+      });
       console.error('Error deleting test suite:', error);
-      alert('Failed to delete test suite');
     }
   };
 
@@ -145,8 +160,19 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
 
   const rootSuites = testSuites.filter(s => !s.parentId);
 
+  if (loading || permissionsLoading) {
+    return <Loader fullScreen text="Loading..." />;
+  }
+
+  // Check if user can create, update, or delete test suites
+  const canCreateTestSuite = hasPermissionCheck('testsuites:create');
+  const canDeleteTestSuite = hasPermissionCheck('testsuites:delete');
+
   return (
     <>
+      {/* Alert Messages */}
+      <FloatingAlert alert={alert} onClose={() => setAlert(null)} />
+
       {/* Top Bar */}
       <div className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/10">
         <div className="px-8 py-4">
@@ -161,14 +187,16 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
               />
             )}
             <div className="flex items-center gap-3">
-              <Button
-                variant="glass-primary"
-                size="sm"
-                onClick={() => setCreateDialogOpen(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Test Suite
-              </Button>
+              {canCreateTestSuite && (
+                <Button
+                  variant="glass-primary"
+                  size="sm"
+                  onClick={() => setCreateDialogOpen(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Test Suite
+                </Button>
+              )}
               <form action="/api/auth/signout" method="POST" className="inline">
                 <Button type="submit" variant="glass-destructive" size="sm" className="px-5">
                   Sign Out
@@ -206,7 +234,7 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
         {loading ? (
           <div className="text-center py-12 text-gray-400">Loading...</div>
         ) : testSuites.length === 0 ? (
-          <EmptyTestSuiteState onCreateClick={() => setCreateDialogOpen(true)} />
+          <EmptyTestSuiteState onCreateClick={() => setCreateDialogOpen(true)} canCreate={canCreateTestSuite} />
         ) : (
           <div className="space-y-2">
             {rootSuites.map((suite) => (
@@ -217,6 +245,7 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
                 onToggleExpand={toggleExpanded}
                 onView={handleViewSuite}
                 onDelete={handleDeleteClick}
+                canDelete={canDeleteTestSuite}
               />
             ))}
           </div>
@@ -225,17 +254,24 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
 
       {/* Dialogs */}
       <CreateTestSuiteDialog
-        open={createDialogOpen}
-        formData={formData}
+        projectId={projectId}
         testSuites={testSuites}
+        triggerOpen={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
-        onFormChange={setFormData}
-        onSubmit={handleCreateTestSuite}
+        onTestSuiteCreated={(suite) => {
+          setAlert({
+            type: 'success',
+            title: 'Success',
+            message: `Test suite "${suite.name}" created successfully`,
+          });
+          setTimeout(() => setAlert(null), 5000);
+          fetchTestSuites();
+        }}
       />
 
       <DeleteTestSuiteDialog
-        open={deleteDialogOpen}
         suite={selectedSuite}
+        triggerOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteTestSuite}
       />

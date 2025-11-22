@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Button } from '@/elements/button';
 import { Breadcrumbs } from '@/components/design/Breadcrumbs';
 import {
-  ProfileCard,
   ProfileInformation,
   NotificationPreferences,
   SecuritySettings,
@@ -72,37 +71,25 @@ export default function ProfilePageContent() {
       </div>
 
       <div className="max-w-7xl mx-auto px-8 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            <ProfileCard
-              name={profileData.name}
-              email={profileData.email}
-              role={profileData.role}
-            />
-          </div>
+        <div className="space-y-6">
+          <ProfileInformation
+            profileData={profileData}
+            isEditing={isEditing}
+            onEdit={setIsEditing}
+            onProfileChange={handleProfileChange}
+          />
 
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            <ProfileInformation
-              profileData={profileData}
-              isEditing={isEditing}
-              onEdit={setIsEditing}
-              onProfileChange={handleProfileChange}
-            />
+          <NotificationPreferences
+            settings={notificationSettings}
+            onSettingChange={handleNotificationChange}
+          />
 
-            <NotificationPreferences
-              settings={notificationSettings}
-              onSettingChange={handleNotificationChange}
-            />
+          <SecuritySettings
+            settings={securitySettings}
+            onSettingChange={handleSecurityChange}
+          />
 
-            <SecuritySettings
-              settings={securitySettings}
-              onSettingChange={handleSecurityChange}
-            />
-
-            <SessionManagement />
-          </div>
+          <SessionManagement />
         </div>
 
         {/* Footer */}

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/elements/card';
+import { DetailCard } from '@/components/design/DetailCard';
+import { DataTable, type ColumnDef } from '@/components/design/DataTable';
 import { Badge } from '@/elements/badge';
 import { Loader } from '@/elements/loader';
 import { 
@@ -103,91 +104,95 @@ export function TestCaseHistoryCard({ testCaseId }: TestCaseHistoryCardProps) {
     return `${secs}s`;
   };
 
+  const columns: ColumnDef<TestResult>[] = [
+    {
+      key: 'status',
+      label: 'Status',
+      render: (status: string) => (
+        <div className="flex items-center gap-2">
+          {getStatusIcon(status)}
+          <Badge
+            variant="outline"
+            className={`text-xs ${getStatusColor(status)}`}
+          >
+            {status}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      key: 'testRun',
+      label: 'Test Run',
+      render: (_, row: TestResult) => (
+        <div>
+          <p className="text-sm text-white/90 font-medium">{row.testRun.name}</p>
+          {row.testRun.environment && (
+            <Badge
+              variant="outline"
+              className="text-xs bg-purple-500/10 text-purple-500 border-purple-500/20 mt-1"
+            >
+              {row.testRun.environment}
+            </Badge>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'executedBy',
+      label: 'Executed By',
+      render: (_, row: TestResult) => (
+        <div className="flex items-center gap-1 text-xs text-white/70">
+          <User className="w-3 h-3" />
+          <span>{row.executedBy.name}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'executedAt',
+      label: 'Date',
+      render: (_, row: TestResult) => (
+        <div className="flex items-center gap-1 text-xs text-white/70">
+          <Calendar className="w-3 h-3" />
+          <span>{new Date(row.executedAt).toLocaleDateString()}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'duration',
+      label: 'Duration',
+      render: (duration?: number) => (
+        <div className="flex items-center gap-1 text-xs text-white/70">
+          <Clock className="w-3 h-3" />
+          <span>{formatDuration(duration) || '-'}</span>
+        </div>
+      ),
+      align: 'right',
+    },
+  ];
+
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <CardTitle>Execution History</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="py-8 flex justify-center">
-            <Loader text="Loading history..." />
-          </div>
-        ) : history.length === 0 ? (
-          <div className="text-center py-8">
-            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-white/60 text-sm">
-              No execution history yet
-            </p>
-            <p className="text-white/40 text-xs mt-1">
-              This test case hasn&apos;t been executed in any test run
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-            {history.map((result) => (
-              <div
-                key={result.id}
-                className="border border-white/10 rounded-lg p-4 bg-white/5 hover:bg-white/10 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(result.status)}
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${getStatusColor(result.status)}`}
-                    >
-                      {result.status}
-                    </Badge>
-                  </div>
-                  {result.duration && (
-                    <div className="flex items-center gap-1 text-xs text-white/60">
-                      <Clock className="w-3 h-3" />
-                      {formatDuration(result.duration)}
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-sm text-white/90 font-medium mb-1">
-                      {result.testRun.name}
-                    </p>
-                    {result.testRun.environment && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs bg-purple-500/10 text-purple-500 border-purple-500/20"
-                      >
-                        {result.testRun.environment}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {result.comment && (
-                    <p className="text-xs text-white/70 italic">
-                      &quot;{result.comment}&quot;
-                    </p>
-                  )}
-
-                  <div className="flex items-center gap-4 text-xs text-white/50 pt-2 border-t border-white/5">
-                    <div className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      <span>{result.executedBy.name}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>
-                        {new Date(result.executedAt).toLocaleDateString()}{' '}
-                        {new Date(result.executedAt).toLocaleTimeString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <DetailCard title="Execution History" contentClassName="">
+      {loading ? (
+        <div className="py-8 flex justify-center">
+          <Loader text="Loading history..." />
+        </div>
+      ) : history.length === 0 ? (
+        <div className="text-center py-8">
+          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <p className="text-white/60 text-sm">
+            No execution history yet
+          </p>
+          <p className="text-white/40 text-xs mt-1">
+            This test case hasn&apos;t been executed in any test run
+          </p>
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={history}
+          emptyMessage="No execution history"
+        />
+      )}
+    </DetailCard>
   );
 }

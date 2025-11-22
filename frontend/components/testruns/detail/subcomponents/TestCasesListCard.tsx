@@ -1,6 +1,7 @@
 import { Badge } from '@/elements/badge';
 import { Button } from '@/elements/button';
-import { Card, CardContent, CardHeader } from '@/elements/card';
+import { DetailCard } from '@/components/design/DetailCard';
+import { DataTable, type ColumnDef } from '@/components/design/DataTable';
 import { AlertCircle, Plus } from 'lucide-react';
 import { TestResult, TestCase } from '../types';
 
@@ -8,16 +9,27 @@ interface TestCasesListCardProps {
   results: TestResult[];
   testRunStatus: string;
   canUpdate?: boolean;
+  canCreate?: boolean;
   onAddTestCases: () => void;
   onAddTestSuites: () => void;
   onExecuteTestCase: (testCase: TestCase) => void;
   getResultIcon: (status?: string) => React.JSX.Element;
 }
 
+interface ResultRow {
+  id: string;
+  testCase: TestCase;
+  status: string;
+  comment?: string;
+  executedBy?: { name: string };
+  executedAt?: string;
+}
+
 export function TestCasesListCard({
   results,
   testRunStatus,
   canUpdate = true,
+  canCreate = true,
   onAddTestCases,
   onAddTestSuites,
   onExecuteTestCase,
@@ -40,13 +52,138 @@ export function TestCasesListCard({
     }
   };
 
+  const columns: ColumnDef<ResultRow>[] = [
+    {
+      key: 'testCase',
+      label: 'Test Case',
+      render: (_, row: ResultRow) => (
+        <div>
+          <p className="font-medium text-white/90">{row.testCase.title}</p>
+          {row.comment && (
+            <p className="text-xs text-white/60 line-clamp-1 mt-1">
+              {row.comment}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      render: (_, row: ResultRow) => (
+        <Badge variant="outline" className="text-xs px-2 py-0.5">
+          {row.testCase.priority}
+        </Badge>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_, row: ResultRow) => (
+        <div className="flex items-center gap-2">
+          {getResultIcon(row.status)}
+          <Badge
+            variant="outline"
+            className={`text-xs px-2 py-0.5 ${getStatusColor(row.status)}`}
+          >
+            {row.status}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      key: 'executedBy',
+      label: 'Executed By',
+      render: (_, row: ResultRow) => (
+        <span className="text-white/70 text-sm">
+          {row.executedBy?.name || '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'executedAt',
+      label: 'Date',
+      render: (_, row: ResultRow) => (
+        <span className="text-white/70 text-sm">
+          {row.executedAt
+            ? new Date(row.executedAt).toLocaleDateString()
+            : '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'id',
+      label: 'Actions',
+      render: (_, row: ResultRow) => (
+        <Button
+          variant="glass"
+          size="sm"
+          onClick={() => onExecuteTestCase(row.testCase)}
+          disabled={
+            testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'
+          }
+          className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+        >
+          {row.status && row.status !== 'SKIPPED' ? 'Update' : 'Execute'}
+        </Button>
+      ),
+      align: 'right',
+    },
+  ];
+
+  const tableData: ResultRow[] = results.map((result) => ({
+    id: result.testCase.id,
+    testCase: result.testCase,
+    status: result.status,
+    comment: result.comment,
+    executedBy: result.executedBy,
+    executedAt: result.executedAt,
+  }));
+
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white">Test Cases</h2>
-          {canUpdate && (
-            <div className="flex gap-2">
+    <DetailCard
+      title={`Test Cases (${results?.length || 0})`}
+      contentClassName=""
+      headerAction={
+        results && results.length > 0 && canCreate ? (
+          <div className="flex gap-2 flex-wrap justify-end">
+            <Button
+              variant="glass"
+              size="sm"
+              onClick={onAddTestSuites}
+              disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Test Suites
+            </Button>
+            <Button
+              variant="glass"
+              size="sm"
+              onClick={onAddTestCases}
+              disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Test Cases
+            </Button>
+          </div>
+        ) : undefined
+      }
+    >
+      {!results || results.length === 0 ? (
+        <div className="text-center py-8">
+          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-400 mb-4">No test cases in this test run</p>
+          {canCreate && (
+            <div className="flex gap-2 justify-center flex-wrap">
+              <Button
+                variant="glass-primary"
+                size="sm"
+                onClick={onAddTestCases}
+                disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Test Cases
+              </Button>
               <Button
                 variant="glass"
                 size="sm"
@@ -56,97 +193,17 @@ export function TestCasesListCard({
                 <Plus className="w-4 h-4 mr-2" />
                 Add Test Suites
               </Button>
-              <Button
-                variant="glass"
-                size="sm"
-                onClick={onAddTestCases}
-                disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Test Cases
-              </Button>
             </div>
           )}
         </div>
-      </CardHeader>
-      <CardContent>
-        {!results || results.length === 0 ? (
-          <div className="text-center py-8">
-            <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-400">No test cases in this test run</p>
-            <Button
-              variant="glass-primary"
-              size="sm"
-              className="mt-4"
-              onClick={onAddTestCases}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Test Cases
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {results.map((result) => {
-              const testCase = result.testCase;
-
-              return (
-                <div
-                  key={testCase.id}
-                  className="flex items-center gap-4 p-4 rounded bg-white/5 hover:bg-white/8 transition-colors border border-white/10"
-                >
-                  <div className="flex-shrink-0">
-                    {getResultIcon(result?.status)}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-white font-medium">
-                        {testCase.title}
-                      </h3>
-                      <Badge variant="outline" className="text-xs px-2 py-0.5 h-fit">
-                        {testCase.priority}
-                      </Badge>
-                      {result && (
-                        <Badge
-                          variant="outline"
-                          className={`text-xs px-2 py-0.5 h-fit ${getStatusColor(result.status)}`}
-                        >
-                          {result.status}
-                        </Badge>
-                      )}
-                    </div>
-                    {result?.comment && (
-                      <p className="text-sm text-gray-400 mt-2">
-                        {result.comment}
-                      </p>
-                    )}
-                    {result?.executedBy && result?.executedAt && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Executed by {result.executedBy.name} on{' '}
-                        {new Date(result.executedAt).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex-shrink-0">
-                    <Button
-                      variant="glass"
-                      size="sm"
-                      onClick={() => onExecuteTestCase(testCase)}
-                      disabled={
-                        testRunStatus === 'COMPLETED' ||
-                        testRunStatus === 'CANCELLED'
-                      }
-                    >
-                      {result ? 'Update' : 'Execute'}
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={tableData}
+          rowClassName="cursor-pointer hover:bg-white/5"
+          emptyMessage="No test cases in this run"
+        />
+      )}
+    </DetailCard>
   );
 }

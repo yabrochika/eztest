@@ -1,12 +1,12 @@
 import { Badge } from '@/elements/badge';
 import { Button } from '@/elements/button';
-import { Card, CardContent, CardHeader } from '@/elements/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/elements/dropdown-menu';
+import { ItemCard } from '@/components/design/ItemCard';
 import { Calendar, MoreVertical, Play, Trash2, User } from 'lucide-react';
 import { TestRun } from '../types';
 
@@ -79,146 +79,143 @@ export function TestRunCard({
   const passRate = calculatePassRate();
   const counts = getResultCounts();
 
+  const badges = (
+    <>
+      <Badge variant="outline" className={getStatusColor(testRun.status)}>
+        {testRun.status.replace('_', ' ')}
+      </Badge>
+      {testRun.environment && (
+        <Badge
+          variant="outline"
+          className="bg-purple-500/10 text-purple-500 border-purple-500/20"
+        >
+          {testRun.environment}
+        </Badge>
+      )}
+    </>
+  );
+
+  const header = (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        asChild
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 -mt-1 shrink-0 hover:bg-white/10"
+        >
+          <MoreVertical className="w-3.5 h-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent variant="glass" align="end">
+        <DropdownMenuItem
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            onViewDetails();
+          }}
+        >
+          <Play className="w-4 h-4 mr-2" />
+          View Details
+        </DropdownMenuItem>
+        {canDelete && (
+          <DropdownMenuItem
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="text-red-400 hover:bg-red-400/10"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const content = (
+    <>
+      {/* Progress */}
+      {testRun._count.results > 0 && (
+        <div className="mb-2.5">
+          <div className="flex justify-between text-xs text-white/60 mb-1">
+            <span>Pass Rate</span>
+            <span className="font-semibold text-white">{passRate}%</span>
+          </div>
+          <div className="w-full bg-white/5 rounded-full h-2">
+            <div
+              className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full transition-all"
+              style={{ width: `${passRate}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-2 mb-2.5">
+        <div className="text-center">
+          <div className="text-2xl font-bold text-white">
+            {testRun._count.results}
+          </div>
+          <div className="text-xs text-white/60">Total</div>
+        </div>
+        {counts.passed > 0 && (
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-500">
+              {counts.passed}
+            </div>
+            <div className="text-xs text-white/60">Passed</div>
+          </div>
+        )}
+        {counts.failed > 0 && (
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-500">
+              {counts.failed}
+            </div>
+            <div className="text-xs text-white/60">Failed</div>
+          </div>
+        )}
+        {counts.blocked > 0 && (
+          <div className="text-center">
+            <div className="text-2xl font-bold text-orange-500">
+              {counts.blocked}
+            </div>
+            <div className="text-xs text-white/60">Blocked</div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  const footer = (
+    <>
+      <div className="flex items-center gap-2 text-xs text-white/60">
+        {testRun.assignedTo && (
+          <div className="flex items-center gap-1">
+            <User className="w-3 h-3" />
+            <span className="truncate">{testRun.assignedTo.name}</span>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-1 text-xs text-white/60">
+        <Calendar className="w-3 h-3" />
+        <span>{new Date(testRun.createdAt).toLocaleDateString()}</span>
+      </div>
+    </>
+  );
+
   return (
-    <Card
-      variant="glass"
-      className="cursor-pointer hover:border-primary/50 transition-colors"
+    <ItemCard
+      title={testRun.name}
+      description={testRun.description || undefined}
+      badges={badges}
+      header={header}
+      content={content}
+      footer={footer}
       onClick={onCardClick}
-    >
-      <CardHeader className="pb-2 pt-3 px-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-white mb-2 truncate">
-              {testRun.name}
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className={getStatusColor(testRun.status)}>
-                {testRun.status.replace('_', ' ')}
-              </Badge>
-              {testRun.environment && (
-                <Badge
-                  variant="outline"
-                  className="bg-purple-500/10 text-purple-500 border-purple-500/20"
-                >
-                  {testRun.environment}
-                </Badge>
-              )}
-            </div>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              asChild
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white/70 hover:text-white hover:bg-white/10"
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent variant="glass" align="end">
-              <DropdownMenuItem
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  onViewDetails();
-                }}
-              >
-                <Play className="w-4 h-4 mr-2" />
-                View Details
-              </DropdownMenuItem>
-              {canDelete && (
-                <DropdownMenuItem
-                  onClick={(e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    onDelete();
-                  }}
-                  className="text-red-400"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardHeader>
-
-      <CardContent className="py-3 px-4">
-        {testRun.description && (
-          <p className="text-sm text-gray-400 mb-3 line-clamp-2">
-            {testRun.description}
-          </p>
-        )}
-
-        {/* Progress */}
-        {testRun._count.results > 0 && (
-          <div className="mb-3">
-            <div className="flex justify-between text-xs text-gray-400 mb-1">
-              <span>Progress</span>
-              <span>{passRate}% Passed</span>
-            </div>
-            <div className="w-full bg-white/5 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full transition-all"
-                style={{ width: `${passRate}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-2 mb-3">
-          {counts.passed > 0 && (
-            <div className="text-center">
-              <div className="text-xs text-green-500 font-semibold">
-                {counts.passed}
-              </div>
-              <div className="text-[10px] text-gray-500">Passed</div>
-            </div>
-          )}
-          {counts.failed > 0 && (
-            <div className="text-center">
-              <div className="text-xs text-red-500 font-semibold">
-                {counts.failed}
-              </div>
-              <div className="text-[10px] text-gray-500">Failed</div>
-            </div>
-          )}
-          {counts.blocked > 0 && (
-            <div className="text-center">
-              <div className="text-xs text-orange-500 font-semibold">
-                {counts.blocked}
-              </div>
-              <div className="text-[10px] text-gray-500">Blocked</div>
-            </div>
-          )}
-          {counts.skipped > 0 && (
-            <div className="text-center">
-              <div className="text-xs text-gray-500 font-semibold">
-                {counts.skipped}
-              </div>
-              <div className="text-[10px] text-gray-500">Skipped</div>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-3 pt-3 border-t border-white/5">
-          <div className="flex items-center justify-between text-xs text-gray-400">
-            {testRun.assignedTo && (
-              <div className="flex items-center gap-2">
-                <User className="w-3 h-3" />
-                <span className="truncate">{testRun.assignedTo.name}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              <span>{new Date(testRun.createdAt).toLocaleDateString()}</span>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      borderColor="accent"
+    />
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/elements/card';
+import { DetailCard } from '@/components/design/DetailCard';
 import { Label } from '@/elements/label';
 import { Project } from '../types';
 
@@ -10,14 +10,11 @@ interface ProjectInfoCardProps {
 
 export function ProjectInfoCard({ project }: ProjectInfoCardProps) {
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <CardTitle className="text-white">Project Information</CardTitle>
-        <CardDescription className="text-white/70">
-          Read-only project details
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <DetailCard
+      title="Project Information"
+      description="Read-only project details"
+      contentClassName="space-y-3"
+    >
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-white/60 text-xs">Created At</Label>
@@ -36,7 +33,6 @@ export function ProjectInfoCard({ project }: ProjectInfoCardProps) {
             <p className="text-sm font-mono text-white/80">{project.id}</p>
           </div>
         </div>
-      </CardContent>
-    </Card>
+    </DetailCard>
   );
 }

@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/elements/card';
 import { TestTube2, Play, FileText, Folder } from 'lucide-react';
 import { Breadcrumbs } from '@/components/design/Breadcrumbs';
 import { Loader } from '@/elements/loader';
-import { StatCard } from './subcomponents/StatCard';
+import { StatCard } from '@/components/design/StatCard';
 import { ProjectHeader } from './subcomponents/ProjectHeader';
 import { ProjectOverviewCard } from './subcomponents/ProjectOverviewCard';
 

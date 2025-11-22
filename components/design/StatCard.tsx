@@ -9,8 +9,23 @@ export interface StatCardProps extends React.ComponentProps<typeof Card> {
   trend?: "up" | "down" | "neutral"
   delta?: React.ReactNode
   icon?: React.ReactNode
+  borderColor?: string
 }
 
+/**
+ * Reusable StatCard component for displaying statistics with optional trends
+ * Used in: ProjectDetail, TestRunDetail, Dashboard, and other stats pages
+ * 
+ * @example
+ * ```tsx
+ * <StatCard 
+ *   icon={<Icon />}
+ *   label="Test Cases"
+ *   value={42}
+ *   borderColor="border-l-primary/30"
+ * />
+ * ```
+ */
 export function StatCard({
   label,
   value,
@@ -18,6 +33,7 @@ export function StatCard({
   trend = "neutral",
   delta,
   icon,
+  borderColor,
   className,
   ...props
 }: StatCardProps) {
@@ -25,8 +41,15 @@ export function StatCard({
     trend === "up" ? "text-emerald-400" : trend === "down" ? "text-red-400" : "text-white/60"
 
   return (
-    <Card variant="glass" className={cn(className)} {...props}>
-      <CardHeader className="flex-row items-center justify-between">
+    <Card 
+      variant="glass" 
+      className={cn(
+        borderColor ? `border-l-4 ${borderColor}` : "",
+        className
+      )} 
+      {...props}
+    >
+      <CardHeader className="flex-row items-center justify-between pb-3">
         <CardTitle className="text-white text-base font-semibold flex items-center gap-2">
           {icon ? <span className="text-white/80">{icon}</span> : null}
           <span>{label}</span>

@@ -1,19 +1,18 @@
 'use client';
 
 import { Button } from '@/elements/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/elements/card';
+import { DetailCard } from '@/components/design/DetailCard';
 import { Badge } from '@/elements/badge';
-import { Plus, Trash2, Mail, Shield, Eye, Users } from 'lucide-react';
+import { Trash2, Mail, Shield, Eye, Users } from 'lucide-react';
 import { ProjectMember } from '../types';
 
 interface MembersCardProps {
   members: ProjectMember[];
   isAdminOrManager: boolean;
-  onAddMember: () => void;
   onRemoveMember: (memberId: string, memberName: string) => void;
 }
 
-export function MembersCard({ members, isAdminOrManager, onAddMember, onRemoveMember }: MembersCardProps) {
+export function MembersCard({ members, isAdminOrManager, onRemoveMember }: MembersCardProps) {
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'ADMIN':
@@ -36,14 +35,11 @@ export function MembersCard({ members, isAdminOrManager, onAddMember, onRemoveMe
 
   return (
     <div className="max-w-6xl mx-auto px-8 pb-8">
-      <Card variant="glass">
-        <CardHeader>
-          <CardTitle className="text-white">Team Members ({members.length})</CardTitle>
-          <CardDescription className="text-white/70">
-            People who have access to this project
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <DetailCard
+        title={`Team Members (${members.length})`}
+        description="People who have access to this project"
+        contentClassName=""
+      >
           {members.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-16 h-16 text-white/50 mx-auto mb-4" />
@@ -51,12 +47,6 @@ export function MembersCard({ members, isAdminOrManager, onAddMember, onRemoveMe
               <p className="text-white/60 mb-6">
                 {isAdminOrManager ? 'Add team members to collaborate on this project' : 'Waiting for project manager or admin to add members'}
               </p>
-              {isAdminOrManager && (
-                <Button onClick={onAddMember} variant="glass-primary">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add First Member
-                </Button>
-              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -109,8 +99,7 @@ export function MembersCard({ members, isAdminOrManager, onAddMember, onRemoveMe
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+      </DetailCard>
     </div>
   );
 }

@@ -7,7 +7,6 @@ import { Breadcrumbs } from '@/components/design/Breadcrumbs';
 import { Loader } from '@/elements/loader';
 import { Plus } from 'lucide-react';
 import { FloatingAlert, type FloatingAlertMessage } from '@/components/utils/FloatingAlert';
-import { TestRunsHeader } from './subcomponents/TestRunsHeader';
 import { TestRunsFilterCard } from './subcomponents/TestRunsFilterCard';
 import { TestRunCard } from './subcomponents/TestRunCard';
 import { TestRunsEmptyState } from './subcomponents/TestRunsEmptyState';
@@ -204,18 +203,17 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
         </div>
       </div>
 
+      {/* Page Header and Filters */}
       <div className="px-8 pt-4">
-        {/* Header and Filters Section */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-4">
           {/* Header */}
-          <div className="flex-shrink-0">
-            <TestRunsHeader
-              project={project}
-            />
+          <div className="shrink-0">
+            <h1 className="text-2xl font-bold text-white mb-2">Test Runs</h1>
+            <p className="text-white/70 text-sm">Manage and track test execution progress</p>
           </div>
 
           {/* Filters */}
-          <div className="w-full lg:w-auto flex-shrink-0">
+          <div className="w-full lg:w-auto shrink-0">
             <TestRunsFilterCard
               filters={filters}
               onSearchChange={(searchQuery) =>
@@ -232,9 +230,8 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-8 py-4">
-        {/* Test Runs List */}
+      {/* Test Runs Grid */}
+      <div className="max-w-7xl mx-auto px-8 pb-8">
         {filteredTestRuns.length === 0 ? (
           <TestRunsEmptyState
             hasTestRuns={testRuns.length > 0}
@@ -242,7 +239,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
             canCreate={canCreateTestRun}
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredTestRuns.map((testRun) => (
               <TestRunCard
                 key={testRun.id}

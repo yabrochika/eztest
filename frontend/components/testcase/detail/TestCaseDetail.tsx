@@ -316,11 +316,12 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
               onAddStep={handleAddStep}
               onRemoveStep={handleRemoveStep}
             />
+
+            <TestCaseHistoryCard testCaseId={testCaseId} />
           </div>
 
           <div className="space-y-6">
             <TestCaseInfoCard testCase={testCase} />
-            <TestCaseHistoryCard testCaseId={testCaseId} />
           </div>
         </div>
 

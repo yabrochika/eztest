@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@/elements/card';
+import { StatCard } from '@/components/design/StatCard';
 import { CheckCircle, XCircle, Calendar, Clock, User } from 'lucide-react';
 import { TestRunStats } from '../types';
 
@@ -23,80 +23,46 @@ export function TestRunStatsCards({
 }: TestRunStatsCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <Card variant="glass">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-400">Progress</span>
-            <span className="text-lg font-bold text-white">
-              {progressPercentage}%
-            </span>
-          </div>
-          <div className="w-full bg-white/5 rounded-full h-2">
-            <div
-              className="bg-gradient-to-r from-blue-500 to-blue-400 h-2 rounded-full transition-all"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            {stats.total - stats.pending} of {stats.total} executed
-          </p>
-        </CardContent>
-      </Card>
+      <StatCard
+        label="Progress"
+        value={`${progressPercentage}%`}
+        helpText={`${stats.total - stats.pending} of ${stats.total} executed`}
+      />
 
-      <Card variant="glass">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Passed</p>
-              <p className="text-2xl font-bold text-green-500">{stats.passed}</p>
-              <p className="text-xs text-gray-500">{passRate}% pass rate</p>
-            </div>
-            <CheckCircle className="w-8 h-8 text-green-500/50" />
-          </div>
-        </CardContent>
-      </Card>
+      <StatCard
+        icon={<CheckCircle className="w-5 h-5" />}
+        label="Passed"
+        value={stats.passed}
+        helpText={`${passRate}% pass rate`}
+        borderColor="border-l-green-500/30"
+      />
 
-      <Card variant="glass">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Failed</p>
-              <p className="text-2xl font-bold text-red-500">{stats.failed}</p>
-              <p className="text-xs text-gray-500">
-                {stats.blocked} blocked, {stats.skipped} skipped
-              </p>
-            </div>
-            <XCircle className="w-8 h-8 text-red-500/50" />
-          </div>
-        </CardContent>
-      </Card>
+      <StatCard
+        icon={<XCircle className="w-5 h-5" />}
+        label="Failed"
+        value={stats.failed}
+        helpText={`${stats.blocked} blocked, ${stats.skipped} skipped`}
+        borderColor="border-l-red-500/30"
+      />
 
-      <Card variant="glass">
-        <CardContent className="p-4">
-          <div>
-            {testRun.assignedTo && (
-              <div className="flex items-center gap-2 mb-2">
-                <User className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-white">{testRun.assignedTo.name}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 text-xs text-gray-400">
+      <StatCard
+        icon={<User className="w-5 h-5" />}
+        label={testRun.assignedTo?.name || 'Unassigned'}
+        value={
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs text-white/60">
               <Calendar className="w-3 h-3" />
-              <span>
-                Created {new Date(testRun.createdAt).toLocaleDateString()}
-              </span>
+              Created {new Date(testRun.createdAt).toLocaleDateString()}
             </div>
             {testRun.startedAt && (
-              <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+              <div className="flex items-center gap-2 text-xs text-white/60">
                 <Clock className="w-3 h-3" />
-                <span>
-                  Started {new Date(testRun.startedAt).toLocaleDateString()}
-                </span>
+                Started {new Date(testRun.startedAt).toLocaleDateString()}
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        }
+      />
     </div>
   );
 }

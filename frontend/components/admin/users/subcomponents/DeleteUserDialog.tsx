@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/elements/dialog';
 import { Button } from '@/elements/button';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 interface DeleteUserDialogProps {
   open: boolean;
@@ -12,6 +13,17 @@ interface DeleteUserDialogProps {
 }
 
 export function DeleteUserDialog({ open, userName, onOpenChange, onConfirm }: DeleteUserDialogProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirm = async () => {
+    try {
+      setIsDeleting(true);
+      await onConfirm();
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
@@ -26,11 +38,21 @@ export function DeleteUserDialog({ open, userName, onOpenChange, onConfirm }: De
           </DialogDescription>
         </DialogHeader>
         <div className="flex gap-3 justify-end mt-4">
-          <Button variant="glass" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="glass" 
+            onClick={() => onOpenChange(false)}
+            disabled={isDeleting}
+          >
             Cancel
           </Button>
-          <Button variant="glass-destructive" onClick={onConfirm}>
-            Delete User
+          <Button 
+            variant="glass-destructive" 
+            onClick={handleConfirm}
+            disabled={isDeleting}
+            className="gap-2"
+          >
+            {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isDeleting ? 'Deleting...' : 'Delete User'}
           </Button>
         </div>
       </DialogContent>

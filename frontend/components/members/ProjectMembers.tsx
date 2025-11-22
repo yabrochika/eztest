@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/elements/button';
 import { Card, CardContent } from '@/elements/card';
 import { Breadcrumbs } from '@/components/design/Breadcrumbs';
-import { Project, ProjectMember, AddMemberFormData } from './types';
-import { MembersHeader } from './subcomponents/MembersHeader';
+import { FloatingAlert, type FloatingAlertMessage } from '@/components/design/FloatingAlert';
+import { Project, ProjectMember } from './types';
 import { MembersCard } from './subcomponents/MembersCard';
-import { AddMemberDialog } from './subcomponents/AddMemberDialog';
+import { CreateAddMemberDialog } from './subcomponents/AddMemberDialog';
 import { RemoveMemberDialog } from './subcomponents/RemoveMemberDialog';
 
 interface ProjectMembersProps {
@@ -25,12 +26,7 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<{ id: string; name: string } | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [formData, setFormData] = useState<AddMemberFormData>({
-    email: '',
-  });
-  const [adding, setAdding] = useState(false);
-  const [error, setError] = useState('');
+  const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
 
   // Check if user is admin or project manager
   const isAdminOrManager = session?.user?.roleName === 'ADMIN' || session?.user?.roleName === 'PROJECT_MANAGER';
@@ -63,41 +59,22 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
         setMembers(membersData.data || []);
       }
     } catch {
-      setError('Failed to load project members');
+      // Error handling
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAdding(true);
-    setError('');
-
-    try {
-      const response = await fetch(`/api/projects/${projectId}/members`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-        }),
+  const handleMemberAdded = (member: unknown) => {
+    if (member) {
+      const newMember = member as ProjectMember;
+      setMembers([...members, newMember]);
+      setAddDialogOpen(false);
+      setAlert({
+        type: 'success',
+        title: 'Member Added',
+        message: `${newMember.user?.name || 'User'} has been added to the project.`,
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMembers([...members, data.data]);
-        setAddDialogOpen(false);
-        setFormData({ email: '' });
-      } else {
-        setError(data.error || 'Failed to add member');
-      }
-    } catch {
-      setError('An error occurred. Please try again.');
-    } finally {
-      setAdding(false);
     }
   };
 
@@ -107,9 +84,8 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
   };
 
   const confirmRemoveMember = async () => {
-    if (!memberToDelete) return;
+    if (!memberToDelete || !project) return;
 
-    setDeleting(true);
     try {
       const response = await fetch(
         `/api/projects/${projectId}/members/${memberToDelete.id}`,
@@ -118,18 +94,30 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
         }
       );
 
-      if (response.ok) {
-        setMembers(members.filter((m) => m.id !== memberToDelete.id));
-        setDeleteDialogOpen(false);
-        setMemberToDelete(null);
-      } else {
+      if (!response.ok) {
         const data = await response.json();
-        alert(data.error || 'Failed to remove member');
+        setAlert({
+          type: 'error',
+          title: 'Failed to Remove Member',
+          message: data.error || 'Failed to remove member from project.',
+        });
+        return;
       }
+
+      setMembers(members.filter((m) => m.id !== memberToDelete.id));
+      setMemberToDelete(null);
+      setDeleteDialogOpen(false);
+      setAlert({
+        type: 'success',
+        title: 'Member Removed',
+        message: `${memberToDelete.name} has been removed from the project.`,
+      });
     } catch {
-      alert('An error occurred. Please try again.');
-    } finally {
-      setDeleting(false);
+      setAlert({
+        type: 'error',
+        title: 'Error',
+        message: 'An unexpected error occurred while removing the member.',
+      });
     }
   };
 
@@ -173,45 +161,65 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
                 { label: 'Members' },
               ]}
             />
-            <form action="/api/auth/signout" method="POST">
-              <Button type="submit" variant="glass-destructive" size="sm" className="px-5">
-                Sign Out
-              </Button>
-            </form>
+            <div className="flex items-center gap-3">
+              {isAdminOrManager && (
+                <Button
+                  variant="glass-primary"
+                  size="sm"
+                  onClick={() => setAddDialogOpen(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Member
+                </Button>
+              )}
+              <form action="/api/auth/signout" method="POST">
+                <Button type="submit" variant="glass-destructive" size="sm" className="px-5">
+                  Sign Out
+                </Button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
       
-      <MembersHeader
-        project={project}
-        isAdminOrManager={isAdminOrManager}
-        onAddMember={() => setAddDialogOpen(true)}
-      />
+      <div className="max-w-6xl mx-auto px-8 pt-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white mb-1">Project Members</h1>
+          <p className="text-white/70 text-sm">
+            Manage team members for <span className="font-semibold text-white">{project.name}</span>
+            {!isAdminOrManager && (
+              <span className="text-white/50 ml-2">(Project managers and admins can manage members)</span>
+            )}
+          </p>
+        </div>
+      </div>
 
       <MembersCard
         members={members}
         isAdminOrManager={isAdminOrManager}
-        onAddMember={() => setAddDialogOpen(true)}
         onRemoveMember={handleRemoveMember}
       />
 
-      <AddMemberDialog
-        open={addDialogOpen}
-        formData={formData}
-        adding={adding}
-        error={error}
+      <CreateAddMemberDialog
+        projectId={projectId}
+        triggerOpen={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        onFormChange={setFormData}
-        onSubmit={handleAddMember}
+        onMemberAdded={handleMemberAdded}
       />
 
       <RemoveMemberDialog
-        open={deleteDialogOpen}
-        memberName={memberToDelete?.name || null}
-        deleting={deleting}
+        member={memberToDelete}
+        triggerOpen={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={confirmRemoveMember}
       />
+
+      {alert && (
+        <FloatingAlert
+          alert={alert}
+          onClose={() => setAlert(null)}
+        />
+      )}
     </>
   );
 }

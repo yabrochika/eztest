@@ -385,6 +385,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
 
   const canUpdateTestRun = hasPermissionCheck('testruns:update');
   const canDeleteTestRun = hasPermissionCheck('testruns:delete');
+  const canCreateTestRun = hasPermissionCheck('testruns:create');
 
   return (
     <div className="flex-1">
@@ -413,7 +414,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         </div>
       </div>
 
-      <div className="p-4 md:p-6 lg:p-8">
+      <div className="p-4 md:p-6 lg:p-8 space-y-6">
         <TestRunHeader
           testRun={testRun}
           actionLoading={actionLoading}
@@ -433,6 +434,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           results={testRun.results}
           testRunStatus={testRun.status}
           canUpdate={canUpdateTestRun}
+          canCreate={canCreateTestRun}
           onAddTestCases={() => {
             fetchAvailableTestCases();
             setAddCasesDialogOpen(true);

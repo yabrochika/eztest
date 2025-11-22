@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/elements/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/elements/card';
+import { DetailCard } from '@/components/design/DetailCard';
 import { Trash2 } from 'lucide-react';
 import { Project } from '../types';
 
@@ -13,14 +13,13 @@ interface DangerZoneCardProps {
 
 export function DangerZoneCard({ project, deleting, onDelete }: DangerZoneCardProps) {
   return (
-    <Card variant="glass" className="border-red-400/30">
-      <CardHeader>
-        <CardTitle className="text-red-400">Danger Zone</CardTitle>
-        <CardDescription className="text-red-300/70">
-          Irreversible and destructive actions
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <DetailCard
+      title="Danger Zone"
+      description="Irreversible and destructive actions"
+      contentClassName=""
+      headerClassName="border-b border-red-400/20"
+      className="border-red-400/30"
+    >
         <div className="flex items-center justify-between p-4 border border-red-400/20 rounded-lg bg-red-400/5">
           <div>
             <h4 className="font-semibold text-red-300 mb-1">Delete this project</h4>
@@ -39,7 +38,6 @@ export function DangerZoneCard({ project, deleting, onDelete }: DangerZoneCardPr
             Delete Project
           </Button>
         </div>
-      </CardContent>
-    </Card>
+    </DetailCard>
   );
 }

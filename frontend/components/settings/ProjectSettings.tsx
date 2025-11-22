@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/elements/button';
 import { Card, CardContent } from '@/elements/card';
-import { Navbar } from '@/components/design/Navbar';
 import { Breadcrumbs } from '@/components/design/Breadcrumbs';
+import { FloatingAlert, type FloatingAlertMessage } from '@/components/design/FloatingAlert';
 import { Project, ProjectFormData } from './types';
 import { SettingsHeader } from './subcomponents/SettingsHeader';
 import { GeneralSettingsCard } from './subcomponents/GeneralSettingsCard';
@@ -24,8 +24,7 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
 
   const [formData, setFormData] = useState<ProjectFormData>({
     name: '',
@@ -54,10 +53,18 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
           description: data.data.description || '',
         });
       } else {
-        setError('Failed to load project');
+        setAlert({
+          type: 'error',
+          title: 'Failed to Load Project',
+          message: 'Could not load project details.',
+        });
       }
     } catch {
-      setError('An error occurred while loading project');
+      setAlert({
+        type: 'error',
+        title: 'Error',
+        message: 'An error occurred while loading project.',
+      });
     } finally {
       setLoading(false);
     }
@@ -66,8 +73,6 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setError('');
-    setSuccessMessage('');
 
     try {
       const response = await fetch(`/api/projects/${projectId}`, {
@@ -85,13 +90,24 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
 
       if (response.ok) {
         setProject(data.data);
-        setSuccessMessage('Project updated successfully');
-        setTimeout(() => setSuccessMessage(''), 3000);
+        setAlert({
+          type: 'success',
+          title: 'Project Updated',
+          message: 'Project settings have been saved successfully.',
+        });
       } else {
-        setError(data.error || 'Failed to update project');
+        setAlert({
+          type: 'error',
+          title: 'Failed to Update',
+          message: data.error || 'Failed to update project.',
+        });
       }
     } catch {
-      setError('An error occurred. Please try again.');
+      setAlert({
+        type: 'error',
+        title: 'Error',
+        message: 'An error occurred. Please try again.',
+      });
     } finally {
       setSaving(false);
     }
@@ -103,8 +119,6 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
         name: project.name,
         description: project.description || '',
       });
-      setError('');
-      setSuccessMessage('');
     }
   };
 
@@ -120,11 +134,19 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
         router.push('/projects?deleted=true');
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to delete project');
+        setAlert({
+          type: 'error',
+          title: 'Failed to Delete',
+          message: data.error || 'Failed to delete project.',
+        });
         setDeleteDialogOpen(false);
       }
     } catch {
-      setError('An error occurred. Please try again.');
+      setAlert({
+        type: 'error',
+        title: 'Error',
+        message: 'An error occurred. Please try again.',
+      });
       setDeleteDialogOpen(false);
     } finally {
       setDeleting(false);
@@ -133,50 +155,15 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a1628]">
-        <Navbar
-          items={[]}
-          breadcrumbs={<Breadcrumbs items={[]} />}
-          actions={
-            <form action="/api/auth/signout" method="POST">
-              <Button
-                type="submit"
-                variant="glass-destructive"
-                size="sm"
-                className="px-5"
-              >
-                Sign Out
-              </Button>
-            </form>
-          }
-        />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-white/70">Loading project...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-white/70">Loading project...</p>
       </div>
     );
   }
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-[#0a1628]">
-        <Navbar
-          items={[]}
-          breadcrumbs={<Breadcrumbs items={[]} />}
-          actions={
-            <form action="/api/auth/signout" method="POST">
-              <Button
-                type="submit"
-                variant="glass-destructive"
-                size="sm"
-                className="px-5"
-              >
-                Sign Out
-              </Button>
-            </form>
-          }
-        />
-        <div className="max-w-4xl mx-auto p-8">
+      <div className="max-w-4xl mx-auto p-8">
           <Card variant="glass">
             <CardContent className="p-8 text-center">
               <p className="text-lg text-white/70">Project not found</p>
@@ -190,48 +177,18 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
             </CardContent>
           </Card>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a1628]">
-      <Navbar
-        items={[
-          { label: 'Overview', href: `/projects/${projectId}` },
-          { label: 'Test Suites', href: `/projects/${projectId}/testsuites` },
-          { label: 'Test Cases', href: `/projects/${projectId}/testcases` },
-          { label: 'Test Runs', href: `/projects/${projectId}/testruns` },
-          { label: 'Members', href: `/projects/${projectId}/members` },
-          { label: 'Settings', href: `/projects/${projectId}/settings` },
-        ]}
-        breadcrumbs={
-          <Breadcrumbs
-            items={[
-              { label: 'Projects', href: '/projects' },
-              { label: project.name, href: `/projects/${projectId}` },
-              { label: 'Settings' },
-            ]}
-          />
-        }
-        actions={
-          <form action="/api/auth/signout" method="POST">
-            <Button type="submit" variant="glass-destructive" size="sm" className="px-5">
-              Sign Out
-            </Button>
-          </form>
-        }
-      />
-
-      <SettingsHeader project={project} />
+    <>
+      <SettingsHeader project={project} projectId={projectId} />
 
       <div className="max-w-4xl mx-auto px-8 pb-8 space-y-6">
         <GeneralSettingsCard
           project={project}
           formData={formData}
           saving={saving}
-          error={error}
-          successMessage={successMessage}
           onFormChange={setFormData}
           onSave={handleSave}
           onCancel={handleCancel}
@@ -253,6 +210,13 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDelete}
       />
-    </div>
+
+      {alert && (
+        <FloatingAlert
+          alert={alert}
+          onClose={() => setAlert(null)}
+        />
+      )}
+    </>
   );
 }

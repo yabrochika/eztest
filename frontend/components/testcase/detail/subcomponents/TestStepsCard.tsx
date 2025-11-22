@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/elements/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/elements/card';
+import { DetailCard } from '@/components/design/DetailCard';
 import { Input } from '@/elements/input';
 import { Label } from '@/elements/label';
 import { GripVertical, Plus, Trash2 } from 'lucide-react';
@@ -31,74 +31,74 @@ export function TestStepsCard({
   onRemoveStep,
 }: TestStepsCardProps) {
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Test Steps</CardTitle>
-          {isEditing && (
-            <Button
-              size="sm"
-              variant="glass"
-              onClick={() => onAddingStepChange(true)}
-              disabled={addingStep}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Step
-            </Button>
-          )}
+    <DetailCard
+      title="Test Steps"
+      contentClassName="space-y-3"
+      headerClassName="flex items-center justify-between"
+    >
+      {isEditing && (
+        <div className="absolute right-6 top-4">
+          <Button
+            size="sm"
+            variant="glass"
+            onClick={() => onAddingStepChange(true)}
+            disabled={addingStep}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Step
+          </Button>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {steps.length === 0 ? (
-            <p className="text-white/60 text-center py-8">
-              No test steps defined yet
-            </p>
-          ) : (
-            steps.map((step) => (
-              <div
-                key={step.stepNumber}
-                className="border border-white/10 rounded-lg p-4 space-y-2"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="flex items-center gap-2">
-                      {isEditing && (
-                        <GripVertical className="w-4 h-4 text-white/60" />
-                      )}
-                      <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-sm font-semibold text-blue-500">
-                        {step.stepNumber}
-                      </div>
+      )}
+      <div className="space-y-3">
+        {steps.length === 0 ? (
+          <p className="text-white/60 text-center py-8">
+            No test steps defined yet
+          </p>
+        ) : (
+          steps.map((step) => (
+            <div
+              key={step.stepNumber}
+              className="border border-white/10 rounded-lg p-4 space-y-2"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-3 flex-1">
+                  <div className="flex items-center gap-2">
+                    {isEditing && (
+                      <GripVertical className="w-4 h-4 text-white/60" />
+                    )}
+                    <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-sm font-semibold text-blue-500">
+                      {step.stepNumber}
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <div>
-                        <h5 className="text-xs font-medium text-white/60 mb-1">
-                          Action
-                        </h5>
-                        {isEditing ? (
-                          <Input
-                            value={step.action}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-                              const updated = steps.map((s) =>
-                                s.stepNumber === step.stepNumber
-                                  ? { ...s, action: e.target.value }
-                                  : s
-                              );
-                              onStepsChange(updated);
-                            }}
-                            placeholder="Enter action"
-                          />
-                        ) : (
-                          <p className="text-white/90">{step.action}</p>
-                        )}
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-white/60 mb-1">
-                          Expected Result
-                        </h5>
-                        {isEditing ? (
-                          <Input
-                            value={step.expectedResult}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div>
+                      <h5 className="text-xs font-medium text-white/60 mb-1">
+                        Action
+                      </h5>
+                      {isEditing ? (
+                        <Input
+                          value={step.action}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                            const updated = steps.map((s) =>
+                              s.stepNumber === step.stepNumber
+                                ? { ...s, action: e.target.value }
+                                : s
+                            );
+                            onStepsChange(updated);
+                          }}
+                          placeholder="Enter action"
+                        />
+                      ) : (
+                        <p className="text-white/90">{step.action}</p>
+                      )}
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-medium text-white/60 mb-1">
+                        Expected Result
+                      </h5>
+                      {isEditing ? (
+                        <Input
+                          value={step.expectedResult}
                             onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
                               const updated = steps.map((s) =>
                                 s.stepNumber === step.stepNumber
@@ -174,7 +174,6 @@ export function TestStepsCard({
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+    </DetailCard>
   );
 }

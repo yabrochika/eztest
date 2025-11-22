@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/elements/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/elements/card';
+import { DetailCard } from '@/components/design/DetailCard';
 import { Badge } from '@/elements/badge';
 import { Breadcrumbs } from '@/components/design/Breadcrumbs';
 import { Mail, Calendar, Briefcase, User, ArrowLeft } from 'lucide-react';
@@ -79,8 +79,7 @@ export default function UserDetailsContent({ user }: UserDetailsContentProps) {
         </Button>
 
         {/* Profile Header Card */}
-        <Card variant="glass" className="mb-8">
-          <CardContent className="p-8">
+        <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)] p-8">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
               {/* Avatar */}
               <div className="flex-shrink-0">
@@ -115,21 +114,18 @@ export default function UserDetailsContent({ user }: UserDetailsContentProps) {
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Details Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* User Information */}
-          <Card variant="glass">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                User Information
-              </CardTitle>
-              <CardDescription>Basic user details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <DetailCard
+            title="User Information"
+            description="Basic user details"
+            contentClassName="space-y-4"
+            headerClassName=""
+          >
+            <div className="space-y-4">
               <div>
                 <label className="text-xs uppercase tracking-wide text-muted-foreground">Name</label>
                 <p className="text-white font-medium mt-1">{user.name}</p>
@@ -142,19 +138,17 @@ export default function UserDetailsContent({ user }: UserDetailsContentProps) {
                 <label className="text-xs uppercase tracking-wide text-muted-foreground">Role</label>
                 <p className="text-white font-medium mt-1">{user.role.name}</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </DetailCard>
 
           {/* Statistics */}
-          <Card variant="glass">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="w-5 h-5" />
-                Statistics
-              </CardTitle>
-              <CardDescription>User activity metrics</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <DetailCard
+            title="Statistics"
+            description="User activity metrics"
+            contentClassName="space-y-4"
+            headerClassName=""
+          >
+            <div className="space-y-4">
               <div>
                 <label className="text-xs uppercase tracking-wide text-muted-foreground">Projects Created</label>
                 <p className="text-white font-medium mt-1 text-2xl">{user._count.createdProjects}</p>
@@ -163,8 +157,8 @@ export default function UserDetailsContent({ user }: UserDetailsContentProps) {
                 <label className="text-xs uppercase tracking-wide text-muted-foreground">Member Since</label>
                 <p className="text-white font-medium mt-1">{new Date(user.createdAt).toLocaleDateString()}</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </DetailCard>
         </div>
 
         {/* Footer */}

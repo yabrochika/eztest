@@ -1,5 +1,6 @@
 import { Badge } from '@/elements/badge';
 import { Button } from '@/elements/button';
+import { DetailCard } from '@/components/design/DetailCard';
 import { Play, Square } from 'lucide-react';
 
 interface TestRunHeaderProps {
@@ -41,53 +42,53 @@ export function TestRunHeader({
   };
 
   return (
-    <div className="mb-6">
-
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">{testRun.name}</h1>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className={getStatusColor(testRun.status)}>
-              {testRun.status.replace('_', ' ')}
+    <DetailCard
+      title={testRun.name}
+      description={testRun.description}
+      contentClassName="space-y-4"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className={getStatusColor(testRun.status)}>
+            {testRun.status.replace('_', ' ')}
+          </Badge>
+          {testRun.environment && (
+            <Badge
+              variant="outline"
+              className="bg-purple-500/10 text-purple-500 border-purple-500/20"
+            >
+              {testRun.environment}
             </Badge>
-            {testRun.environment && (
-              <Badge
-                variant="outline"
-                className="bg-purple-500/10 text-purple-500 border-purple-500/20"
+          )}
+        </div>
+
+        {canUpdate && (
+          <div className="flex gap-2 flex-wrap">
+            {testRun.status === 'PLANNED' && (
+              <Button
+                variant="glass-primary"
+                size="sm"
+                onClick={onStartTestRun}
+                disabled={actionLoading}
               >
-                {testRun.environment}
-              </Badge>
+                <Play className="w-4 h-4 mr-2" />
+                Start Test Run
+              </Button>
+            )}
+            {testRun.status === 'IN_PROGRESS' && (
+              <Button
+                variant="glass-primary"
+                size="sm"
+                onClick={onCompleteTestRun}
+                disabled={actionLoading}
+              >
+                <Square className="w-4 h-4 mr-2" />
+                Complete Test Run
+              </Button>
             )}
           </div>
-        </div>
-
-        <div className="flex gap-2">
-          {canUpdate && testRun.status === 'PLANNED' && (
-            <Button
-              variant="glass-primary"
-              onClick={onStartTestRun}
-              disabled={actionLoading}
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Start Test Run
-            </Button>
-          )}
-          {canUpdate && testRun.status === 'IN_PROGRESS' && (
-            <Button
-              variant="glass-primary"
-              onClick={onCompleteTestRun}
-              disabled={actionLoading}
-            >
-              <Square className="w-4 h-4 mr-2" />
-              Complete Test Run
-            </Button>
-          )}
-        </div>
+        )}
       </div>
-
-      {testRun.description && (
-        <p className="text-gray-400">{testRun.description}</p>
-      )}
-    </div>
+    </DetailCard>
   );
 }

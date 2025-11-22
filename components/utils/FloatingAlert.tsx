@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export interface FloatingAlertMessage {
   type: 'success' | 'error';
@@ -14,6 +15,22 @@ interface FloatingAlertProps {
 }
 
 export const FloatingAlert = ({ alert, onClose }: FloatingAlertProps) => {
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    if (alert) {
+      const timer = setTimeout(() => {
+        setIsClosing(true);
+        setTimeout(() => {
+          onClose();
+        }, 300); // Wait for fade animation
+      }, 10000); // 10 seconds
+      return () => clearTimeout(timer);
+    } else {
+      setIsClosing(false);
+    }
+  }, [alert, onClose]);
+
   if (!alert) return null;
 
   const isSuccess = alert.type === 'success';
@@ -22,7 +39,7 @@ export const FloatingAlert = ({ alert, onClose }: FloatingAlertProps) => {
   const messageColor = isSuccess ? 'text-green-300' : 'text-red-300';
 
   return (
-    <div className={`fixed bottom-4 right-4 z-[9999] max-w-md animate-in slide-in-from-bottom ${bgColor} rounded-lg p-4 shadow-lg`}>
+    <div className={`fixed bottom-4 right-4 z-[9999] max-w-md animate-in slide-in-from-bottom ${bgColor} rounded-lg p-4 shadow-lg transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
       <div className="flex items-start gap-3">
         <div className="flex-1">
           <h4 className={`font-semibold ${titleColor}`}>

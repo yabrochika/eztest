@@ -72,8 +72,14 @@ export const BaseDialog = <T = unknown,>({
   useEffect(() => {
     if (triggerOpen) {
       setOpen(true);
+      // Reinitialize form data when dialog opens with new fields
+      const initial: Record<string, string> = {};
+      fields.forEach((field) => {
+        initial[field.name] = field.defaultValue || '';
+      });
+      setFormData(initial);
     }
-  }, [triggerOpen]);
+  }, [triggerOpen, fields]);
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
@@ -160,6 +166,7 @@ export const BaseDialog = <T = unknown,>({
     }
 
     if (field.type === 'select') {
+      const selectedOption = field.options?.find((opt) => opt.value === formData[field.name]);
       return (
         <Select key={field.name} value={formData[field.name]} onValueChange={(value) => {
           const syntheticEvent = {

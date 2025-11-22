@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/elements/card';
+import { DetailCard } from '@/components/design/DetailCard';
 import { Button } from '@/elements/button';
 import { Folder } from 'lucide-react';
 
@@ -23,62 +23,57 @@ export function TestSuiteInfoCard({
   onParentClick,
 }: TestSuiteInfoCardProps) {
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <CardTitle>Information</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {parent && (
-          <div>
-            <h4 className="text-sm font-medium text-white/60 mb-1">
-              Parent Suite
-            </h4>
-            <Button
-              variant="glass"
-              size="sm"
-              className="w-full justify-start"
-              onClick={() => onParentClick(parent.id)}
-            >
-              <Folder className="w-4 h-4 mr-2" />
-              {parent.name}
-            </Button>
-          </div>
-        )}
-
+    <DetailCard title="Information" contentClassName="space-y-3">
+      {parent && (
         <div>
           <h4 className="text-sm font-medium text-white/60 mb-1">
-            Statistics
+            Parent Suite
           </h4>
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between text-white/90">
-              <span>Test Cases</span>
-              <span>{testCasesCount}</span>
-            </div>
-            <div className="flex justify-between text-white/90">
-              <span>Child Suites</span>
-              <span>{childrenCount}</span>
-            </div>
+          <Button
+            variant="glass"
+            size="sm"
+            className="w-full justify-start"
+            onClick={() => onParentClick(parent.id)}
+          >
+            <Folder className="w-4 h-4 mr-2" />
+            {parent.name}
+          </Button>
+        </div>
+      )}
+
+      <div>
+        <h4 className="text-sm font-medium text-white/60 mb-1">
+          Statistics
+        </h4>
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between text-white/90">
+            <span>Test Cases</span>
+            <span>{testCasesCount}</span>
+          </div>
+          <div className="flex justify-between text-white/90">
+            <span>Child Suites</span>
+            <span>{childrenCount}</span>
           </div>
         </div>
+      </div>
 
-        <div>
-          <h4 className="text-sm font-medium text-white/60 mb-1">
-            Created
-          </h4>
-          <p className="text-white/90 text-sm">
-            {new Date(createdAt).toLocaleDateString()}
-          </p>
-        </div>
+      <div>
+        <h4 className="text-sm font-medium text-white/60 mb-1">
+          Created
+        </h4>
+        <p className="text-white/90 text-sm">
+          {new Date(createdAt).toLocaleDateString()}
+        </p>
+      </div>
 
-        <div>
-          <h4 className="text-sm font-medium text-white/60 mb-1">
-            Last Updated
-          </h4>
-          <p className="text-white/90 text-sm">
-            {new Date(updatedAt).toLocaleDateString()}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+      <div>
+        <h4 className="text-sm font-medium text-white/60 mb-1">
+          Last Updated
+        </h4>
+        <p className="text-white/90 text-sm">
+          {new Date(updatedAt).toLocaleDateString()}
+        </p>
+      </div>
+    </DetailCard>
   );
 }

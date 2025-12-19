@@ -28,7 +28,6 @@ EZTest is a lightweight, open-source test management platform built with Next.js
 - **🔒 Secure** - Role-based access control with 27 granular permissions
 - **📊 Complete** - Projects, Test Cases, Test Runs, Defects, and more
 - **🎨 Modern UI** - Beautiful glass morphism design with Tailwind CSS
-- **📱 Responsive** - Works on desktop, tablet, and mobile
 
 ---
 

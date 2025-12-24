@@ -35,7 +35,7 @@ export function ModuleTestCasesCard({
   ) : undefined;
 
   return (
-    <DetailCard title={`Test Cases (${testCasesCount})`} headerAction={headerAction} contentClassName="">
+    <DetailCard title={`Test Cases (${testCasesCount})`} headerAction={headerAction} contentClassName="p-0">
       {testCases && testCases.length > 0 ? (
         <TestCaseTable
           testCases={testCases}
@@ -45,7 +45,7 @@ export function ModuleTestCasesCard({
           canDelete={canDelete}
         />
       ) : (
-        <div className="text-center py-8">
+        <div className="text-center py-8 px-4">
           <TestTube2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
           <p className="text-white/60 mb-4">
             No test cases in this module yet

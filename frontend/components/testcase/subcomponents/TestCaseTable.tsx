@@ -77,7 +77,7 @@ export function TestCaseTable({
     {
       key: 'tcId',
       label: 'ID',
-      width: '80px',
+      width: '70px',
       render: (row) => (
         <p className="text-xs font-mono text-white/70 truncate">{row.tcId}</p>
       ),
@@ -86,20 +86,12 @@ export function TestCaseTable({
       key: 'title',
       label: 'TITLE',
       render: (row) => (
-        <div className="min-w-0">
+        <div className="min-w-0 flex items-center gap-2">
           <HoverCard openDelay={200}>
             <HoverCardTrigger asChild>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-white truncate cursor-pointer">
-                  {row.title}
-                </p>
-                {row._count.defects > 0 && (
-                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/20 rounded border border-red-500/30 flex-shrink-0">
-                    <Bug className="w-3 h-3 text-red-400" />
-                    <span className="text-xs text-red-400 font-medium">{row._count.defects}</span>
-                  </div>
-                )}
-              </div>
+              <p className="text-sm font-medium text-white truncate cursor-pointer flex-1">
+                {row.title}
+              </p>
             </HoverCardTrigger>
             {row.title && row.title.length > 40 && (
               <HoverCardContent side="top" className="w-80">
@@ -117,13 +109,19 @@ export function TestCaseTable({
               </HoverCardContent>
             )}
           </HoverCard>
+          {row._count.defects > 0 && (
+            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/20 rounded border border-red-500/30 flex-shrink-0">
+              <Bug className="w-3 h-3 text-red-400" />
+              <span className="text-xs text-red-400 font-medium">{row._count.defects}</span>
+            </div>
+          )}
         </div>
       ),
     },
     {
       key: 'priority',
       label: 'PRIORITY',
-      width: '110px',
+      width: '100px',
       render: (row) => (
         <PriorityBadge
           priority={
@@ -135,7 +133,7 @@ export function TestCaseTable({
     {
       key: 'status',
       label: 'STATUS',
-      width: '100px',
+      width: '90px',
       render: (row) => (
         <Badge
           variant="outline"
@@ -148,7 +146,7 @@ export function TestCaseTable({
     {
       key: 'owner',
       label: 'OWNER',
-      width: '150px',
+      width: '140px',
       render: (row) => (
         <div className="min-w-0">
           <HoverCard openDelay={200}>
@@ -172,7 +170,7 @@ export function TestCaseTable({
     {
       key: 'runs',
       label: 'RUNS',
-      width: '80px',
+      width: '70px',
       render: (row) => (
         <span className="text-xs text-white/60">{row._count.results}</span>
       ),
@@ -232,7 +230,7 @@ export function TestCaseTable({
       grouped={groupedByModule}
       groupConfig={groupConfig}
       actions={actions}
-      gridTemplateColumns="80px 1fr 110px 100px 150px 80px 50px"
+      gridTemplateColumns="70px 1fr 100px 90px 140px 70px 40px"
       emptyMessage="No test cases available"
     />
   );

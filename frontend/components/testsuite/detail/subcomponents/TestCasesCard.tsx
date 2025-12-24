@@ -2,7 +2,7 @@
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { Plus } from 'lucide-react';
 import { TestCase, Module } from '@/frontend/components/testcase/types';
-import { TestCaseTable } from '@/frontend/components/testcase/subcomponents/TestCaseTable';
+import { TestSuiteTestCaseTable } from './TestSuiteTestCaseTable';
 
 interface TestCasesCardProps {
   testCases: TestCase[];
@@ -28,12 +28,11 @@ export function TestCasesCard({
   return (
     <DetailCard 
       title={`Test Cases (${testCasesCount})`} 
-      contentClassName=""
+      contentClassName="p-0"
     >
       {testCases && testCases.length > 0 ? (
-        <TestCaseTable
+        <TestSuiteTestCaseTable
           testCases={testCases}
-          groupedByModule={true}
           modules={modules}
           onClick={onTestCaseClick}
           onDelete={onRemoveTestCase}

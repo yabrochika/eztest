@@ -41,9 +41,7 @@ export function TestSuiteHeader({
       isEditing={isEditing}
       editTitle={formData.name}
       onTitleChange={onNameChange}
-      badges={[
-        { label: '', value: 'Test Suite', className: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
-      ]}
+      badges={[]}
       actions={[
         { label: 'Edit', icon: Edit, onClick: onEdit, show: canUpdate },
         { label: 'Delete', icon: Trash2, onClick: onDelete, variant: 'destructive', show: canDelete },

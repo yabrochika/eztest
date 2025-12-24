@@ -3,7 +3,7 @@
 import * as React from "react"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "../../reusable-elements/buttons/Button"
+import { ButtonPrimary } from "../../reusable-elements/buttons/ButtonPrimary"
 import { Card, CardContent } from "../../reusable-elements/cards/Card"
 
 interface EmptyStateProps {
@@ -58,9 +58,9 @@ function EmptyState({
         </p>
       )}
       {actionLabel && onAction && (
-        <Button variant="default" onClick={onAction}>
+        <ButtonPrimary onClick={onAction}>
           {actionLabel}
-        </Button>
+        </ButtonPrimary>
       )}
     </div>
   )

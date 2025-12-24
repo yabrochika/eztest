@@ -1,21 +1,22 @@
 'use client';
 
 import { useState, useEffect, ReactNode } from 'react';
-import { Button } from "../../reusable-elements/buttons/Button";
-import { ButtonPrimary } from "../../reusable-elements/buttons/ButtonPrimary";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../../reusable-elements/dialogs/Dialog";
-import { Input } from "../../reusable-elements/inputs/Input";
-import { Textarea } from "../../reusable-elements/textareas/Textarea";
+import { Button } from '@/frontend/reusable-elements/buttons/Button';
+import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/frontend/reusable-elements/dialogs/Dialog';
+import { Input } from '@/frontend/reusable-elements/inputs/Input';
+import { Textarea } from '@/frontend/reusable-elements/textareas/Textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../reusable-elements/selects/Select";
-import { FloatingAlert, type FloatingAlertMessage } from "../alerts/FloatingAlert";
-import { InlineError } from "../../reusable-elements/alerts/InlineError";
+} from '@/frontend/reusable-elements/selects/Select';
+import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
+import { InlineError } from '@/frontend/reusable-elements/alerts/InlineError';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { TextareaWithAttachments } from '@/frontend/reusable-elements/textareas/TextareaWithAttachments';
 import type { Attachment } from '@/lib/s3';
 
 export interface BaseDialogField {
@@ -84,7 +85,7 @@ export const BaseDialog = <T = unknown,>({
   // Validate a single field
   const validateField = (field: BaseDialogField, value: string, currentFormData?: Record<string, string>): string | undefined => {
     const dataToUse = currentFormData || formData;
-    
+
     // Custom validation function takes priority
     if (field.validate) {
       return field.validate(value, dataToUse);
@@ -159,14 +160,14 @@ export const BaseDialog = <T = unknown,>({
   // Validate all fields
   const validateAllFields = (): boolean => {
     const errors: Record<string, string> = {};
-    
+
     fields.forEach((field) => {
       const error = validateField(field, formData[field.name] || '', formData);
       if (error) {
         errors[field.name] = error;
       }
     });
-    
+
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -198,6 +199,8 @@ export const BaseDialog = <T = unknown,>({
   const persistenceKey = formPersistenceKey || `dialog-${title.toLowerCase().replace(/\s+/g, '-')}`;
 
   // Use form persistence hook
+  // useFormPersistence returns [formData, setFormData, clearFormData, resetFormData].
+  // Only the first three are needed in this component.
   const [formData, setFormData, clearFormData] = useFormPersistence(
     persistenceKey,
     getInitialData(),
@@ -219,6 +222,16 @@ export const BaseDialog = <T = unknown,>({
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
+    
+    // Clear attachments when dialog closes
+    if (!newOpen) {
+      fields.forEach((field) => {
+        if (field.type === 'textarea-with-attachments' && field.onAttachmentsChange) {
+          field.onAttachmentsChange([]);
+        }
+      });
+    }
+    
     if (onOpenChange) {
       onOpenChange(newOpen);
     }
@@ -226,11 +239,11 @@ export const BaseDialog = <T = unknown,>({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     // Find the field config to check for transform
     const field = fields.find((f) => f.name === name);
     let transformedValue = value;
-    
+
     if (field?.transform) {
       if (field.transform === 'uppercase') {
         transformedValue = value.toUpperCase();
@@ -240,7 +253,7 @@ export const BaseDialog = <T = unknown,>({
         transformedValue = value.charAt(0).toUpperCase() + value.slice(1);
       }
     }
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]: transformedValue,
@@ -265,11 +278,19 @@ export const BaseDialog = <T = unknown,>({
 
     try {
       const result = await onSubmit(formData);
-      
+
       // Clear form data after successful submission
       clearFormData();
-      handleOpenChange(false);
       
+      // Clear attachments for all textarea-with-attachments fields
+      fields.forEach((field) => {
+        if (field.type === 'textarea-with-attachments' && field.onAttachmentsChange) {
+          field.onAttachmentsChange([]);
+        }
+      });
+      
+      handleOpenChange(false);
+
       if (onSuccess) {
         onSuccess(result);
       }
@@ -330,16 +351,45 @@ export const BaseDialog = <T = unknown,>({
       );
     }
 
+    if (field.type === 'textarea-with-attachments') {
+      return (
+        <TextareaWithAttachments
+          key={field.name}
+          variant="glass"
+          fieldName={field.name}
+          value={formData[field.name] || ''}
+          onChange={(value: string) => {
+            const syntheticEvent = {
+              target: {
+                name: field.name,
+                value: value,
+              },
+            } as unknown as React.ChangeEvent<HTMLInputElement>;
+            handleInputChange(syntheticEvent);
+          }}
+          attachments={field.attachments || []}
+          onAttachmentsChange={field.onAttachmentsChange}
+          entityType="testcase"
+          projectId={projectId}
+          placeholder={field.placeholder}
+          maxLength={field.maxLength}
+          rows={field.rows || 3}
+          showCharCount={true}
+          className={errorBorderClass}
+        />
+      );
+    }
+
     if (field.type === 'select') {
       const selectValue = formData[field.name] || undefined;
       return (
-        <Select key={field.name} value={selectValue} onValueChange={(value) => {
+        <Select key={field.name} value={selectValue} onValueChange={(value: string) => {
           // Update form data
           setFormData((prev) => ({
             ...prev,
             [field.name]: value,
           }));
-          
+
           // Clear error immediately when a value is selected
           setFieldErrors((prev) => {
             const newErrors = { ...prev };
@@ -446,4 +496,3 @@ export const BaseDialog = <T = unknown,>({
     </Dialog>
   );
 };
-

@@ -1,12 +1,12 @@
-'use client';
+﻿'use client';
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { TopBar } from '@/components/design';
-import { FloatingAlert, type FloatingAlertMessage } from '@/components/design/FloatingAlert';
+import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
+import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Loader } from '@/elements/loader';
-import { ButtonSecondary } from '@/elements/button-secondary';
+import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
+import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
 import { TestTube2, Folder } from 'lucide-react';
 import { TestCase, TestCaseFormData, TestStep } from './types';
 import { Module } from '../types';
@@ -593,28 +593,30 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
         />
 
         {/* Quick Actions Buttons */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          <ButtonSecondary
-            onClick={() => router.push(`/projects/${testCase.project.id}/testcases`)}
-          >
-            <TestTube2 className="w-4 h-4 mr-2" />
-            View All Test Cases
-          </ButtonSecondary>
-          {testCase.suite && (
-            <ButtonSecondary
-              onClick={() => router.push(`/projects/${testCase.project.id}/testsuites/${testCase.suite?.id}`)}
-            >
-              <Folder className="w-4 h-4 mr-2" />
-              View Test Suite
-            </ButtonSecondary>
-          )}
-          <ButtonSecondary
-            onClick={() => router.push(`/projects/${testCase.project.id}/testsuites`)}
-          >
-            <Folder className="w-4 h-4 mr-2" />
-            View All Test Suites
-          </ButtonSecondary>
-        </div>
+        <ActionButtonGroup
+          buttons={[
+            {
+              label: 'View All Test Cases',
+              icon: TestTube2,
+              onClick: () => router.push(`/projects/${testCase.project.id}/testcases`),
+              variant: 'secondary',
+            },
+            {
+              label: 'View Test Suite',
+              icon: Folder,
+              onClick: () => router.push(`/projects/${testCase.project.id}/testsuites/${testCase.suite?.id}`),
+              variant: 'secondary',
+              show: !!testCase.suite,
+            },
+            {
+              label: 'View All Test Suites',
+              icon: Folder,
+              onClick: () => router.push(`/projects/${testCase.project.id}/testsuites`),
+              variant: 'secondary',
+            },
+          ]}
+          className="mb-6"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

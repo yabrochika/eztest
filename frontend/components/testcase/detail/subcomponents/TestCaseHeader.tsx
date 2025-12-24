@@ -1,11 +1,7 @@
-'use client';
+﻿'use client';
 
-import { Badge } from '@/elements/badge';
-import { Button } from '@/elements/button';
-import { ButtonPrimary } from '@/elements/button-primary';
-import { ButtonDestructive } from '@/elements/button-destructive';
-import { Input } from '@/elements/input';
-import { Edit, Trash2, Save, X } from 'lucide-react';
+import { DetailPageHeader } from '@/frontend/reusable-components/layout/DetailPageHeader';
+import { Edit, Trash2 } from 'lucide-react';
 import { TestCase, TestCaseFormData } from '../types';
 
 interface TestCaseHeaderProps {
@@ -64,83 +60,25 @@ export function TestCaseHeader({
   };
 
   return (
-    <div className="mb-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="w-full">
-          <h1 className="text-3xl font-bold text-white mb-1">
-            {isEditing ? (
-              <Input
-                value={formData.title}
-                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                  onFormChange({ ...formData, title: e.target.value })
-                }
-                className="text-3xl font-bold text-white bg-white/5 border-white/10"
-              />
-            ) : (
-              testCase.title
-            )}
-          </h1>
-          <p className="text-white/60 mb-3">
-            {testCase.project.name} ({testCase.project.key})
-          </p>
-          <div className="flex items-center gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-white/60">Priority:</span>
-              <Badge
-                variant="outline"
-                className={getPriorityColor(testCase.priority)}
-              >
-                {testCase.priority}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-white/60">Status:</span>
-              <Badge variant="outline" className={getStatusColor(testCase.status)}>
-                {testCase.status}
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          {isEditing ? (
-            <>
-              <Button variant="glass" onClick={onCancel} className="cursor-pointer" disabled={saving}>
-                <X className="w-4 h-4 mr-2" />
-                Cancel
-              </Button>
-              <ButtonPrimary onClick={onSave} className="cursor-pointer" disabled={saving}>
-                {saving ? (
-                  <>
-                    <div className="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save
-                  </>
-                )}
-              </ButtonPrimary>
-            </>
-          ) : (
-            <>
-              {canUpdate && (
-                <Button variant="glass" onClick={onEdit}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-              )}
-              {canDelete && (
-                <ButtonDestructive onClick={onDelete} className="cursor-pointer">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </ButtonDestructive>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+    <DetailPageHeader
+      title={testCase.title}
+      subtitle={`${testCase.project.name} (${testCase.project.key})`}
+      isEditing={isEditing}
+      editTitle={formData.title}
+      onTitleChange={(title) => onFormChange({ ...formData, title })}
+      badges={[
+        { label: 'Priority', value: testCase.priority, className: getPriorityColor(testCase.priority) },
+        { label: 'Status', value: testCase.status, className: getStatusColor(testCase.status) },
+      ]}
+      actions={[
+        { label: 'Edit', icon: Edit, onClick: onEdit, show: canUpdate },
+        { label: 'Delete', icon: Trash2, onClick: onDelete, variant: 'destructive', show: canDelete },
+      ]}
+      editActions={{
+        onSave,
+        onCancel,
+        saving,
+      }}
+    />
   );
 }

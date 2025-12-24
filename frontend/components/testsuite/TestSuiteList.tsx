@@ -1,14 +1,14 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Badge } from '@/elements/badge';
-import { Button } from '@/elements/button';
-import { ButtonPrimary } from '@/elements/button-primary';
+import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { Plus } from 'lucide-react';
-import { TopBar } from '@/components/design';
-import { Loader } from '@/elements/loader';
-import { FloatingAlert, type FloatingAlertMessage } from '@/components/design/FloatingAlert';
+import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
+import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
+import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
+import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
+import { ResponsiveGrid } from '@/frontend/reusable-components/layout/ResponsiveGrid';
 import { TestSuite, Project } from './types';
 import { TestSuiteTreeItem } from './subcomponents/TestSuiteTreeItem';
 import { CreateTestSuiteDialog } from './subcomponents/CreateTestSuiteDialog';
@@ -198,19 +198,12 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
 
       <div className="max-w-7xl mx-auto px-8 pt-8">
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            {project && (
-              <Badge variant="outline" className="font-mono border-primary/40 bg-primary/10 text-primary text-xs px-2.5 py-0.5">
-                {project.key}
-              </Badge>
-            )}
-            <h1 className="text-2xl font-bold text-white">Test Suites</h1>
-          </div>
-          <p className="text-gray-400">
-            Organize test cases into hierarchical suites
-          </p>
-        </div>
+        <PageHeaderWithBadge
+          badge={project?.key}
+          title="Test Suites"
+          description="Organize test cases into hierarchical suites"
+          className="mb-6"
+        />
 
         {/* Actions */}
         <div className="flex items-center justify-between mb-6">
@@ -225,7 +218,10 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
         ) : testSuites.length === 0 ? (
           <EmptyTestSuiteState onCreateClick={() => setCreateDialogOpen(true)} canCreate={canCreateTestSuite} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          <ResponsiveGrid
+            columns={{ default: 1, md: 2, lg: 2, xl: 3 }}
+            gap="md"
+          >
             {rootSuites.map((suite) => (
               <TestSuiteTreeItem
                 key={suite.id}
@@ -237,7 +233,7 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
                 canDelete={canDeleteTestSuite}
               />
             ))}
-          </div>
+          </ResponsiveGrid>
         )}
       </div>
 

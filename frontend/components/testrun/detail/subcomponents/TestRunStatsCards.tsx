@@ -1,5 +1,6 @@
-import { formatDateTime } from '@/lib/date-utils';
-import { StatCard } from '@/components/design/StatCard';
+﻿import { formatDateTime } from '@/lib/date-utils';
+import { StatCard } from '@/frontend/reusable-components/cards/StatCard';
+import { ResponsiveGrid } from '@/frontend/reusable-components/layout/ResponsiveGrid';
 import { CheckCircle, XCircle, Calendar, Clock, User } from 'lucide-react';
 import { TestRunStats } from '../types';
 
@@ -23,7 +24,11 @@ export function TestRunStatsCards({
   testRun,
 }: TestRunStatsCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <ResponsiveGrid
+      columns={{ default: 1, md: 2, lg: 4 }}
+      gap="md"
+      className="mb-6"
+    >
       <StatCard
         label="Progress"
         value={`${progressPercentage}%`}
@@ -64,6 +69,6 @@ export function TestRunStatsCards({
           </div>
         }
       />
-    </div>
+    </ResponsiveGrid>
   );
 }

@@ -1,7 +1,6 @@
-import { Badge } from '@/elements/badge';
-import { Button } from '@/elements/button';
-import { ButtonPrimary } from '@/elements/button-primary';
-import { DetailCard } from '@/components/design/DetailCard';
+﻿import { Badge } from '@/frontend/reusable-elements/badges/Badge';
+import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
+import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
 import { Play, Square } from 'lucide-react';
 
 interface TestRunHeaderProps {
@@ -70,28 +69,26 @@ export function TestRunHeader({
         </div>
 
         {canUpdate && (
-          <div className="flex gap-2 flex-wrap">
-            {testRun.status === 'PLANNED' && (
-              <ButtonPrimary
-                size="default"
-                onClick={onStartTestRun}
-                disabled={actionLoading}
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Start Test Run
-              </ButtonPrimary>
-            )}
-            {testRun.status === 'IN_PROGRESS' && (
-              <ButtonPrimary
-                size="default"
-                onClick={onCompleteTestRun}
-                disabled={actionLoading}
-              >
-                <Square className="w-4 h-4 mr-2" />
-                Complete Test Run
-              </ButtonPrimary>
-            )}
-          </div>
+          <ActionButtonGroup
+            buttons={[
+              {
+                label: 'Start Test Run',
+                icon: Play,
+                onClick: onStartTestRun,
+                variant: 'primary',
+                show: testRun.status === 'PLANNED',
+                loading: actionLoading && testRun.status === 'PLANNED',
+              },
+              {
+                label: 'Complete Test Run',
+                icon: Square,
+                onClick: onCompleteTestRun,
+                variant: 'primary',
+                show: testRun.status === 'IN_PROGRESS',
+                loading: actionLoading && testRun.status === 'IN_PROGRESS',
+              },
+            ]}
+          />
         )}
       </div>
     </DetailCard>

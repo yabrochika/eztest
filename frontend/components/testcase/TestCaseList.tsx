@@ -1,17 +1,17 @@
-'use client';
+﻿'use client';
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Badge } from '@/elements/badge';
-import { ButtonPrimary } from '@/elements/button-primary';
-import { ButtonSecondary } from '@/elements/button-secondary';
 import { Plus, FolderPlus } from 'lucide-react';
-import { TopBar } from '@/components/design';
-import { Loader } from '@/elements/loader';
-import { Pagination } from '@/elements/pagination';
-import { FloatingAlert, type FloatingAlertMessage } from '@/components/design/FloatingAlert';
+import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
+import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
+import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
+import { HeaderWithFilters } from '@/frontend/reusable-components/layout/HeaderWithFilters';
+import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
+import { Pagination } from '@/frontend/reusable-elements/pagination/Pagination';
+import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { TestCase, TestSuite, Project, Module } from './types';
-import { TestCaseTable } from '@/components/common/tables/TestCaseTable';
+import { TestCaseTable } from './subcomponents/TestCaseTable';
 import { CreateTestCaseDialog } from './subcomponents/CreateTestCaseDialog';
 import { CreateModuleDialog } from './subcomponents/CreateModuleDialog';
 import { DeleteTestCaseDialog } from './subcomponents/DeleteTestCaseDialog';
@@ -258,41 +258,38 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
         ]}
         actions={
           canCreateTestCase ? (
-            <div className="flex gap-2">
-              <ButtonSecondary onClick={() => setCreateModuleDialogOpen(true)} className="cursor-pointer">
-                <FolderPlus className="w-4 h-4 mr-2" />
-                New Module
-              </ButtonSecondary>
-              <ButtonPrimary onClick={() => setCreateDialogOpen(true)} className="cursor-pointer">
-                <Plus className="w-4 h-4 mr-2" />
-                New Test Case
-              </ButtonPrimary>
-            </div>
+            <ActionButtonGroup
+              buttons={[
+                {
+                  label: 'New Module',
+                  icon: FolderPlus,
+                  onClick: () => setCreateModuleDialogOpen(true),
+                  variant: 'secondary',
+                },
+                {
+                  label: 'New Test Case',
+                  icon: Plus,
+                  onClick: () => setCreateDialogOpen(true),
+                  variant: 'primary',
+                },
+              ]}
+            />
           ) : undefined
         }
       />
       
       <div className="px-8 pt-4">
         {/* Header and Filters Section */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-4">
-          {/* Header */}
-          <div className="shrink-0">
-            <div className="flex items-center gap-3 mb-2">
-              {project && (
-                <Badge variant="outline" className="font-mono border-primary/40 bg-primary/10 text-primary text-xs px-2.5 py-0.5">
-                  {project.key}
-                </Badge>
-              )}
-              <h1 className="text-2xl font-bold text-white">Test Cases</h1>
-            </div>
-            {project && (
-              <p className="text-white/70 text-sm mb-2">{project.name}</p>
-            )}
-          </div>
-
-          {/* Filters */}
-          {mounted && (
-            <div className="w-full lg:w-auto shrink-0">
+        <HeaderWithFilters
+          header={
+            <PageHeaderWithBadge
+              badge={project?.key}
+              title="Test Cases"
+              description={project?.name}
+            />
+          }
+          filters={
+            mounted ? (
               <TestCaseFilters
                 searchQuery={searchQuery}
                 priorityFilter={priorityFilter}
@@ -301,9 +298,9 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
                 onPriorityChange={setPriorityFilter}
                 onStatusChange={setStatusFilter}
               />
-            </div>
-          )}
-        </div>
+            ) : null
+          }
+        />
       </div>
 
       {/* Content */}

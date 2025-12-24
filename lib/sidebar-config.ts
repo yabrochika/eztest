@@ -1,4 +1,6 @@
-import { SidebarItem } from '@/components/design/Sidebar';
+import { type SidebarProps } from '@/frontend/reusable-components';
+
+type SidebarItem = SidebarProps['items'][number];
 
 /**
  * Main navigation items for the application

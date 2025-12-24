@@ -1,14 +1,10 @@
-import { Badge } from '@/elements/badge';
-import { Button } from '@/elements/button';
-import { ItemCard } from '@/components/design/ItemCard';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/elements/dropdown-menu';
-import { formatDateTime } from '@/lib/date-utils';
-import { Calendar, MoreVertical, Play, Trash2, User } from 'lucide-react';
+﻿import { Badge } from '@/frontend/reusable-elements/badges/Badge';
+import { ItemCard } from '@/frontend/reusable-components/cards/ItemCard';
+import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
+import { ProgressBarWithLabel } from '@/frontend/reusable-components/data/ProgressBarWithLabel';
+import { CompactStatsGrid } from '@/frontend/reusable-components/data/CompactStatsGrid';
+import { CardFooter } from '@/frontend/reusable-components/layout/CardFooter';
+import { Calendar, Play, Trash2, User } from 'lucide-react';
 import { TestRun } from '../types';
 
 interface TestRunCardProps {
@@ -97,103 +93,90 @@ export function TestRunCard({
   );
 
   const header = (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        asChild
-        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 -mt-1 shrink-0 hover:bg-white/10"
-        >
-          <MoreVertical className="w-3.5 h-3.5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onViewDetails(); }} className="hover:bg-white/10">
-          <Play className="w-4 h-4 mr-2" />
-          View Details
-        </DropdownMenuItem>
-        {canDelete && (
-          <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDelete(); }} className="text-red-400 hover:bg-red-400/10">
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <ActionMenu
+      items={[
+        {
+          label: 'View Details',
+          icon: Play,
+          onClick: onViewDetails,
+        },
+        {
+          label: 'Delete',
+          icon: Trash2,
+          onClick: onDelete,
+          variant: 'destructive',
+          show: canDelete,
+        },
+      ]}
+      align="end"
+      iconSize="w-3.5 h-3.5"
+    />
   );
 
   const content = (
     <>
       {/* Progress */}
       {testRun._count.results > 0 && (
-        <div className="mb-2.5">
-          <div className="flex justify-between text-xs text-white/60 mb-1">
-            <span>Pass Rate</span>
-            <span className="font-semibold text-white">{passRate}%</span>
-          </div>
-          <div className="w-full bg-white/5 rounded-full h-2">
-            <div
-              className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full transition-all"
-              style={{ width: `${passRate}%` }}
-            />
-          </div>
-        </div>
+        <ProgressBarWithLabel
+          label="Pass Rate"
+          value={passRate}
+          gradientFrom="from-green-500"
+          gradientTo="to-green-400"
+        />
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-2 mb-2.5">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-white">
-            {testRun._count.results}
-          </div>
-          <div className="text-xs text-white/60">Total</div>
-        </div>
-        {counts.passed > 0 && (
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-500">
-              {counts.passed}
-            </div>
-            <div className="text-xs text-white/60">Passed</div>
-          </div>
-        )}
-        {counts.failed > 0 && (
-          <div className="text-center">
-            <div className="text-2xl font-bold text-red-500">
-              {counts.failed}
-            </div>
-            <div className="text-xs text-white/60">Failed</div>
-          </div>
-        )}
-        {counts.blocked > 0 && (
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-500">
-              {counts.blocked}
-            </div>
-            <div className="text-xs text-white/60">Blocked</div>
-          </div>
-        )}
-      </div>
+      <CompactStatsGrid
+        stats={[
+          {
+            value: testRun._count.results,
+            label: 'Total',
+            show: true,
+          },
+          {
+            value: counts.passed,
+            label: 'Passed',
+            valueClassName: 'text-green-500',
+            show: counts.passed > 0,
+          },
+          {
+            value: counts.failed,
+            label: 'Failed',
+            valueClassName: 'text-red-500',
+            show: counts.failed > 0,
+          },
+          {
+            value: counts.blocked,
+            label: 'Blocked',
+            valueClassName: 'text-orange-500',
+            show: counts.blocked > 0,
+          },
+        ]}
+        columns={4}
+        gap="md"
+        className="mb-2.5"
+      />
     </>
   );
 
   const footer = (
-    <>
-      <div className="flex items-center gap-2 text-xs text-white/60">
-        {testRun.assignedTo && (
-          <div className="flex items-center gap-1">
-            <User className="w-3 h-3" />
-            <span className="truncate">{testRun.assignedTo.name}</span>
-          </div>
-        )}
-      </div>
-      <div className="flex items-center gap-1 text-xs text-white/60">
-        <Calendar className="w-3 h-3" />
-        <span>{formatDateTime(testRun.createdAt)}</span>
-      </div>
-    </>
+    <CardFooter
+      items={[
+        ...(testRun.assignedTo
+          ? [
+              {
+                icon: User,
+                value: testRun.assignedTo.name,
+              },
+            ]
+          : []),
+        {
+          icon: Calendar,
+          value: testRun.createdAt,
+          formatDate: true,
+        },
+      ]}
+    />
   );
 
   return (

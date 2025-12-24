@@ -1,19 +1,12 @@
-'use client';
+﻿'use client';
 
-import { Button } from '@/elements/button';
+import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
 import {
   Edit,
   Folder,
-  MoreVertical,
   Trash2,
 } from 'lucide-react';
 import { TestSuite } from '../types';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/elements/dropdown-menu';
 
 interface TestSuiteCardProps {
   suite: TestSuite;
@@ -45,42 +38,24 @@ export function TestSuiteCard({
     >
       {/* Menu Button */}
       <div className="absolute top-4 right-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onView(suite.id);
-              }}
-              className="cursor-pointer"
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              View / Edit
-            </DropdownMenuItem>
-            {canDelete && (
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(suite);
-                }}
-                className="cursor-pointer text-red-400 focus:text-red-400"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ActionMenu
+          items={[
+            {
+              label: 'View / Edit',
+              icon: Edit,
+              onClick: () => onView(suite.id),
+            },
+            {
+              label: 'Delete',
+              icon: Trash2,
+              onClick: () => onDelete(suite),
+              variant: 'destructive',
+              show: canDelete,
+            },
+          ]}
+          align="end"
+          iconSize="h-4 w-4"
+        />
       </div>
 
       {/* Card Content */}

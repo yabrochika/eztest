@@ -1,19 +1,17 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/elements/card';
-import { ButtonPrimary } from '@/elements/button-primary';
-import { Input } from '@/elements/input';
-import { TopBar, UserCard } from '@/components/design';
-import { Loader } from '@/elements/loader';
-import { FloatingAlert, type FloatingAlertMessage } from '@/components/design/FloatingAlert';
+import { SearchInput } from '@/frontend/reusable-elements/inputs/SearchInput';
+import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
+import { MembersList } from '@/frontend/reusable-components/users/MembersList';
+import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
+import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
+import { HeaderWithFilters } from '@/frontend/reusable-components/layout/HeaderWithFilters';
+import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
+import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { 
   Users, 
-  UserPlus, 
-  Search,
-  Shield,
-  Eye
+  UserPlus
 } from 'lucide-react';
 import { User, Role, UserFormData, EditUserFormData } from './types';
 import { AddUserDialog } from './subcomponents/AddUserDialog';
@@ -44,7 +42,7 @@ export default function UserManagement() {
       if (data.data) {
         setUsers(data.data);
       }
-    } catch (error) {
+    } catch {
       setAlert({
         type: 'error',
         title: 'Failed to Load Users',
@@ -62,7 +60,7 @@ export default function UserManagement() {
       if (data.data) {
         setRoles(data.data);
       }
-    } catch (error) {
+    } catch {
       setAlert({
         type: 'error',
         title: 'Failed to Load Roles',
@@ -136,7 +134,7 @@ export default function UserManagement() {
           message: `User "${userName}" has been deleted successfully.`,
         });
       }
-    } catch (error) {
+    } catch {
       setAlert({
         type: 'error',
         title: 'Failed to Delete User',
@@ -145,32 +143,6 @@ export default function UserManagement() {
     }
   };
 
-  const getRoleBadgeColor = (roleName: string) => {
-    switch (roleName) {
-      case 'ADMIN':
-        return 'bg-red-500/10 text-red-500 border-red-500/20';
-      case 'PROJECT_MANAGER':
-        return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'TESTER':
-        return 'bg-green-500/10 text-green-500 border-green-500/20';
-      case 'VIEWER':
-        return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
-      default:
-        return 'bg-white/10 text-white border-white/20';
-    }
-  };
-
-  const getRoleIcon = (roleName: string) => {
-    switch (roleName) {
-      case 'ADMIN':
-      case 'PROJECT_MANAGER':
-        return <Shield className="w-3 h-3" />;
-      case 'VIEWER':
-        return <Eye className="w-3 h-3" />;
-      default:
-        return <Users className="w-3 h-3" />;
-    }
-  };
 
   const filteredUsers = users.filter(
     (user) =>
@@ -188,83 +160,82 @@ export default function UserManagement() {
           { label: 'Users' },
         ]}
         actions={
-          <ButtonPrimary
-            onClick={() => setAddDialogOpen(true)}
-            className="gap-2 cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4" />
-            Add User
-          </ButtonPrimary>
+          <ActionButtonGroup
+            buttons={[
+              {
+                label: 'Add User',
+                icon: UserPlus,
+                onClick: () => setAddDialogOpen(true),
+                variant: 'primary',
+              },
+            ]}
+          />
         }
       />
 
-      {/* Page Header */}
-      <div className="max-w-7xl mx-auto px-8 py-6 pt-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-1">User Management</h1>
-            <p className="text-white/70 text-sm">Manage application users and assign roles</p>
-          </div>
-          <div className="w-64">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/40" />
-              <Input
+      {/* Page Header and Filters */}
+      <div className="px-8 pt-4">
+        <HeaderWithFilters
+          header={
+            <PageHeaderWithBadge
+              title="User Management"
+              description="Manage application users and assign roles"
+            />
+          }
+          filters={
+            <div className="w-full lg:w-64">
+              <SearchInput
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={setSearchQuery}
                 placeholder="Search users..."
-                className="pl-10 bg-[#0f172a] border-[#334155]"
               />
             </div>
-          </div>
-        </div>
+          }
+        />
       </div>
 
       {/* Users List */}
-      <div className="max-w-7xl mx-auto px-8 pb-8">
-        {loading ? (
-          <Loader fullScreen={false} text="Loading users..." />
-        ) : (
-          <Card variant="glass">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                All Users ({filteredUsers.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {filteredUsers.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="w-16 h-16 text-white/50 mx-auto mb-4" />
-                  <p className="text-white/60">No users found</p>
-                  <p className="text-white/40 text-sm mt-1">
-                    {searchQuery ? 'Try a different search term' : 'Add your first user to get started'}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {filteredUsers.map((user) => (
-                    <UserCard
-                      key={user.id}
-                      user={user}
-                      onEdit={() => {
-                        setSelectedUser(user);
-                        setEditDialogOpen(true);
-                      }}
-                      onDelete={() => {
-                        setSelectedUser(user);
-                        setDeleteDialogOpen(true);
-                      }}
-                      viewHref={`/admin/users/${user.id}`}
-                      showProjects={true}
-                      getRoleBadgeColor={getRoleBadgeColor}
-                      getRoleIcon={getRoleIcon}
-                    />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+      <div className="px-8 pb-8">
+        <div className="max-w-7xl mx-auto">
+          {loading ? (
+            <Loader fullScreen={false} text="Loading users..." />
+          ) : (
+            <MembersList
+              members={filteredUsers.map((user) => ({
+                id: user.id,
+                user: {
+                  id: user.id,
+                  name: user.name,
+                  email: user.email,
+                  avatar: user.avatar,
+                  role: user.role,
+                },
+                createdAt: user.createdAt,
+              }))}
+              title={`All Users (${filteredUsers.length})`}
+              description="Application users and their assigned roles"
+              emptyTitle="No users found"
+              emptyDescription={searchQuery ? 'Try a different search term' : 'Add your first user to get started'}
+              emptyIcon={Users}
+              onEdit={(userId) => {
+                const user = filteredUsers.find((u) => u.id === userId);
+                if (user) {
+                  setSelectedUser(user);
+                  setEditDialogOpen(true);
+                }
+              }}
+              onDelete={(userId) => {
+                const user = filteredUsers.find((u) => u.id === userId);
+                if (user) {
+                  setSelectedUser(user);
+                  setDeleteDialogOpen(true);
+                }
+              }}
+              viewHref={(userId) => `/admin/users/${userId}`}
+              showProjects={true}
+            />
+          )}
+        </div>
       </div>
 
       {/* Dialogs */}

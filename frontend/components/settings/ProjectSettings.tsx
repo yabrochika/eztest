@@ -1,12 +1,11 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Settings } from 'lucide-react';
-import { ButtonPrimary } from '@/elements/button-primary';
-import { Card, CardContent } from '@/elements/card';
-import { Loader } from '@/elements/loader';
-import { FloatingAlert, type FloatingAlertMessage } from '@/components/design/FloatingAlert';
+import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
+import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
+import { NotFoundState } from '@/frontend/reusable-components/errors/NotFoundState';
 import { Project, ProjectFormData } from './types';
 import { SettingsHeader } from './subcomponents/SettingsHeader';
 import { GeneralSettingsCard } from './subcomponents/GeneralSettingsCard';
@@ -170,50 +169,23 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
 
   if (!project) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md">
-          <div className="mb-6 flex justify-center">
-            <div className="p-4 bg-red-500/10 rounded-full border border-red-500/30">
-              <Settings className="w-12 h-12 text-red-400" />
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Project Not Found</h2>
-          <p className="text-white/70 mb-6">
-            The project you&apos;re trying to configure doesn&apos;t exist or has been deleted.
-          </p>
-          <div className="flex items-center justify-center gap-2 text-sm text-blue-400">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
-            <span>Redirecting to projects page...</span>
-          </div>
-        </div>
-      </div>
+      <NotFoundState
+        title="Project Not Found"
+        message="The project you're trying to configure doesn't exist or has been deleted."
+        icon={Settings}
+        redirectingMessage="Redirecting to projects page..."
+        showRedirecting={true}
+      />
     );
   }
 
-  // Original code below - keeping for safety
-  if (false && !project) {
-    return (
-      <div className="max-w-4xl mx-auto p-8">
-          <Card variant="glass">
-            <CardContent className="p-8 text-center">
-              <p className="text-lg text-white/70">Project not found (OLD)</p>
-              <ButtonPrimary
-                onClick={() => router.push('/projects')}
-                className="mt-4"
-              >
-                Back to Projects
-              </ButtonPrimary>
-            </CardContent>
-          </Card>
-        </div>
-    );
-  }
 
   return (
     <>
       <SettingsHeader project={project} projectId={projectId} />
 
-      <div className="max-w-4xl mx-auto px-8 pb-8 space-y-6">
+      <div className="px-8 pb-8">
+        <div className="max-w-4xl mx-auto space-y-6 pt-0">
         <GeneralSettingsCard
           project={project}
           formData={formData}
@@ -230,6 +202,7 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
           deleting={deleting}
           onDelete={() => setDeleteDialogOpen(true)}
         />
+        </div>
       </div>
 
       <DeleteProjectDialog

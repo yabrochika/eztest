@@ -1,5 +1,5 @@
-import { DetailCard } from '@/components/design/DetailCard';
-import { FormBuilder, FormFieldConfig } from '@/frontend/components/form';
+﻿import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
+import { FormBuilder, FormFieldConfig } from '@/frontend/reusable-components';
 import { TestSuiteFormData } from '../types';
 
 interface TestSuiteDetailsCardProps {

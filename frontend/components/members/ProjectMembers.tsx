@@ -1,14 +1,15 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Plus, Users } from 'lucide-react';
-import { ButtonPrimary } from '@/elements/button-primary';
-import { Card, CardContent } from '@/elements/card';
-import { Loader } from '@/elements/loader';
-import { TopBar } from '@/components/design';
-import { FloatingAlert, type FloatingAlertMessage } from '@/components/design/FloatingAlert';
+import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
+import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
+import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
+import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
+import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
+import { NotFoundState } from '@/frontend/reusable-components/errors/NotFoundState';
 import { Project, ProjectMember } from './types';
 import { MembersCard } from './subcomponents/MembersCard';
 import { CreateAddMemberDialog } from './subcomponents/AddMemberDialog';
@@ -138,44 +139,16 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
 
   if (!project) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md">
-          <div className="mb-6 flex justify-center">
-            <div className="p-4 bg-red-500/10 rounded-full border border-red-500/30">
-              <Users className="w-12 h-12 text-red-400" />
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Project Not Found</h2>
-          <p className="text-white/70 mb-6">
-            The project you&apos;re trying to access doesn&apos;t exist or has been deleted.
-          </p>
-          <div className="flex items-center justify-center gap-2 text-sm text-blue-400">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
-            <span>Redirecting to projects page...</span>
-          </div>
-        </div>
-      </div>
+      <NotFoundState
+        title="Project Not Found"
+        message="The project you're trying to access doesn't exist or has been deleted."
+        icon={Users}
+        redirectingMessage="Redirecting to projects page..."
+        showRedirecting={true}
+      />
     );
   }
 
-  // Old fallback - keeping for safety
-  if (false && !project) {
-    return (
-      <div className="max-w-6xl mx-auto p-8">
-          <Card variant="glass">
-            <CardContent className="p-8 text-center">
-              <p className="text-lg text-white/70">Project not found (OLD)</p>
-              <ButtonPrimary
-                onClick={() => router.push('/projects')}
-                className="mt-4"
-              >
-                Back to Projects
-              </ButtonPrimary>
-            </CardContent>
-          </Card>
-        </div>
-    );
-  }
 
   return (
     <>
@@ -187,36 +160,37 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
           { label: 'Members' },
         ]}
         actions={
-          isAdminOrManager && (
-            <ButtonPrimary
-              size="default"
-              onClick={() => setAddDialogOpen(true)}
-              className="cursor-pointer"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Member
-            </ButtonPrimary>
-          )
+          isAdminOrManager ? (
+            <ActionButtonGroup
+              buttons={[
+                {
+                  label: 'Add Member',
+                  icon: Plus,
+                  onClick: () => setAddDialogOpen(true),
+                  variant: 'primary',
+                },
+              ]}
+            />
+          ) : undefined
         }
       />
       
-      <div className="max-w-6xl mx-auto px-8 pt-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white mb-1">Project Members</h1>
-          <p className="text-white/70 text-sm">
-            Manage project members for <span className="font-semibold text-white">{project.name}</span>
-            {!isAdminOrManager && (
-              <span className="text-white/50 ml-2">(Project managers and admins can manage members)</span>
-            )}
-          </p>
+      <div className="px-8 pt-4 pb-8">
+        <div className="max-w-6xl mx-auto">
+          <PageHeaderWithBadge
+            badge={project.key}
+            title="Project Members"
+            description={`Manage project members for ${project.name}${!isAdminOrManager ? ' (Project managers and admins can manage members)' : ''}`}
+            className="mb-6"
+          />
+
+          <MembersCard
+            members={members}
+            isAdminOrManager={isAdminOrManager}
+            onRemoveMember={handleRemoveMember}
+          />
         </div>
       </div>
-
-      <MembersCard
-        members={members}
-        isAdminOrManager={isAdminOrManager}
-        onRemoveMember={handleRemoveMember}
-      />
 
       <CreateAddMemberDialog
         projectId={projectId}

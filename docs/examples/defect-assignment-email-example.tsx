@@ -8,7 +8,7 @@
 'use client';
 
 import { useState } from 'react';
-import { SendEmailDialog } from '@/components/common/SendEmailDialog';
+import { SendEmailDialog } from '@/frontend/reusable-components';
 
 interface User {
   id: string;

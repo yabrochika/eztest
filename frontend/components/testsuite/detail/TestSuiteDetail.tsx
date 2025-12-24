@@ -1,18 +1,18 @@
-import { useRouter } from 'next/navigation';
+﻿import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { TopBar } from '@/components/design';
-import { Loader } from '@/elements/loader';
-import { FloatingAlert, type FloatingAlertMessage } from '@/components/design/FloatingAlert';
+import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
+import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
+import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { TestSuiteHeader } from './subcomponents/TestSuiteHeader';
 import { TestSuiteDetailsCard } from './subcomponents/TestSuiteDetailsCard';
 import { TestCasesCard } from './subcomponents/TestCasesCard';
 import { ChildSuitesCard } from './subcomponents/ChildSuitesCard';
 import { TestSuiteInfoCard } from './subcomponents/TestSuiteInfoCard';
 import { DeleteTestSuiteDialog } from './subcomponents/DeleteTestSuiteDialog';
-import { ButtonSecondary } from '@/elements/button-secondary';
+import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
 import { Plus, TestTube2, Folder } from 'lucide-react';
 import { AddTestCasesDialog } from '@/frontend/components/common/dialogs/AddTestCasesDialog';
-import { AddModulesAndTestCasesDialog } from '@/components/common/dialogs/AddModulesAndTestCasesDialog';
+import { AddModulesAndTestCasesDialog } from '@/frontend/reusable-components/dialogs/AddModulesAndTestCasesDialog';
 import { DeleteTestCaseDialog } from '@/frontend/components/testcase/subcomponents/DeleteTestCaseDialog';
 import { TestSuite, TestSuiteFormData } from './types';
 import { TestCase, Module } from '@/frontend/components/testcase/types';
@@ -422,33 +422,33 @@ export default function TestSuiteDetail({ suiteId }: TestSuiteDetailProps) {
         />
 
         {/* Quick Actions Buttons */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          {canManageTestCases && (
-            <>
-              <ButtonSecondary
-                onClick={() => {
-                  fetchAvailableModules();
-                  setAddModulesDialogOpen(true);
-                }}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Modules & Test Cases
-              </ButtonSecondary>
-            </>
-          )}
-          <ButtonSecondary
-            onClick={() => router.push(`/projects/${testSuite.project.id}/testcases`)}
-          >
-            <TestTube2 className="w-4 h-4 mr-2" />
-            View All Test Cases
-          </ButtonSecondary>
-          <ButtonSecondary
-            onClick={() => router.push(`/projects/${testSuite.project.id}/testsuites`)}
-          >
-            <Folder className="w-4 h-4 mr-2" />
-            View All Test Suites
-          </ButtonSecondary>
-        </div>
+        <ActionButtonGroup
+          buttons={[
+            {
+              label: 'Add Modules & Test Cases',
+              icon: Plus,
+              onClick: () => {
+                fetchAvailableModules();
+                setAddModulesDialogOpen(true);
+              },
+              variant: 'secondary',
+              show: canManageTestCases,
+            },
+            {
+              label: 'View All Test Cases',
+              icon: TestTube2,
+              onClick: () => router.push(`/projects/${testSuite.project.id}/testcases`),
+              variant: 'secondary',
+            },
+            {
+              label: 'View All Test Suites',
+              icon: Folder,
+              onClick: () => router.push(`/projects/${testSuite.project.id}/testsuites`),
+              variant: 'secondary',
+            },
+          ]}
+          className="mb-6"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

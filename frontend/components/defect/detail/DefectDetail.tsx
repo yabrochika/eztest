@@ -1,15 +1,15 @@
-'use client';
+﻿'use client';
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { TopBar } from '@/components/design';
+import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
 import {
   FloatingAlert,
   type FloatingAlertMessage,
-} from '@/components/design/FloatingAlert';
+} from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Loader } from '@/elements/loader';
-import { ButtonSecondary } from '@/elements/button-secondary';
+import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
+import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
 import { List, TestTube2, PlayCircle } from 'lucide-react';
 import { Defect, DefectFormData } from './types';
 import type { Attachment } from '@/lib/s3';
@@ -93,8 +93,8 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
         // Load existing attachments
         if (data.data.attachments && Array.isArray(data.data.attachments)) {
           const descAtts = data.data.attachments
-            .filter((att: any) => !att.fieldName || att.fieldName === 'description')
-            .map((att: any) => ({
+            .filter((att: Attachment) => !att.fieldName || att.fieldName === 'description')
+            .map((att: Attachment) => ({
               id: att.id,
               filename: att.filename,
               originalName: att.originalName,
@@ -124,7 +124,7 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
 
       if (pendingAttachments.length > 0) {
         for (const attachment of pendingAttachments) {
-          // @ts-ignore - Access the pending file object
+          // @ts-expect-error - Access the pending file object
           const file = attachment._pendingFile;
           if (!file) continue;
 
@@ -375,32 +375,29 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
         />
 
         {/* Quick Actions Buttons */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          <ButtonSecondary
-            onClick={() =>
-              router.push(`/projects/${defect.project.id}/defects`)
-            }
-          >
-            <List className="w-4 h-4 mr-2" />
-            View All Defects
-          </ButtonSecondary>
-          <ButtonSecondary
-            onClick={() =>
-              router.push(`/projects/${defect.project.id}/testcases`)
-            }
-          >
-            <TestTube2 className="w-4 h-4 mr-2" />
-            View All Test Cases
-          </ButtonSecondary>
-          <ButtonSecondary
-            onClick={() =>
-              router.push(`/projects/${defect.project.id}/testruns`)
-            }
-          >
-            <PlayCircle className="w-4 h-4 mr-2" />
-            View All Test Runs
-          </ButtonSecondary>
-        </div>
+        <ActionButtonGroup
+          buttons={[
+            {
+              label: 'View All Defects',
+              icon: List,
+              onClick: () => router.push(`/projects/${defect.project.id}/defects`),
+              variant: 'secondary',
+            },
+            {
+              label: 'View All Test Cases',
+              icon: TestTube2,
+              onClick: () => router.push(`/projects/${defect.project.id}/testcases`),
+              variant: 'secondary',
+            },
+            {
+              label: 'View All Test Runs',
+              icon: PlayCircle,
+              onClick: () => router.push(`/projects/${defect.project.id}/testruns`),
+              variant: 'secondary',
+            },
+          ]}
+          className="mb-6"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

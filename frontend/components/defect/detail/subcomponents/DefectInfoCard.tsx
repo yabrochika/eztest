@@ -2,7 +2,9 @@
 
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
-import { formatDateTime } from '@/lib/date-utils';
+import { UserInfoSection } from '@/frontend/reusable-components/data/UserInfoSection';
+import { StatisticsSection } from '@/frontend/reusable-components/data/StatisticsSection';
+import { DateInfoSection } from '@/frontend/reusable-components/data/DateInfoSection';
 import { Defect } from '../types';
 
 interface DefectInfoCardProps {
@@ -17,34 +19,23 @@ export function DefectInfoCard({ defect }: DefectInfoCardProps) {
         <p className="text-white/90 text-sm font-mono">{defect.defectId}</p>
       </div>
 
-      <div>
-        <h4 className="text-sm font-medium text-white/60 mb-1">Created By</h4>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-sm font-semibold text-white">
-            {defect.createdBy.name.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <p className="text-white/90 text-sm">{defect.createdBy.name}</p>
-            <p className="text-white/60 text-xs">{defect.createdBy.email}</p>
-          </div>
-        </div>
-      </div>
+      <UserInfoSection
+        label="Created By"
+        user={{
+          name: defect.createdBy.name,
+          email: defect.createdBy.email,
+        }}
+      />
 
       {defect.assignedTo && (
-        <div>
-          <h4 className="text-sm font-medium text-white/60 mb-1">
-            Assigned To
-          </h4>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-sm font-semibold text-white">
-              {defect.assignedTo.name.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <p className="text-white/90 text-sm">{defect.assignedTo.name}</p>
-              <p className="text-white/60 text-xs">{defect.assignedTo.email}</p>
-            </div>
-          </div>
-        </div>
+        <UserInfoSection
+          label="Assigned To"
+          user={{
+            name: defect.assignedTo.name,
+            email: defect.assignedTo.email,
+          }}
+          avatarGradient="from-green-500 to-teal-500"
+        />
       )}
 
       {defect.testCases && defect.testCases.length > 0 && (
@@ -74,52 +65,20 @@ export function DefectInfoCard({ defect }: DefectInfoCardProps) {
         </div>
       )}
 
-      <div>
-        <h4 className="text-sm font-medium text-white/60 mb-1">Statistics</h4>
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between text-white/90">
-            <span>Comments</span>
-            <span>{defect.comments.length}</span>
-          </div>
-          <div className="flex justify-between text-white/90">
-            <span>Attachments</span>
-            <span>{defect.attachments.length}</span>
-          </div>
-        </div>
-      </div>
+      <StatisticsSection
+        statistics={[
+          { label: 'Comments', value: defect.comments.length },
+          { label: 'Attachments', value: defect.attachments.length },
+        ]}
+      />
 
-      <div>
-        <h4 className="text-sm font-medium text-white/60 mb-1">Created</h4>
-        <p className="text-white/90 text-sm">
-          {formatDateTime(defect.createdAt)}
-        </p>
-      </div>
-
-      <div>
-        <h4 className="text-sm font-medium text-white/60 mb-1">
-          Last Updated
-        </h4>
-        <p className="text-white/90 text-sm">
-          {formatDateTime(defect.updatedAt)}
-        </p>
-      </div>
-
+      <DateInfoSection label="Created" date={defect.createdAt} />
+      <DateInfoSection label="Last Updated" date={defect.updatedAt} />
       {defect.resolvedAt && (
-        <div>
-          <h4 className="text-sm font-medium text-white/60 mb-1">Resolved At</h4>
-          <p className="text-white/90 text-sm">
-            {formatDateTime(defect.resolvedAt)}
-          </p>
-        </div>
+        <DateInfoSection label="Resolved At" date={defect.resolvedAt} />
       )}
-
       {defect.closedAt && (
-        <div>
-          <h4 className="text-sm font-medium text-white/60 mb-1">Closed At</h4>
-          <p className="text-white/90 text-sm">
-            {formatDateTime(defect.closedAt)}
-          </p>
-        </div>
+        <DateInfoSection label="Closed At" date={defect.closedAt} />
       )}
     </DetailCard>
   );

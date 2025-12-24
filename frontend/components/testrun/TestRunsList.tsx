@@ -7,6 +7,9 @@ import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
 import { Plus } from 'lucide-react';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
+import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
+import { HeaderWithFilters } from '@/frontend/reusable-components/layout/HeaderWithFilters';
+import { ResponsiveGrid } from '@/frontend/reusable-components/layout/ResponsiveGrid';
 import { TestRunsFilterCard } from './subcomponents/TestRunsFilterCard';
 import { TestRunCard } from './subcomponents/TestRunCard';
 import { TestRunsEmptyState } from './subcomponents/TestRunsEmptyState';
@@ -191,15 +194,15 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
 
       {/* Page Header and Filters */}
       <div className="px-8 pt-4">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-4">
-          {/* Header */}
-          <div className="shrink-0">
-            <h1 className="text-2xl font-bold text-white mb-2">Test Runs</h1>
-            <p className="text-white/70 text-sm">Manage and track test execution progress</p>
-          </div>
-
-          {/* Filters */}
-          <div className="w-full lg:w-auto shrink-0">
+        <HeaderWithFilters
+          header={
+            <PageHeaderWithBadge
+              badge={project?.key}
+              title="Test Runs"
+              description="Manage and track test execution progress"
+            />
+          }
+          filters={
             <TestRunsFilterCard
               filters={filters}
               onSearchChange={(searchQuery) =>
@@ -212,8 +215,9 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
                 setFilters({ ...filters, environmentFilter })
               }
             />
-          </div>
-        </div>
+          }
+          className="mb-4"
+        />
       </div>
 
       {/* Test Runs Grid */}
@@ -225,7 +229,10 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
             canCreate={canCreateTestRun}
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <ResponsiveGrid
+            columns={{ default: 1, md: 2, lg: 3 }}
+            gap="sm"
+          >
             {filteredTestRuns.map((testRun) => (
               <TestRunCard
                 key={testRun.id}
@@ -243,7 +250,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
                 }}
               />
             ))}
-          </div>
+          </ResponsiveGrid>
         )}
 
         {/* Create Dialog */}

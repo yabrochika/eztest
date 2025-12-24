@@ -4,7 +4,7 @@ import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimar
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { Plus, TestTube2 } from 'lucide-react';
 import { TestCase } from '../../types';
-import { TestCaseTable } from '@/frontend/reusable-components/tables/TestCaseTable';
+import { TestCaseTable } from '@/frontend/components/testcase/subcomponents/TestCaseTable';
 
 interface ModuleTestCasesCardProps {
   testCases: TestCase[];

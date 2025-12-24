@@ -1,11 +1,7 @@
 ﻿'use client';
 
-import { Badge } from '@/frontend/reusable-elements/badges/Badge';
-import { Button } from '@/frontend/reusable-elements/buttons/Button';
-import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
-import { ButtonDestructive } from '@/frontend/reusable-elements/buttons/ButtonDestructive';
-import { Input } from '@/frontend/reusable-elements/inputs/Input';
-import { Edit, Trash2, Save, X, RotateCcw } from 'lucide-react';
+import { DetailPageHeader } from '@/frontend/reusable-components/layout/DetailPageHeader';
+import { Edit, Trash2, RotateCcw } from 'lucide-react';
 import { Defect, DefectFormData } from '../types';
 
 interface DefectHeaderProps {
@@ -89,85 +85,28 @@ export function DefectHeader({
   };
 
   return (
-    <div className="mb-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="w-full">
-          <h1 className="text-3xl font-bold text-white mb-1">
-            {isEditing ? (
-              <Input
-                value={formData.title}
-                onChange={(e) =>
-                  onFormChange({ ...formData, title: e.target.value })
-                }
-                className="text-3xl font-bold"
-                placeholder="Defect title"
-              />
-            ) : (
-              defect.title
-            )}
-          </h1>
-          <p className="text-white/60 text-sm mb-3">{defect.defectId}</p>
-          <div className="flex items-center gap-6 text-sm flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="text-white/60">Severity:</span>
-              <Badge
-                variant="outline"
-                className={getSeverityColor(defect.severity)}
-              >
-                {defect.severity}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-white/60">Priority:</span>
-              <Badge variant="outline" className={getPriorityColor(defect.priority)}>
-                {defect.priority}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-white/60">Status:</span>
-              <Badge variant="outline" className={getStatusColor(defect.status)}>
-                {formatStatus(defect.status)}
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          {isEditing ? (
-            <>
-              <Button variant="glass" onClick={onCancel} className="cursor-pointer">
-                <X className="w-4 h-4 mr-2" />
-                Cancel
-              </Button>
-              <ButtonPrimary onClick={onSave} disabled={saving} className="cursor-pointer">
-                <Save className="w-4 h-4 mr-2" />
-                {saving ? 'Saving...' : 'Save'}
-              </ButtonPrimary>
-            </>
-          ) : (
-            <>
-              {defect.status === 'CLOSED' && canUpdate && (
-                <Button variant="glass" onClick={onReopen} className="cursor-pointer">
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Reopen
-                </Button>
-              )}
-              {canUpdate && (
-                <Button variant="glass" onClick={onEdit}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-              )}
-              {canDelete && (
-                <ButtonDestructive onClick={onDelete} className="cursor-pointer">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </ButtonDestructive>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+    <DetailPageHeader
+      title={defect.title}
+      subtitle={defect.defectId}
+      subtitleClassName="text-sm"
+      isEditing={isEditing}
+      editTitle={formData.title}
+      onTitleChange={(title) => onFormChange({ ...formData, title })}
+      badges={[
+        { label: 'Severity', value: defect.severity, className: getSeverityColor(defect.severity) },
+        { label: 'Priority', value: defect.priority, className: getPriorityColor(defect.priority) },
+        { label: 'Status', value: formatStatus(defect.status), className: getStatusColor(defect.status) },
+      ]}
+      actions={[
+        { label: 'Reopen', icon: RotateCcw, onClick: onReopen, show: defect.status === 'CLOSED' && canUpdate },
+        { label: 'Edit', icon: Edit, onClick: onEdit, show: canUpdate },
+        { label: 'Delete', icon: Trash2, onClick: onDelete, variant: 'destructive', show: canDelete },
+      ]}
+      editActions={{
+        onSave,
+        onCancel,
+        saving,
+      }}
+    />
   );
 }

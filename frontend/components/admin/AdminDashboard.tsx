@@ -1,11 +1,15 @@
 ﻿'use client';
 
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/frontend/reusable-elements/cards/Card';
+import { useRouter } from 'next/navigation';
 import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
+import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
+import { ResponsiveGrid } from '@/frontend/reusable-components/layout/ResponsiveGrid';
+import { ItemCard } from '@/frontend/reusable-components/cards/ItemCard';
 import { Users } from 'lucide-react';
 
 export default function AdminDashboard() {
+  const router = useRouter();
+
   return (
     <div className="flex-1">
       {/* Top Bar */}
@@ -16,36 +20,34 @@ export default function AdminDashboard() {
       />
 
       {/* Content */}
-      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
-          <p className="text-white/70">
-            Manage application users and access control
-          </p>
-        </div>
+      <div className="px-8 pt-4 pb-8">
+        <div className="max-w-7xl mx-auto">
+          <PageHeaderWithBadge
+            title="Admin Dashboard"
+            description="Manage application users and access control"
+            className="mb-6"
+          />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* User Management */}
-          <Link href="/admin/users">
-            <Card variant="glass" className="hover:shadow-xl hover:shadow-primary/10 transition-all cursor-pointer group">
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-3 bg-blue-500/10 rounded-lg">
-                    <Users className="w-6 h-6 text-blue-500" />
-                  </div>
-                  <CardTitle className="group-hover:text-primary transition-colors">User Management</CardTitle>
+          <ResponsiveGrid columns={{ default: 1, md: 2, lg: 3 }} gap="md">
+            {/* User Management */}
+            <ItemCard
+              title="User Management"
+              description="Add, edit, and manage application users"
+              badges={
+                <div className="p-3 bg-blue-500/10 rounded-lg">
+                  <Users className="w-6 h-6 text-blue-500" />
                 </div>
-                <CardDescription>
-                  Add, edit, and manage application users
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+              }
+              content={
                 <p className="text-sm text-white/60">
                   Manage user accounts and assign application-level roles
                 </p>
-              </CardContent>
-            </Card>
-          </Link>
+              }
+              borderColor="accent"
+              onClick={() => router.push('/admin/users')}
+              className="hover:shadow-xl hover:shadow-primary/10 transition-all"
+            />
+          </ResponsiveGrid>
         </div>
       </div>
     </div>

@@ -1,15 +1,9 @@
 ﻿'use client';
 
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
-import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { Card, CardContent, CardHeader } from '@/frontend/reusable-elements/cards/Card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/frontend/reusable-elements/dropdowns/DropdownMenu';
-import { Clock, MoreVertical, Trash2 } from 'lucide-react';
+import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
+import { Clock, Trash2 } from 'lucide-react';
 import { TestCase } from '../types';
 
 interface TestCaseCardProps {
@@ -76,28 +70,19 @@ export function TestCaseCard({ testCase, onDelete, onClick }: TestCaseCardProps)
               </Badge>
             </div>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              asChild
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            >
-              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10 cursor-pointer">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent variant="glass" align="end">
-              <DropdownMenuItem
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  onDelete(testCase);
-                }}
-                className="text-red-400 hover:bg-red-400/10"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ActionMenu
+            items={[
+              {
+                label: 'Delete',
+                icon: Trash2,
+                onClick: () => onDelete(testCase),
+                variant: 'destructive',
+              },
+            ]}
+            align="end"
+            buttonSize="sm"
+            iconSize="w-4 h-4"
+          />
         </div>
       </CardHeader>
       

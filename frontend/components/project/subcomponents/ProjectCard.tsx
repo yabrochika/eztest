@@ -2,10 +2,11 @@
 
 import { formatDateTime } from '@/lib/date-utils';
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
-import { Button } from '@/frontend/reusable-elements/buttons/Button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/frontend/reusable-elements/dropdowns/DropdownMenu';
 import { ItemCard } from '@/frontend/reusable-components/cards/ItemCard';
-import { MoreVertical, Folder, Settings, Users, Trash2, TestTube2, Play, FileText } from 'lucide-react';
+import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
+import { StatsGrid } from '@/frontend/reusable-components/data/StatsGrid';
+import { AvatarStack } from '@/frontend/reusable-components/users/AvatarStack';
+import { Folder, Settings, Users, Trash2, TestTube2, Play, FileText } from 'lucide-react';
 
 interface ProjectCardProps {
   project: {
@@ -47,90 +48,78 @@ export const ProjectCard = ({ project, onNavigate, onDelete, canUpdate = false, 
   );
 
   const header = hasActionPermissions && (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="h-6 w-6 -mt-1 shrink-0 hover:bg-white/10">
-          <MoreVertical className="w-3.5 h-3.5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onNavigate(`/projects/${project.id}`); }} className="hover:bg-white/10">
-          <Folder className="w-4 h-4 mr-2" />
-          Open Project
-        </DropdownMenuItem>
-        {canUpdate && (
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onNavigate(`/projects/${project.id}/settings`); }} className="hover:bg-white/10">
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </DropdownMenuItem>
-        )}
-        {canManageMembers && (
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onNavigate(`/projects/${project.id}/members`); }} className="hover:bg-white/10">
-            <Users className="w-4 h-4 mr-2" />
-            Manage Members
-          </DropdownMenuItem>
-        )}
-        {canDelete && (
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-red-400 hover:bg-red-400/10">
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <ActionMenu
+      items={[
+        {
+          label: 'Open Project',
+          icon: Folder,
+          onClick: () => onNavigate(`/projects/${project.id}`),
+        },
+        {
+          label: 'Settings',
+          icon: Settings,
+          onClick: () => onNavigate(`/projects/${project.id}/settings`),
+          show: canUpdate,
+        },
+        {
+          label: 'Manage Members',
+          icon: Users,
+          onClick: () => onNavigate(`/projects/${project.id}/members`),
+          show: canManageMembers,
+        },
+        {
+          label: 'Delete',
+          icon: Trash2,
+          onClick: onDelete,
+          variant: 'destructive',
+          show: canDelete,
+        },
+      ]}
+    />
   );
 
   const content = (
-    <div className="grid grid-cols-3 gap-2.5 mb-2.5">
-      <div className="text-center">
-        <div className="flex items-center justify-center mb-1">
-          <TestTube2 className="w-4 h-4 text-primary" />
-        </div>
-        <div className="text-2xl font-bold text-white">
-          {project._count?.testCases || 0}
-        </div>
-        <div className="text-xs text-white/60">Test Cases</div>
-      </div>
-      <div className="text-center">
-        <div className="flex items-center justify-center mb-1">
-          <Play className="w-4 h-4 text-accent" />
-        </div>
-        <div className="text-2xl font-bold text-white">
-          {project._count?.testRuns || 0}
-        </div>
-        <div className="text-xs text-white/60">Test Runs</div>
-      </div>
-      <div className="text-center">
-        <div className="flex items-center justify-center mb-1">
-          <FileText className="w-4 h-4 text-purple-400" />
-        </div>
-        <div className="text-2xl font-bold text-white">
-          {project._count?.testSuites || 0}
-        </div>
-        <div className="text-xs text-white/60">Test Suites</div>
-      </div>
-    </div>
+    <StatsGrid
+      stats={[
+        {
+          icon: TestTube2,
+          value: project._count?.testCases || 0,
+          label: 'Test Cases',
+          iconColor: 'text-primary',
+        },
+        {
+          icon: Play,
+          value: project._count?.testRuns || 0,
+          label: 'Test Runs',
+          iconColor: 'text-accent',
+        },
+        {
+          icon: FileText,
+          value: project._count?.testSuites || 0,
+          label: 'Test Suites',
+          iconColor: 'text-purple-400',
+        },
+      ]}
+      columns={3}
+      gap="sm"
+      className="mb-2.5"
+    />
   );
 
   const footer = (
     <>
       <div className="flex items-center gap-2">
-        <div className="flex -space-x-1.5">
-          {project.members.slice(0, 3).map((member) => (
-            <div
-              key={member.id}
-              className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold border-2 border-background"
-              title={member.user.name}
-            >
-              {member.user.name.charAt(0).toUpperCase()}
-            </div>
-          ))}
-          {project.members.length > 3 && (
-            <div className="w-7 h-7 rounded-full bg-white/10 text-white/70 flex items-center justify-center text-xs font-semibold border-2 border-background">
-              +{project.members.length - 3}
-            </div>
-          )}
-        </div>
+        <AvatarStack
+          avatars={project.members.map((member) => ({
+            id: member.id,
+            name: member.user.name,
+            avatar: member.user.avatar,
+            email: member.user.email,
+          }))}
+          maxVisible={3}
+          size="md"
+          showCount={true}
+        />
         <span className="text-xs text-white/60">
           {project.members.length} member{project.members.length !== 1 ? 's' : ''}
         </span>

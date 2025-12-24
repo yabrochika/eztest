@@ -286,7 +286,7 @@ export function FileUploadModal({
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="rounded-md opacity-70 hover:opacity-100 hover:bg-accent/50 cursor-pointer"
+            className="rounded-md opacity-70 transition-all hover:opacity-100 hover:bg-accent/50 cursor-pointer"
             title="Close"
           >
             <X className="w-5 h-5" />

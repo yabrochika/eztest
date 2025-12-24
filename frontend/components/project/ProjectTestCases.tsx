@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from '@/frontend/reusable-elements/dialogs/Dialog';
 import { Input } from '@/frontend/reusable-elements/inputs/Input';
+import { SearchInput } from '@/frontend/reusable-elements/inputs/SearchInput';
 import { Label } from '@/frontend/reusable-elements/labels/Label';
 import { Textarea } from '@/frontend/reusable-elements/textareas/Textarea';
 import {
@@ -26,19 +27,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/frontend/reusable-elements/selects/Select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/frontend/reusable-elements/dropdowns/DropdownMenu';
+import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
 import {
   AlertCircle,
   Clock,
   Filter,
-  MoreVertical,
   Plus,
-  Search,
   Trash2,
 } from 'lucide-react';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
@@ -374,15 +368,11 @@ export default function ProjectTestCases({ projectId }: ProjectTestCasesProps) {
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search test cases..."
-                  value={searchQuery}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+              <SearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search test cases..."
+              />
             </div>
 
             <div>
@@ -471,29 +461,21 @@ export default function ProjectTestCases({ projectId }: ProjectTestCasesProps) {
                       </Badge>
                     </div>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      asChild
-                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                    >
-                      <Button variant="ghost" size="sm" className="cursor-pointer">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={(e: React.MouseEvent) => {
-                          e.stopPropagation();
+                  <ActionMenu
+                    items={[
+                      {
+                        label: 'Delete',
+                        icon: Trash2,
+                        onClick: () => {
                           setSelectedTestCase(testCase);
                           setDeleteDialogOpen(true);
-                        }}
-                        className="text-red-400 hover:bg-red-400/10"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        },
+                        variant: 'destructive',
+                      },
+                    ]}
+                    align="end"
+                    iconSize="w-4 h-4"
+                  />
                 </div>
               </CardHeader>
               

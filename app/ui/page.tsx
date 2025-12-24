@@ -294,7 +294,7 @@ export default function UIShowcasePage() {
             </GlassPanel>
 
             <GlassPanel heading="Empty state & dialog" contentClassName="space-y-4">
-              <EmptyState heading="No test runs" description="Create your first run to start tracking results." />
+              <EmptyState title="No test runs" description="Create your first run to start tracking results." />
               <ConfirmDialog description="This will start a new test run.">
                 <ButtonPrimary>Open confirm</ButtonPrimary>
               </ConfirmDialog>

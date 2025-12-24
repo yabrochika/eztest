@@ -6,6 +6,8 @@ import { useSession } from 'next-auth/react';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
+import { InfoBanner } from '@/frontend/reusable-components/alerts/InfoBanner';
+import { ResponsiveGrid } from '@/frontend/reusable-components/layout/ResponsiveGrid';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
 import { ProjectCard } from './subcomponents/ProjectCard';
 import { CreateProjectDialog } from './subcomponents/CreateProjectDialog';
@@ -151,25 +153,11 @@ export default function ProjectList() {
           
           {/* Info Banner - Only show when no project has been selected */}
           {projects.length > 0 && !hasSelectedProject && (
-            <div className="mb-6 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
-              <div className="flex items-start gap-3">
-                <svg
-                  className="h-5 w-5 text-blue-300 mt-0.5 flex-shrink-0"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <p className="text-sm text-blue-200/90">
-                  Select a project below to view test suites, test cases, and manage testing activities.
-                </p>
-              </div>
-            </div>
+            <InfoBanner
+              message="Select a project below to view test suites, test cases, and manage testing activities."
+              variant="info"
+              className="mb-6"
+            />
           )}
           
           <CreateProjectDialog triggerOpen={triggerCreateDialog} onProjectCreated={handleProjectCreated} onOpenChange={handleDialogOpenChange} />
@@ -180,7 +168,10 @@ export default function ProjectList() {
         {projects.length === 0 ? (
           <EmptyProjectsState onCreateProject={handleCreateProject} canCreateProject={canCreateProject} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <ResponsiveGrid
+            columns={{ default: 1, md: 2, lg: 3 }}
+            gap="md"
+          >
             {projects.map((project) => (
               <ProjectCard
                 key={project.id}
@@ -192,7 +183,7 @@ export default function ProjectList() {
                 canManageMembers={hasPermissionCheck('projects:manage_members')}
               />
             ))}
-          </div>
+          </ResponsiveGrid>
         )}
       </div>
 

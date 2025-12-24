@@ -2,7 +2,7 @@
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { Plus } from 'lucide-react';
 import { TestCase, Module } from '@/frontend/components/testcase/types';
-import { TestCaseTable } from '@/frontend/reusable-components/tables/TestCaseTable';
+import { TestCaseTable } from '@/frontend/components/testcase/subcomponents/TestCaseTable';
 
 interface TestCasesCardProps {
   testCases: TestCase[];

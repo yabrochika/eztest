@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
+import { MetadataDisplay } from '@/frontend/reusable-components/data/MetadataDisplay';
 import { formatDateTime } from '@/lib/date-utils';
 
 interface ProjectHeaderProps {
@@ -30,19 +31,22 @@ export const ProjectHeader = ({ project }: ProjectHeaderProps) => {
       {project.description && (
         <p className="text-white/70 text-sm mb-2 break-words line-clamp-2">{project.description}</p>
       )}
-      <div className="flex items-center gap-4 text-xs text-white/60">
-        <div>
-          Created by <span className="font-semibold text-white/90">{project.createdBy.name}</span>
-        </div>
-        <div>•</div>
-        <div>
-          Last updated {formatDateTime(project.updatedAt)}
-        </div>
-        <div>•</div>
-        <div>
-          Team Size: <span className="font-semibold text-white/90">{project.members.length} members</span>
-        </div>
-      </div>
+      <MetadataDisplay
+        items={[
+          {
+            label: 'Created by',
+            value: project.createdBy.name,
+          },
+          {
+            label: 'Last updated',
+            value: formatDateTime(project.updatedAt),
+          },
+          {
+            label: 'Team Size:',
+            value: `${project.members.length} members`,
+          },
+        ]}
+      />
     </div>
   );
 };

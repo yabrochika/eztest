@@ -39,9 +39,9 @@ export { EmptyStateCard } from './cards/EmptyStateCard';
 
 // Dialogs
 export { BaseDialog } from './dialogs/BaseDialog';
-export type { BaseDialogProps } from './dialogs/BaseDialog';
+export type { BaseDialogConfig, BaseDialogField } from './dialogs/BaseDialog';
 export { BaseConfirmDialog } from './dialogs/BaseConfirmDialog';
-export type { BaseConfirmDialogProps } from './dialogs/BaseConfirmDialog';
+export type { BaseConfirmDialogConfig } from './dialogs/BaseConfirmDialog';
 export { ConfirmDialog } from './dialogs/ConfirmDialog';
 export type { ConfirmDialogProps } from './dialogs/ConfirmDialog';
 export { ConfirmDeleteDialog } from './dialogs/ConfirmDeleteDialog';
@@ -89,7 +89,6 @@ export type { BreadcrumbsProps, BreadcrumbItem } from './layout/Breadcrumbs';
 // Tables
 export { DefectTable } from './tables/DefectTable';
 export type { Defect, SortField, SortOrder } from './tables/DefectTable';
-export { TestCaseTable } from './tables/TestCaseTable';
 export { DataTable } from './tables/DataTable';
 export type { DataTableProps, ColumnDef } from './tables/DataTable';
 

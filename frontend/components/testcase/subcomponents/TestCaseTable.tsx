@@ -1,44 +1,63 @@
 ﻿'use client';
 
-import { useState } from 'react';
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
-import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/frontend/reusable-elements/dropdowns/DropdownMenu';
-import { MoreVertical, Trash2, ChevronDown } from 'lucide-react';
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/frontend/reusable-elements/hover-cards/HoverCard';
+import { Trash2, Bug } from 'lucide-react';
 import { PriorityBadge } from '@/frontend/reusable-components/badges/PriorityBadge';
+import { GroupedDataTable, ColumnDef, GroupConfig, ActionConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
 import { TestCase, Module } from '../types';
 import { useRouter } from 'next/navigation';
 
 interface TestCaseTableProps {
   testCases: TestCase[];
-  groupedByTestSuite?: boolean;
   groupedByModule?: boolean;
   modules?: Module[];
-  onDelete: (testCase: TestCase) => void;
+  onDelete?: (testCase: TestCase) => void;
   onClick: (testCaseId: string) => void;
   canDelete?: boolean;
   projectId?: string;
   enableModuleLink?: boolean;
 }
 
-export function TestCaseTable({ testCases, groupedByTestSuite = false, groupedByModule = false, modules = [], onDelete, onClick, canDelete = true, projectId, enableModuleLink = false }: TestCaseTableProps) {
+/**
+ * Test case table component with module grouping and collapsible sections
+ * Uses the reusable GroupedDataTable component internally
+ * 
+ * @example
+ * // Basic usage
+ * <TestCaseTable
+ *   testCases={testCases}
+ *   onClick={(id) => router.push(`/testcases/${id}`)}
+ * />
+ * 
+ * @example
+ * // With module grouping and actions
+ * <TestCaseTable
+ *   testCases={testCases}
+ *   groupedByModule={true}
+ *   modules={modules}
+ *   onClick={handleClick}
+ *   onDelete={handleDelete}
+ *   canDelete={true}
+ *   projectId={projectId}
+ *   enableModuleLink={true}
+ * />
+ */
+export function TestCaseTable({
+  testCases,
+  groupedByModule = false,
+  modules = [],
+  onDelete,
+  onClick,
+  canDelete = true,
+  projectId,
+  enableModuleLink = false,
+}: TestCaseTableProps) {
   const router = useRouter();
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-
-  const toggleGroup = (groupId: string) => {
-    const newExpanded = new Set(expandedGroups);
-    if (newExpanded.has(groupId)) {
-      newExpanded.delete(groupId);
-    } else {
-      newExpanded.add(groupId);
-    }
-    setExpandedGroups(newExpanded);
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -53,314 +72,168 @@ export function TestCaseTable({ testCases, groupedByTestSuite = false, groupedBy
     }
   };
 
-  // Group by module or test suite
-  const groupedCases = groupedByModule
-    ? (() => {
-        // First, create groups from test cases
-        const groups = testCases.reduce((acc, testCase) => {
-          const groupId = testCase.moduleId || 'no-module';
-          const groupName = testCase.module?.name || 'Ungrouped';
-          
-          if (!acc[groupId]) {
-            acc[groupId] = {
-              groupName,
-              testCases: [],
-            };
+  // Define columns
+  const columns: ColumnDef<TestCase>[] = [
+    {
+      key: 'tcId',
+      label: 'ID',
+      width: '80px',
+      render: (row) => (
+        <p className="text-xs font-mono text-white/70 truncate">{row.tcId}</p>
+      ),
+    },
+    {
+      key: 'title',
+      label: 'TITLE',
+      render: (row) => (
+        <div className="min-w-0">
+          <HoverCard openDelay={200}>
+            <HoverCardTrigger asChild>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-white truncate cursor-pointer">
+                  {row.title}
+                </p>
+                {row._count.defects > 0 && (
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/20 rounded border border-red-500/30 flex-shrink-0">
+                    <Bug className="w-3 h-3 text-red-400" />
+                    <span className="text-xs text-red-400 font-medium">{row._count.defects}</span>
+                  </div>
+                )}
+              </div>
+            </HoverCardTrigger>
+            {row.title && row.title.length > 40 && (
+              <HoverCardContent side="top" className="w-80">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-white">Test Case Title</h4>
+                  <p className="text-sm text-white/80 break-words">{row.title}</p>
+                  {row._count.defects > 0 && (
+                    <div className="pt-2 border-t border-white/10">
+                      <p className="text-xs text-red-400">
+                        {row._count.defects} open defect{row._count.defects !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </HoverCardContent>
+            )}
+          </HoverCard>
+        </div>
+      ),
+    },
+    {
+      key: 'priority',
+      label: 'PRIORITY',
+      width: '110px',
+      render: (row) => (
+        <PriorityBadge
+          priority={
+            row.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'critical'
           }
-          
-          acc[groupId].testCases.push(testCase);
-          return acc;
-        }, {} as Record<string, { groupName: string; testCases: TestCase[] }>);
-        
-        // Then, add empty modules if modules prop is provided
-        if (modules && modules.length > 0) {
-          modules.forEach(module => {
-            if (!groups[module.id]) {
-              groups[module.id] = {
-                groupName: module.name,
-                testCases: [],
-              };
+        />
+      ),
+    },
+    {
+      key: 'status',
+      label: 'STATUS',
+      width: '100px',
+      render: (row) => (
+        <Badge
+          variant="outline"
+          className={`w-fit text-xs px-2 py-0.5 ${getStatusColor(row.status)}`}
+        >
+          {row.status}
+        </Badge>
+      ),
+    },
+    {
+      key: 'owner',
+      label: 'OWNER',
+      width: '150px',
+      render: (row) => (
+        <div className="min-w-0">
+          <HoverCard openDelay={200}>
+            <HoverCardTrigger asChild>
+              <span className="text-xs text-white/70 truncate block cursor-pointer">
+                {row.createdBy.name}
+              </span>
+            </HoverCardTrigger>
+            {row.createdBy.name && row.createdBy.name.length > 20 && (
+              <HoverCardContent side="top" className="w-60">
+                <div className="space-y-1">
+                  <h4 className="text-xs font-semibold text-white/60">Owner</h4>
+                  <p className="text-sm text-white/90">{row.createdBy.name}</p>
+                </div>
+              </HoverCardContent>
+            )}
+          </HoverCard>
+        </div>
+      ),
+    },
+    {
+      key: 'runs',
+      label: 'RUNS',
+      width: '80px',
+      render: (row) => (
+        <span className="text-xs text-white/60">{row._count.results}</span>
+      ),
+    },
+  ];
+
+  // Group configuration
+  const groupConfig: GroupConfig<TestCase> | undefined = groupedByModule
+    ? {
+        getGroupId: (row) => row.moduleId || 'no-module',
+        getGroupName: (groupId) => {
+          if (groupId === 'no-module') return 'Ungrouped';
+          const moduleItem = modules.find((m) => m.id === groupId);
+          return moduleItem?.name || 'Ungrouped';
+        },
+        getGroupCount: (groupId) => {
+          const moduleItem = modules.find((m) => m.id === groupId);
+          return moduleItem?._count?.testCases;
+        },
+        onGroupClick: enableModuleLink && projectId
+          ? (groupId) => {
+              if (groupId !== 'no-module') {
+                router.push(`/projects/${projectId}/modules/${groupId}`);
+              }
             }
-          });
+          : undefined,
+        emptyGroups: modules.map((moduleItem) => ({
+          id: moduleItem.id,
+          name: moduleItem.name,
+          count: moduleItem._count?.testCases,
+        })),
+      }
+    : undefined;
+
+  // Action configuration
+  const actions: ActionConfig<TestCase> | undefined =
+    onDelete && canDelete
+      ? {
+          items: [
+            {
+              label: 'Delete',
+              icon: Trash2,
+              onClick: onDelete,
+              variant: 'destructive',
+            },
+          ],
+          align: 'end',
+          iconSize: 'w-3 h-3',
         }
-        
-        return groups;
-      })()
-    : groupedByTestSuite
-    ? testCases.reduce((acc, testCase) => {
-        const groupId = testCase.suiteId || 'no-suite';
-        const groupName = testCase.suite?.name || 'Ungrouped';
-        
-        if (!acc[groupId]) {
-          acc[groupId] = {
-            groupName,
-            testCases: [],
-          };
-        }
-        
-        acc[groupId].testCases.push(testCase);
-        return acc;
-      }, {} as Record<string, { groupName: string; testCases: TestCase[] }>)
-    : null;
+      : undefined;
 
   return (
-    <div className="space-y-2">
-      {/* Header Row */}
-      <div className="grid grid-cols-12 gap-3 px-3 py-1.5 text-xs font-semibold text-white/60 border-b border-white/10">
-        <div className="col-span-1">ID</div>
-        <div className="col-span-5">TITLE</div>
-        <div className="col-span-1">PRIORITY</div>
-        <div className="col-span-1">STATUS</div>
-        <div className="col-span-2">OWNER</div>
-        <div className="col-span-1">RUNS</div>
-        <div className="col-span-1"></div>
-      </div>
-
-      {/* Test Case Rows */}
-      {groupedCases ? (
-        // Grouped by module or test suite with collapsible dropdowns
-        Object.entries(groupedCases).map(([groupId, { groupName, testCases: cases }]) => {
-          const isExpanded = expandedGroups.has(groupId);
-          return (
-            <div key={groupId} className="space-y-1">
-              {/* Group Header - Collapsible */}
-              <div className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 border-b border-white/10 rounded transition-colors">
-                <button
-                  onClick={() => toggleGroup(groupId)}
-                  className="flex items-center gap-2 flex-1 text-left cursor-pointer"
-                >
-                  <ChevronDown
-                    className={`w-4 h-4 text-white/60 transition-transform flex-shrink-0 ${
-                      isExpanded ? 'rotate-180' : ''
-                    }`}
-                  />
-                  {enableModuleLink && groupedByModule && groupId !== 'no-module' && projectId ? (
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/projects/${projectId}/modules/${groupId}`);
-                      }}
-                      className="text-sm font-semibold text-blue-400 hover:text-blue-300 cursor-pointer hover:underline"
-                    >
-                      {groupName}
-                    </span>
-                  ) : (
-                    <span className="text-sm font-semibold text-white/80">
-                      {groupName}
-                    </span>
-                  )}
-                </button>
-                <span className="text-xs text-white/50">
-                  ({cases.length} test case{cases.length !== 1 ? 's' : ''})
-                </span>
-              </div>
-
-              {/* Test Cases - Hidden when collapsed */}
-              {isExpanded && cases.length > 0 && (
-                <div className="space-y-0.5 pl-3">
-                  {cases.map((testCase) => (
-                    <div
-                      key={testCase.id}
-                      className="grid grid-cols-12 gap-3 px-3 py-1.5 rounded hover:bg-white/5 border-b border-white/10 hover:border-blue-500/30 cursor-pointer transition-colors items-center text-sm"
-                      onClick={() => onClick(testCase.id)}
-                    >
-                      {/* ID Column */}
-                      <div className="col-span-1">
-                        <p className="text-xs font-mono text-white/70 truncate">
-                          {testCase.tcId}
-                        </p>
-                      </div>
-
-                      {/* Title Column */}
-                      <div className="col-span-5">
-                        <p className="text-sm font-medium text-white truncate">
-                          {testCase.title}
-                        </p>
-                      </div>
-
-                      {/* Priority Column */}
-                      <div className="col-span-1">
-                        <div className="scale-90 origin-left">
-                          <PriorityBadge
-                            priority={
-                              testCase.priority.toLowerCase() as
-                                | 'low'
-                                | 'medium'
-                                | 'high'
-                                | 'critical'
-                            }
-                          />
-                        </div>
-                      </div>
-
-                      {/* Status Column */}
-                      <div className="col-span-1">
-                        <div className="scale-90 origin-left">
-                          <Badge
-                            variant="outline"
-                            className={`w-fit text-xs px-1.5 py-0.5 ${getStatusColor(testCase.status)}`}
-                          >
-                            {testCase.status}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* Owner Column */}
-                      <div className="col-span-2">
-                        <span className="text-xs text-white/70 truncate">
-                          {testCase.createdBy.name}
-                        </span>
-                      </div>
-
-                      {/* Runs Column */}
-                      <div className="col-span-1">
-                        <span className="text-xs text-white/60">
-                          {testCase._count.results}
-                        </span>
-                      </div>
-
-                      {/* Actions Column */}
-                      <div className="col-span-1 flex justify-end">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            asChild
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-white/70 hover:text-white hover:bg-white/10 h-5 w-5 p-0 cursor-pointer"
-                            >
-                              <MoreVertical className="w-3 h-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent variant="glass" align="end">
-                            {canDelete && (
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDelete(testCase);
-                                }}
-                                className="text-red-400 hover:bg-red-400/10"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Empty state when expanded but no test cases */}
-              {isExpanded && cases.length === 0 && (
-                <div className="pl-6 py-4 text-sm text-white/50 italic">
-                  No test cases in this module yet
-                </div>
-              )}
-            </div>
-          );
-        })
-      ) : (
-        // Ungrouped
-        testCases.map((testCase) => (
-          <div
-            key={testCase.id}
-            className="grid grid-cols-12 gap-3 px-3 py-1.5 rounded hover:bg-white/5 border-b border-white/10 hover:border-blue-500/30 cursor-pointer transition-colors items-center text-sm"
-            onClick={() => onClick(testCase.id)}
-          >
-            {/* ID Column */}
-            <div className="col-span-1">
-              <p className="text-xs font-mono text-white/70 truncate">
-                {testCase.tcId}
-              </p>
-            </div>
-
-            {/* Title Column */}
-            <div className="col-span-5">
-              <p className="text-sm font-medium text-white truncate">
-                {testCase.title}
-              </p>
-            </div>
-
-            {/* Priority Column */}
-            <div className="col-span-1">
-              <div className="scale-90 origin-left">
-                <PriorityBadge
-                  priority={
-                    testCase.priority.toLowerCase() as
-                      | 'low'
-                      | 'medium'
-                      | 'high'
-                      | 'critical'
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Status Column */}
-            <div className="col-span-1">
-              <div className="scale-90 origin-left">
-                <Badge
-                  variant="outline"
-                  className={`w-fit text-xs px-1.5 py-0.5 ${getStatusColor(testCase.status)}`}
-                >
-                  {testCase.status}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Owner Column */}
-            <div className="col-span-2">
-              <span className="text-xs text-white/70 truncate">
-                {testCase.createdBy.name}
-              </span>
-            </div>
-
-            {/* Runs Column */}
-            <div className="col-span-1">
-              <span className="text-xs text-white/60">
-                {testCase._count.results}
-              </span>
-            </div>
-
-            {/* Actions Column */}
-            <div className="col-span-1 flex justify-end">
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  asChild
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-white/70 hover:text-white hover:bg-white/10 h-5 w-5 p-0 cursor-pointer"
-                  >
-                    <MoreVertical className="w-3 h-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent variant="glass" align="end">
-                  {canDelete && (
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(testCase);
-                      }}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        ))
-      )}
-    </div>
+    <GroupedDataTable
+      data={testCases}
+      columns={columns}
+      onRowClick={(row) => onClick(row.id)}
+      grouped={groupedByModule}
+      groupConfig={groupConfig}
+      actions={actions}
+      gridTemplateColumns="80px 1fr 110px 100px 150px 80px 50px"
+      emptyMessage="No test cases available"
+    />
   );
 }

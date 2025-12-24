@@ -1,6 +1,7 @@
-﻿import { formatDateTime } from '@/lib/date-utils';
-import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
+﻿import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
+import { StatisticsSection } from '@/frontend/reusable-components/data/StatisticsSection';
+import { DateInfoSection } from '@/frontend/reusable-components/data/DateInfoSection';
 import { Folder } from 'lucide-react';
 
 interface TestSuiteInfoCardProps {
@@ -42,39 +43,15 @@ export function TestSuiteInfoCard({
         </div>
       )}
 
-      <div>
-        <h4 className="text-sm font-medium text-white/60 mb-1">
-          Statistics
-        </h4>
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between text-white/90">
-            <span>Test Cases</span>
-            <span>{testCasesCount}</span>
-          </div>
-          <div className="flex justify-between text-white/90">
-            <span>Child Suites</span>
-            <span>{childrenCount}</span>
-          </div>
-        </div>
-      </div>
+      <StatisticsSection
+        statistics={[
+          { label: 'Test Cases', value: testCasesCount },
+          { label: 'Child Suites', value: childrenCount },
+        ]}
+      />
 
-      <div>
-        <h4 className="text-sm font-medium text-white/60 mb-1">
-          Created
-        </h4>
-        <p className="text-white/90 text-sm">
-          {formatDateTime(createdAt)}
-        </p>
-      </div>
-
-      <div>
-        <h4 className="text-sm font-medium text-white/60 mb-1">
-          Last Updated
-        </h4>
-        <p className="text-white/90 text-sm">
-          {formatDateTime(updatedAt)}
-        </p>
-      </div>
+      <DateInfoSection label="Created" date={createdAt} />
+      <DateInfoSection label="Last Updated" date={updatedAt} />
     </DetailCard>
   );
 }

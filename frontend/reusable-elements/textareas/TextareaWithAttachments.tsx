@@ -406,7 +406,7 @@ function TextareaWithAttachments({
                 </div>
                 <button
                   onClick={() => setFileError('')}
-                  className="text-white/40 hover:text-white/80 transition-colors"
+                  className="opacity-70 transition-all hover:opacity-100 hover:bg-accent/50 rounded-md p-1"
                 >
                   <X className="w-4 h-4" />
                 </button>

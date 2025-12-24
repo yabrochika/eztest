@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
-import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
+import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
 import { TestTube2, Folder } from 'lucide-react';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -302,16 +302,23 @@ export default function ModuleDetail({ projectId, moduleId }: ModuleDetailProps)
           canDelete={canDeleteModule}
         />
 
-        <div className="flex flex-wrap gap-3 mb-6">
-          <ButtonSecondary onClick={() => router.push(`/projects/${projectId}/testcases`)}>
-            <TestTube2 className="w-4 h-4 mr-2" />
-            View All Test Cases
-          </ButtonSecondary>
-          <ButtonSecondary onClick={() => router.push(`/projects/${projectId}/testsuites`)}>
-            <Folder className="w-4 h-4 mr-2" />
-            View All Test Suites
-          </ButtonSecondary>
-        </div>
+        <ActionButtonGroup
+          buttons={[
+            {
+              label: 'View All Test Cases',
+              icon: TestTube2,
+              onClick: () => router.push(`/projects/${projectId}/testcases`),
+              variant: 'secondary',
+            },
+            {
+              label: 'View All Test Suites',
+              icon: Folder,
+              onClick: () => router.push(`/projects/${projectId}/testsuites`),
+              variant: 'secondary',
+            },
+          ]}
+          className="mb-6"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

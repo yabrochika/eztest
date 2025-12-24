@@ -128,7 +128,7 @@ export function SearchableSelect({
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white/90 transition-colors z-10"
+            className="absolute right-2 top-1/2 -translate-y-1/2 opacity-70 transition-all hover:opacity-100 hover:bg-accent/50 rounded-md p-1 z-10"
             tabIndex={-1}
           >
             <X className="w-4 h-4" />

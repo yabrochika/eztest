@@ -13,6 +13,7 @@ import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSeco
 import { Label } from '@/frontend/reusable-elements/labels/Label';
 import { Textarea } from '@/frontend/reusable-elements/textareas/Textarea';
 import { Input } from '@/frontend/reusable-elements/inputs/Input';
+import { SearchInput } from '@/frontend/reusable-elements/inputs/SearchInput';
 import {
   Select,
   SelectContent,
@@ -21,7 +22,7 @@ import {
   SelectValue,
 } from '@/frontend/reusable-elements/selects/Select';
 import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
-import { CheckCircle, XCircle, AlertCircle, Circle, Bug, Search } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Circle, Bug } from 'lucide-react';
 import { ResultFormData } from '../types';
 import { CreateDefectDialog } from '@/frontend/components/defect/subcomponents/CreateDefectDialog';
 
@@ -286,15 +287,11 @@ export function RecordResultDialog({
                   </div>
 
                   {/* Search Input */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 w-4 h-4 text-white/40" />
-                    <Input
-                      placeholder="Search defects by title or ID..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
+                  <SearchInput
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search defects by title or ID..."
+                  />
 
                   {/* Defects List */}
                   <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">

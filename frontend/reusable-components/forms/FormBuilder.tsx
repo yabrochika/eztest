@@ -39,8 +39,10 @@ export function FormBuilder<T = Record<string, unknown>>({
   const getFieldColSpan = (field: FormFieldConfig): string => {
     const fieldCols = field.cols || 1;
     if (columns === 1) return '';
-    if (fieldCols >= columns) return `col-span-${columns}`;
-    return `col-span-${fieldCols}`;
+    if (fieldCols >= columns) {
+      return columns === 2 ? 'col-span-2' : 'col-span-3';
+    }
+    return fieldCols === 2 ? 'col-span-2' : 'col-span-1';
   };
 
   return (

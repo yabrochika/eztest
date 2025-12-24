@@ -1,7 +1,8 @@
 ﻿'use client';
 
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
-import { formatDateTime } from '@/lib/date-utils';
+import { StatisticsSection } from '@/frontend/reusable-components/data/StatisticsSection';
+import { DateInfoSection } from '@/frontend/reusable-components/data/DateInfoSection';
 import { Module } from '../../types';
 
 interface ModuleInfoCardProps {
@@ -17,27 +18,18 @@ export function ModuleInfoCard({ module, testCaseCount }: ModuleInfoCardProps) {
         <p className="text-white/90 text-sm">{module.order ?? 0}</p>
       </div>
 
-      <div>
-        <h4 className="text-sm font-medium text-white/60 mb-1">Test Cases</h4>
-        <p className="text-white/90 text-sm">{testCaseCount}</p>
-      </div>
+      <StatisticsSection
+        statistics={[
+          { label: 'Test Cases', value: testCaseCount },
+        ]}
+      />
 
       {module.createdAt && (
-        <div>
-          <h4 className="text-sm font-medium text-white/60 mb-1">Created</h4>
-          <p className="text-white/90 text-sm">
-            {formatDateTime(module.createdAt)}
-          </p>
-        </div>
+        <DateInfoSection label="Created" date={module.createdAt} />
       )}
 
       {module.updatedAt && (
-        <div>
-          <h4 className="text-sm font-medium text-white/60 mb-1">Last Updated</h4>
-          <p className="text-white/90 text-sm">
-            {formatDateTime(module.updatedAt)}
-          </p>
-        </div>
+        <DateInfoSection label="Last Updated" date={module.updatedAt} />
       )}
     </DetailCard>
   );

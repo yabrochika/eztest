@@ -32,7 +32,7 @@ export function SearchInput({
           variant="ghost"
           size="sm"
           onClick={() => onChange('')}
-          className="absolute right-2 top-1/2 -translate-y-1/2 h-auto p-1 text-white/50 hover:text-white"
+          className="absolute right-2 top-1/2 -translate-y-1/2 h-auto p-1 rounded-md opacity-70 transition-all hover:opacity-100 hover:bg-accent/50"
         >
           <X className="w-4 h-4" />
         </Button>

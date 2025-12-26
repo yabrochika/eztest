@@ -2,37 +2,43 @@
 set -e
 
 echo "Starting EzTest application..."
-echo "Waiting for database connection..."
 
+# Wait for database to be ready
+echo "Waiting for database connection..."
 MAX_RETRIES=30
 RETRY_COUNT=0
 
-# ✅ SAFE DB CONNECTION CHECK (read-only)
-until npx prisma db execute --stdin <<< "SELECT 1;" >/dev/null 2>&1; do
+until npx prisma migrate deploy 2>&1 | tee /tmp/prisma_error.log || [ $RETRY_COUNT -eq $MAX_RETRIES ]; do
   RETRY_COUNT=$((RETRY_COUNT + 1))
-  echo "Database unavailable - attempt $RETRY_COUNT/$MAX_RETRIES"
-
-  if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-    echo "Failed to connect to database"
-    exit 1
+  echo "Database is unavailable - attempt $RETRY_COUNT/$MAX_RETRIES"
+  if [ -f /tmp/prisma_error.log ]; then
+    echo "Error details:"
+    cat /tmp/prisma_error.log | head -3
   fi
-
   sleep 2
 done
 
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+  echo "Failed to connect to database after $MAX_RETRIES attempts"
+  exit 1
+fi
+
 echo "Database is ready!"
 
-# ✅ RUN MIGRATIONS EXACTLY ONCE
+# Run migrations
 echo "Running database migrations..."
 npx prisma migrate deploy
 
-# ✅ OPTIONAL SEED (safe after migrations)
+# Seed database if SEED_DATABASE is set to true
 if [ "$SEED_DATABASE" = "true" ]; then
   echo "Seeding database..."
-  npm install tsx --no-save >/dev/null 2>&1 || true
-  npx tsx prisma/seed.ts || echo "Seeding skipped or already completed"
+  # Install tsx temporarily for seeding (it's in devDependencies)
+  npm install tsx --no-save 2>/dev/null || true
+  # Run seed directly with npx tsx
+  npx tsx prisma/seed.ts || echo "Seeding failed or already completed"
 fi
 
 echo "Database setup completed!"
 
+# Execute the main command
 exec "$@"

@@ -410,7 +410,6 @@ model DropdownOption {
   label       String   // The display label for users (e.g., "Critical", "High Priority")
   order       Int      @default(0) // For sorting options
   isActive    Boolean  @default(true) // Soft delete flag
-  color       String?  // Optional color for visual distinction (e.g., "#FF0000")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

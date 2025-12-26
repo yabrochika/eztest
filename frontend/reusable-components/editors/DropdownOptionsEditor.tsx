@@ -22,7 +22,6 @@ export interface DropdownOptionData {
   id?: string;
   value: string;
   label: string;
-  color?: string | null;
   isActive: boolean;
   order: number;
 }
@@ -32,7 +31,6 @@ export interface CreateOptionData {
   field: string;
   value: string;
   label: string;
-  color?: string | null;
   isActive: boolean;
   order: number;
 }
@@ -41,7 +39,6 @@ export interface UpdateOptionData {
   id: string;
   value: string;
   label: string;
-  color?: string | null;
   isActive: boolean;
   order: number;
 }
@@ -113,7 +110,6 @@ export function DropdownOptionsEditor({
         id: opt.id,
         value: opt.value,
         label: opt.label,
-        color: opt.color,
         isActive: opt.isActive,
         order: opt.order,
       }))
@@ -140,7 +136,6 @@ export function DropdownOptionsEditor({
     const newOption: OptionFormData = {
       value: '',
       label: '',
-      color: null,
       isActive: true,
       isNew: true,
       isEditing: true,
@@ -204,7 +199,6 @@ export function DropdownOptionsEditor({
         handleUpdateOption(index, {
           value: original.value,
           label: original.label,
-          color: original.color,
           isEditing: false,
         });
       }
@@ -239,7 +233,6 @@ export function DropdownOptionsEditor({
           field,
           value: opt.value,
           label: opt.label,
-          color: opt.color,
           isActive: opt.isActive,
           order: opt.order,
         }));
@@ -250,7 +243,6 @@ export function DropdownOptionsEditor({
           id: opt.id!,
           value: opt.value,
           label: opt.label,
-          color: opt.color,
           isActive: opt.isActive,
           order: opt.order,
         }));

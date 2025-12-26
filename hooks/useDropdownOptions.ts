@@ -7,7 +7,6 @@ export interface DropdownOption {
   value: string;
   label: string;
   order: number;
-  color?: string | null;
   isActive: boolean;
 }
 

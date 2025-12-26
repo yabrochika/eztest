@@ -9,7 +9,6 @@ export const createDropdownOptionSchema = z.object({
   value: z.string().min(1, 'Value is required'),
   label: z.string().min(1, 'Label is required'),
   order: z.number().int().min(0).optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex color (e.g., #FF0000)').optional(),
 });
 
 /**
@@ -18,7 +17,6 @@ export const createDropdownOptionSchema = z.object({
 export const updateDropdownOptionSchema = z.object({
   label: z.string().min(1, 'Label is required').optional(),
   order: z.number().int().min(0).optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex color (e.g., #FF0000)').optional(),
   isActive: z.boolean().optional(),
 });
 

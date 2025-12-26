@@ -6,7 +6,6 @@ export interface DropdownOption {
   label: string;
   order: number;
   isActive: boolean;
-  color?: string | null;
   createdAt: string;
   updatedAt: string;
 }

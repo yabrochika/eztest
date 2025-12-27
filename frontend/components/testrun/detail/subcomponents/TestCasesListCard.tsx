@@ -6,6 +6,8 @@ import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { DataTable, type ColumnDef } from '@/frontend/reusable-components/tables/DataTable';
 import { AlertCircle, Plus } from 'lucide-react';
 import { TestResult, TestCase } from '../types';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface TestCasesListCardProps {
   results: TestResult[];
@@ -38,6 +40,9 @@ export function TestCasesListCard({
   onCreateDefect,
   getResultIcon,
 }: TestCasesListCardProps) {
+  const { options: priorityOptions, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
+  const { options: statusOptions, loading: loadingStatus } = useDropdownOptions('TestResult', 'status');
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PASSED':
@@ -73,26 +78,40 @@ export function TestCasesListCard({
     {
       key: 'priority',
       label: 'Priority',
-      render: (_, row: ResultRow) => (
-        <Badge variant="outline" className="text-xs px-2 py-0.5">
-          {row.testCase.priority?.toUpperCase()}
-        </Badge>
-      ),
+      render: (_, row: ResultRow) => {
+        const badgeProps = getDynamicBadgeProps(row.testCase.priority, priorityOptions);
+        return (
+          <Badge 
+            variant="outline" 
+            className={`text-xs px-2 py-0.5 ${badgeProps.className}`}
+            style={badgeProps.style}
+          >
+            {row.testCase.priority?.toUpperCase()}
+          </Badge>
+        );
+      },
     },
     {
       key: 'status',
       label: 'Status',
-      render: (_, row: ResultRow) => (
-        <div className="flex items-center gap-2">
-          {getResultIcon(row.status)}
-          <Badge
-            variant="outline"
-            className={`text-xs px-2 py-0.5 ${getStatusColor(row.status)}`}
-          >
-            {row.status}
-          </Badge>
-        </div>
-      ),
+      render: (_, row: ResultRow) => {
+        const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
+        const label = !loadingStatus && statusOptions.length > 0
+          ? statusOptions.find(opt => opt.value === row.status)?.label || row.status
+          : row.status;
+        return (
+          <div className="flex items-center gap-2">
+            {getResultIcon(row.status)}
+            <Badge
+              variant="outline"
+              className={`text-xs px-2 py-0.5 ${badgeProps.className}`}
+              style={badgeProps.style}
+            >
+              {label}
+            </Badge>
+          </div>
+        );
+      },
     },
     {
       key: 'executedBy',

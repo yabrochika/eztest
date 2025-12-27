@@ -6,6 +6,7 @@ export interface DropdownOption {
   field: string;
   value: string;
   label: string;
+  color?: string | null;
   order: number;
   isActive: boolean;
 }
@@ -37,10 +38,12 @@ export function useDropdownOptions(entity: string, field: string): UseDropdownOp
       setLoading(true);
       setError(null);
 
+      // Add cache-busting timestamp to prevent stale data
+      const timestamp = Date.now();
       const response = await fetch(
         `/api/dropdown-options?entity=${encodeURIComponent(entity)}&field=${encodeURIComponent(
           field
-        )}&isActive=true`
+        )}&isActive=true&_t=${timestamp}`
       );
 
       if (!response.ok) {

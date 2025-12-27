@@ -13,6 +13,7 @@ export interface BadgeItem {
   label: string;
   value: string;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export interface ActionButton {
@@ -113,6 +114,7 @@ export function DetailPageHeader({
                   <Badge
                     variant="outline"
                     className={badge.className}
+                    style={badge.style}
                   >
                     {badge.value}
                   </Badge>

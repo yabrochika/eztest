@@ -4,6 +4,7 @@ export interface DropdownOption {
   field: string;
   value: string;
   label: string;
+  color?: string | null;
   order: number;
   isActive: boolean;
   createdAt: string;
@@ -16,13 +17,11 @@ export interface CreateDropdownOptionInput {
   value: string;
   label: string;
   order?: number;
-  color?: string;
 }
 
 export interface UpdateDropdownOptionInput {
   label?: string;
   order?: number;
-  color?: string;
   isActive?: boolean;
 }
 

@@ -321,7 +321,11 @@ export function DropdownOptionsEditor({
                             onChange={(e) => handleUpdateOption(index, { value: e.target.value })}
                             placeholder="VALUE"
                             className="bg-[#0f172a] border-[#334155] text-sm"
+                            disabled={!option.isNew}
                           />
+                          {!option.isNew && (
+                            <p className="text-xs text-white/40 mt-1">Value cannot be changed after creation</p>
+                          )}
                         </div>
                         <div>
                           <label className="text-xs text-white/60 mb-1 block">Label *</label>

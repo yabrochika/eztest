@@ -11,6 +11,8 @@ import { PriorityBadge } from '@/frontend/reusable-components/badges/PriorityBad
 import { GroupedDataTable, ColumnDef, GroupConfig, ActionConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
 import { TestCase, Module } from '../types';
 import { useRouter } from 'next/navigation';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface TestCaseTableProps {
   testCases: TestCase[];
@@ -58,6 +60,8 @@ export function TestCaseTable({
   enableModuleLink = false,
 }: TestCaseTableProps) {
   const router = useRouter();
+  const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
+  const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -122,26 +126,34 @@ export function TestCaseTable({
       key: 'priority',
       label: 'PRIORITY',
       width: '100px',
-      render: (row) => (
-        <PriorityBadge
-          priority={
-            row.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'critical'
-          }
-        />
-      ),
+      render: (row) => {
+        const badgeProps = getDynamicBadgeProps(row.priority, priorityOptions);
+        return (
+          <PriorityBadge
+            priority={row.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'critical'}
+            dynamicClassName={badgeProps.className}
+            dynamicStyle={badgeProps.style}
+          />
+        );
+      },
     },
     {
       key: 'status',
       label: 'STATUS',
       width: '90px',
-      render: (row) => (
-        <Badge
-          variant="outline"
-          className={`w-fit text-xs px-2 py-0.5 ${getStatusColor(row.status)}`}
-        >
-          {row.status}
-        </Badge>
-      ),
+      render: (row) => {
+        const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
+        const label = statusOptions.find(opt => opt.value === row.status)?.label || row.status;
+        return (
+          <Badge
+            variant="outline"
+            className={`w-fit text-xs px-2 py-0.5 ${badgeProps.className}`}
+            style={badgeProps.style}
+          >
+            {label}
+          </Badge>
+        );
+      },
     },
     {
       key: 'owner',

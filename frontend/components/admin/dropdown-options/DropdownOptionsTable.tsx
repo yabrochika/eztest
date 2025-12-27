@@ -110,16 +110,39 @@ export function DropdownOptionsTable({
             .filter((opt) => opt.isActive)
             .sort((a, b) => a.order - b.order)
             .map((option) => {
-              const colors = getOptionColor(option.value);
-              return (
-                <Badge
-                  key={option.id}
-                  variant="outline"
-                  className={`${colors.bg} ${colors.text} ${colors.border}`}
-                >
-                  {option.label}
-                </Badge>
-              );
+              // Use color from database if available, otherwise use hash-based color
+              if (option.color) {
+                const hex = option.color.replace('#', '');
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                const styles = {
+                  backgroundColor: `rgba(${r}, ${g}, ${b}, 0.1)`,
+                  color: `rgb(${Math.min(r + 50, 255)}, ${Math.min(g + 50, 255)}, ${Math.min(b + 50, 255)})`,
+                  borderColor: `rgba(${r}, ${g}, ${b}, 0.3)`,
+                };
+                return (
+                  <Badge
+                    key={option.id}
+                    variant="outline"
+                    className="border"
+                    style={styles}
+                  >
+                    {option.label}
+                  </Badge>
+                );
+              } else {
+                const colors = getOptionColor(option.value);
+                return (
+                  <Badge
+                    key={option.id}
+                    variant="outline"
+                    className={`${colors.bg} ${colors.text} ${colors.border}`}
+                  >
+                    {option.label}
+                  </Badge>
+                );
+              }
             })}
           {row.options.filter((opt) => opt.isActive).length === 0 && (
             <span className="text-sm text-white/40">No active options</span>

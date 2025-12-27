@@ -6,6 +6,8 @@ import { CompactStatsGrid } from '@/frontend/reusable-components/data/CompactSta
 import { CardFooter } from '@/frontend/reusable-components/layout/CardFooter';
 import { Calendar, Play, Trash2, User } from 'lucide-react';
 import { TestRun } from '../types';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface TestRunCardProps {
   testRun: TestRun;
@@ -22,6 +24,9 @@ export function TestRunCard({
   onViewDetails,
   onDelete,
 }: TestRunCardProps) {
+  const { options: statusOptions } = useDropdownOptions('TestRun', 'status');
+  const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PLANNED':
@@ -76,15 +81,25 @@ export function TestRunCard({
   const passRate = calculatePassRate();
   const counts = getResultCounts();
 
+  const statusBadgeProps = getDynamicBadgeProps(testRun.status, statusOptions);
+  const environmentBadgeProps = testRun.environment 
+    ? getDynamicBadgeProps(testRun.environment, environmentOptions)
+    : null;
+
   const badges = (
     <>
-      <Badge variant="outline" className={getStatusColor(testRun.status)}>
+      <Badge 
+        variant="outline" 
+        className={statusBadgeProps.className}
+        style={statusBadgeProps.style}
+      >
         {testRun.status.replace('_', ' ')}
       </Badge>
-      {testRun.environment && (
+      {testRun.environment && environmentBadgeProps && (
         <Badge
           variant="outline"
-          className="bg-purple-500/10 text-purple-500 border-purple-500/20"
+          className={environmentBadgeProps.className}
+          style={environmentBadgeProps.style}
         >
           {testRun.environment?.toUpperCase()}
         </Badge>

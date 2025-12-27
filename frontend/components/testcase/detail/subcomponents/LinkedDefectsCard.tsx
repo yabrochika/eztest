@@ -6,6 +6,8 @@ import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { DataTable, type ColumnDef } from '@/frontend/reusable-components/tables/DataTable';
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { TestCase } from '../types';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface LinkedDefectsCardProps {
   testCase: TestCase;
@@ -22,6 +24,8 @@ interface DefectRow {
 
 export function LinkedDefectsCard({ testCase }: LinkedDefectsCardProps) {
   const router = useRouter();
+  const { options: severityOptions } = useDropdownOptions('Defect', 'severity');
+  const { options: statusOptions } = useDropdownOptions('Defect', 'status');
 
   // Ensure defects is an array
   const defects = Array.isArray(testCase.defects) ? testCase.defects : [];
@@ -95,20 +99,34 @@ export function LinkedDefectsCard({ testCase }: LinkedDefectsCardProps) {
     {
       key: 'severity',
       label: 'Severity',
-      render: (value: unknown, row: DefectRow) => (
-        <Badge variant="outline" className={`text-xs ${getSeverityColor(row.severity)}`}>
-          {value as string}
-        </Badge>
-      ),
+      render: (value: unknown, row: DefectRow) => {
+        const badgeProps = getDynamicBadgeProps(row.severity, severityOptions);
+        return (
+          <Badge 
+            variant="outline" 
+            className={`text-xs ${badgeProps.className}`}
+            style={badgeProps.style}
+          >
+            {value as string}
+          </Badge>
+        );
+      },
     },
     {
       key: 'status',
       label: 'Status',
-      render: (value: unknown, row: DefectRow) => (
-        <Badge variant="outline" className={`text-xs ${getStatusColor(row.status)}`}>
-          {(value as string).replace('_', ' ')}
-        </Badge>
-      ),
+      render: (value: unknown, row: DefectRow) => {
+        const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
+        return (
+          <Badge 
+            variant="outline" 
+            className={`text-xs ${badgeProps.className}`}
+            style={badgeProps.style}
+          >
+            {(value as string).replace('_', ' ')}
+          </Badge>
+        );
+      },
       align: 'right',
     },
   ];

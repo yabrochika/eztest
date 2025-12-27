@@ -132,6 +132,20 @@ export class DropdownOptionService {
     });
 
     if (existing) {
+      // If the option exists but is inactive, reactivate it
+      if (!(existing as any).isActive) {
+        const reactivatedOption = await prisma.dropdownOption.update({
+          where: { id: (existing as any).id },
+          data: {
+            label: data.label,
+            order: data.order ?? 0,
+            isActive: true,
+          },
+        });
+        return reactivatedOption as unknown as DropdownOption;
+      }
+      
+      // If the option exists and is active, throw an error
       throw new Error(
         `Dropdown option with entity "${data.entity}", field "${data.field}", and value "${data.value}" already exists`
       );

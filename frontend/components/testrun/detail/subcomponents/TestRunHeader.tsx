@@ -2,6 +2,8 @@
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
 import { Play, Square } from 'lucide-react';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface TestRunHeaderProps {
   testRun: {
@@ -26,6 +28,9 @@ export function TestRunHeader({
   onStartTestRun,
   onCompleteTestRun,
 }: TestRunHeaderProps) {
+  const { options: statusOptions } = useDropdownOptions('TestRun', 'status');
+  const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PLANNED':
@@ -41,6 +46,17 @@ export function TestRunHeader({
     }
   };
 
+  const statusBadgeProps = getDynamicBadgeProps(testRun.status, statusOptions);
+  const environmentBadgeProps = testRun.environment 
+    ? getDynamicBadgeProps(testRun.environment, environmentOptions)
+    : null;
+
+  // Get labels from dropdown options
+  const statusLabel = statusOptions.find(opt => opt.value === testRun.status)?.label || testRun.status.replace('_', ' ');
+  const environmentLabel = testRun.environment 
+    ? (environmentOptions.find(opt => opt.value === testRun.environment)?.label || testRun.environment.toUpperCase())
+    : null;
+
   return (
     <DetailCard
       title={testRun.name}
@@ -51,18 +67,23 @@ export function TestRunHeader({
         <div className="flex flex-wrap gap-6 text-sm">
           <div className="flex items-center gap-2">
             <span className="text-white/60">Status:</span>
-            <Badge variant="outline" className={getStatusColor(testRun.status)}>
-              {testRun.status.replace('_', ' ')}
+            <Badge 
+              variant="outline" 
+              className={statusBadgeProps.className}
+              style={statusBadgeProps.style}
+            >
+              {statusLabel}
             </Badge>
           </div>
-          {testRun.environment && (
+          {testRun.environment && environmentBadgeProps && (
             <div className="flex items-center gap-2">
               <span className="text-white/60">Environment:</span>
               <Badge
                 variant="outline"
-                className="bg-purple-500/10 text-purple-500 border-purple-500/20"
+                className={environmentBadgeProps.className}
+                style={environmentBadgeProps.style}
               >
-                {testRun.environment?.toUpperCase()}
+                {environmentLabel}
               </Badge>
             </div>
           )}

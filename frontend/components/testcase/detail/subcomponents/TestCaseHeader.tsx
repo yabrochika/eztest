@@ -3,6 +3,8 @@
 import { DetailPageHeader } from '@/frontend/reusable-components/layout/DetailPageHeader';
 import { Edit, Trash2 } from 'lucide-react';
 import { TestCase, TestCaseFormData } from '../types';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface TestCaseHeaderProps {
   testCase: TestCase;
@@ -31,6 +33,9 @@ export function TestCaseHeader({
   canDelete = true,
   saving = false,
 }: TestCaseHeaderProps) {
+  const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
+  const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'CRITICAL':
@@ -59,6 +64,13 @@ export function TestCaseHeader({
     }
   };
 
+  const priorityBadgeProps = getDynamicBadgeProps(testCase.priority, priorityOptions);
+  const statusBadgeProps = getDynamicBadgeProps(testCase.status, statusOptions);
+
+  // Get labels from dropdown options
+  const priorityLabel = priorityOptions.find(opt => opt.value === testCase.priority)?.label || testCase.priority;
+  const statusLabel = statusOptions.find(opt => opt.value === testCase.status)?.label || testCase.status;
+
   return (
     <DetailPageHeader
       title={testCase.title}
@@ -67,8 +79,18 @@ export function TestCaseHeader({
       editTitle={formData.title}
       onTitleChange={(title) => onFormChange({ ...formData, title })}
       badges={[
-        { label: 'Priority', value: testCase.priority, className: getPriorityColor(testCase.priority) },
-        { label: 'Status', value: testCase.status, className: getStatusColor(testCase.status) },
+        { 
+          label: 'Priority', 
+          value: priorityLabel, 
+          className: priorityBadgeProps.className,
+          style: priorityBadgeProps.style 
+        },
+        { 
+          label: 'Status', 
+          value: statusLabel, 
+          className: statusBadgeProps.className,
+          style: statusBadgeProps.style 
+        },
       ]}
       actions={[
         { label: 'Edit', icon: Edit, onClick: onEdit, show: canUpdate },

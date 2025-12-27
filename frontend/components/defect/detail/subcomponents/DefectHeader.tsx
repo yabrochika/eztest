@@ -3,6 +3,8 @@
 import { DetailPageHeader } from '@/frontend/reusable-components/layout/DetailPageHeader';
 import { Edit, Trash2, RotateCcw } from 'lucide-react';
 import { Defect, DefectFormData } from '../types';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface DefectHeaderProps {
   defect: Defect;
@@ -33,6 +35,10 @@ export function DefectHeader({
   canUpdate = true,
   canDelete = true,
 }: DefectHeaderProps) {
+  const { options: severityOptions } = useDropdownOptions('Defect', 'severity');
+  const { options: priorityOptions } = useDropdownOptions('Defect', 'priority');
+  const { options: statusOptions } = useDropdownOptions('Defect', 'status');
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'CRITICAL':
@@ -84,6 +90,15 @@ export function DefectHeader({
     return status.replace('_', ' ');
   };
 
+  const severityBadgeProps = getDynamicBadgeProps(defect.severity, severityOptions);
+  const priorityBadgeProps = getDynamicBadgeProps(defect.priority, priorityOptions);
+  const statusBadgeProps = getDynamicBadgeProps(defect.status, statusOptions);
+
+  // Get labels from dropdown options
+  const severityLabel = severityOptions.find(opt => opt.value === defect.severity)?.label || defect.severity;
+  const priorityLabel = priorityOptions.find(opt => opt.value === defect.priority)?.label || defect.priority;
+  const statusLabel = statusOptions.find(opt => opt.value === defect.status)?.label || formatStatus(defect.status);
+
   return (
     <DetailPageHeader
       title={defect.title}
@@ -93,9 +108,24 @@ export function DefectHeader({
       editTitle={formData.title}
       onTitleChange={(title) => onFormChange({ ...formData, title })}
       badges={[
-        { label: 'Severity', value: defect.severity, className: getSeverityColor(defect.severity) },
-        { label: 'Priority', value: defect.priority, className: getPriorityColor(defect.priority) },
-        { label: 'Status', value: formatStatus(defect.status), className: getStatusColor(defect.status) },
+        { 
+          label: 'Severity', 
+          value: severityLabel, 
+          className: severityBadgeProps.className,
+          style: severityBadgeProps.style 
+        },
+        { 
+          label: 'Priority', 
+          value: priorityLabel, 
+          className: priorityBadgeProps.className,
+          style: priorityBadgeProps.style 
+        },
+        { 
+          label: 'Status', 
+          value: statusLabel, 
+          className: statusBadgeProps.className,
+          style: statusBadgeProps.style 
+        },
       ]}
       actions={[
         { label: 'Reopen', icon: RotateCcw, onClick: onReopen, show: defect.status === 'CLOSED' && canUpdate },

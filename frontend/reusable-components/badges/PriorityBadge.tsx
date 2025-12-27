@@ -11,21 +11,36 @@ const styles: Record<Priority, string> = {
 }
 
 export interface PriorityBadgeProps extends Omit<React.ComponentProps<typeof Badge>, "variant"> {
-  priority: Priority
+  priority: Priority | string
+  dynamicClassName?: string
+  dynamicStyle?: React.CSSProperties
 }
 
-export function PriorityBadge({ priority, className, children, ...props }: PriorityBadgeProps) {
+export function PriorityBadge({ 
+  priority, 
+  className, 
+  children, 
+  dynamicClassName,
+  dynamicStyle,
+  ...props 
+}: PriorityBadgeProps) {
+  // Use dynamic styles if provided, otherwise fall back to default styles
+  const badgeClassName = dynamicClassName 
+    ? dynamicClassName
+    : styles[priority as Priority] || styles.medium;
+
   return (
     <Badge
       variant="glass"
       className={[
         "px-2.5 py-0.5 text-xs font-semibold",
-        styles[priority],
+        badgeClassName,
         className,
       ].join(" ")}
+      style={dynamicStyle}
       {...props}
     >
-      {children ?? priority.toUpperCase()}
+      {children ?? (typeof priority === 'string' ? priority.toUpperCase() : priority)}
     </Badge>
   )
 }

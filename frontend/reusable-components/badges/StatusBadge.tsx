@@ -4,8 +4,10 @@ import { Badge } from "@/frontend/reusable-elements/badges/Badge"
 export type TestStatus = "passed" | "failed" | "skipped" | "running" | "blocked" | "queued"
 
 export interface StatusBadgeProps extends Omit<React.ComponentProps<typeof Badge>, "variant"> {
-  status: TestStatus
+  status: TestStatus | string
   pulse?: boolean
+  dynamicClassName?: string
+  dynamicStyle?: React.CSSProperties
 }
 
 const styles: Record<TestStatus, string> = {
@@ -17,16 +19,30 @@ const styles: Record<TestStatus, string> = {
   queued: "bg-purple-500/25 text-purple-300 border border-purple-500/30",
 }
 
-export function StatusBadge({ status, pulse = false, className, children, ...props }: StatusBadgeProps) {
+export function StatusBadge({ 
+  status, 
+  pulse = false, 
+  className, 
+  children, 
+  dynamicClassName,
+  dynamicStyle,
+  ...props 
+}: StatusBadgeProps) {
+  // Use dynamic styles if provided, otherwise fall back to default styles
+  const badgeClassName = dynamicClassName 
+    ? dynamicClassName
+    : styles[status as TestStatus] || styles.queued;
+
   return (
     <Badge
       variant="glass"
       className={[
         "rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur-md",
-        styles[status],
+        badgeClassName,
         pulse ? "animate-pulse" : "",
         className,
       ].join(" ")}
+      style={dynamicStyle}
       {...props}
     >
       {children ?? status}

@@ -15,15 +15,17 @@ import {
   HoverCardTrigger,
 } from '@/frontend/reusable-elements/hover-cards/HoverCard';
 import { MoreVertical, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 export interface Defect {
   id: string;
   defectId: string;
   title: string;
   description: string | null;
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  status: 'OPEN' | 'IN_PROGRESS' | 'FIXED' | 'RETEST' | 'CLOSED' | 'REOPENED';
-  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  severity: string;
+  status: string;
+  priority: string;
   assignedTo?: {
     id: string;
     name: string;
@@ -79,63 +81,10 @@ export function DefectTable({
   const allSelected = defects.length > 0 && defects.every(d => selectedDefects.has(d.id));
   const someSelected = defects.some(d => selectedDefects.has(d.id)) && !allSelected;
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'CRITICAL':
-        return 'bg-red-500/10 text-red-400 border-red-500/30';
-      case 'HIGH':
-        return 'bg-orange-500/10 text-orange-400 border-orange-500/30';
-      case 'MEDIUM':
-        return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
-      case 'LOW':
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-      default:
-        return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'CRITICAL':
-        return 'bg-red-500/10 text-red-400 border-red-500/30';
-      case 'HIGH':
-        return 'bg-orange-500/10 text-orange-400 border-orange-500/30';
-      case 'MEDIUM':
-        return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
-      case 'LOW':
-        return 'bg-green-500/10 text-green-400 border-green-500/30';
-      default:
-        return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'OPEN':
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-      case 'IN_PROGRESS':
-        return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
-      case 'FIXED':
-        return 'bg-green-500/10 text-green-400 border-green-500/30';
-      case 'RETEST':
-        return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
-      case 'CLOSED':
-        return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
-      case 'REOPENED':
-        return 'bg-orange-500/10 text-orange-400 border-orange-500/30';
-      default:
-        return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-  };
+  // Fetch dynamic dropdown options
+  const { options: severityOptions } = useDropdownOptions('Defect', 'severity');
+  const { options: priorityOptions } = useDropdownOptions('Defect', 'priority');
+  const { options: statusOptions } = useDropdownOptions('Defect', 'status');
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
@@ -268,32 +217,53 @@ export function DefectTable({
 
             {/* Severity Column */}
             <div onClick={() => onClick(defect.id)} className="cursor-pointer">
-              <Badge
-                variant="outline"
-                className={`w-fit text-xs px-2 py-0.5 ${getSeverityColor(defect.severity)}`}
-              >
-                {defect.severity}
-              </Badge>
+              {(() => {
+                const badgeProps = getDynamicBadgeProps(defect.severity, severityOptions);
+                const label = severityOptions.find(opt => opt.value === defect.severity)?.label || defect.severity;
+                return (
+                  <Badge
+                    variant="outline"
+                    className={`w-fit text-xs px-2 py-0.5 ${badgeProps.className}`}
+                    style={badgeProps.style}
+                  >
+                    {label}
+                  </Badge>
+                );
+              })()}
             </div>
 
             {/* Priority Column */}
             <div onClick={() => onClick(defect.id)} className="cursor-pointer">
-              <Badge
-                variant="outline"
-                className={`w-fit text-xs px-2 py-0.5 ${getPriorityColor(defect.priority)}`}
-              >
-                {defect.priority}
-              </Badge>
+              {(() => {
+                const badgeProps = getDynamicBadgeProps(defect.priority, priorityOptions);
+                const label = priorityOptions.find(opt => opt.value === defect.priority)?.label || defect.priority;
+                return (
+                  <Badge
+                    variant="outline"
+                    className={`w-fit text-xs px-2 py-0.5 ${badgeProps.className}`}
+                    style={badgeProps.style}
+                  >
+                    {label}
+                  </Badge>
+                );
+              })()}
             </div>
 
             {/* Status Column */}
             <div onClick={() => onClick(defect.id)} className="cursor-pointer">
-              <Badge
-                variant="outline"
-                className={`w-fit text-xs px-2 py-0.5 ${getStatusColor(defect.status)}`}
-              >
-                {defect.status.replace('_', ' ')}
-              </Badge>
+              {(() => {
+                const badgeProps = getDynamicBadgeProps(defect.status, statusOptions);
+                const label = statusOptions.find(opt => opt.value === defect.status)?.label || defect.status.replace('_', ' ');
+                return (
+                  <Badge
+                    variant="outline"
+                    className={`w-fit text-xs px-2 py-0.5 ${badgeProps.className}`}
+                    style={badgeProps.style}
+                  >
+                    {label}
+                  </Badge>
+                );
+              })()}
             </div>
 
             {/* Assignee Column */}

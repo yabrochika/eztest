@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader } from '@/frontend/reusable-elements/card
 import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
 import { Clock, Trash2 } from 'lucide-react';
 import { TestCase } from '../types';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface TestCaseCardProps {
   testCase: TestCase;
@@ -15,6 +17,9 @@ interface TestCaseCardProps {
 export type { TestCaseCardProps };
 
 export function TestCaseCard({ testCase, onDelete, onClick }: TestCaseCardProps) {
+  const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
+  const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'CRITICAL':
@@ -43,6 +48,13 @@ export function TestCaseCard({ testCase, onDelete, onClick }: TestCaseCardProps)
     }
   };
 
+  const priorityBadgeProps = getDynamicBadgeProps(testCase.priority, priorityOptions);
+  const statusBadgeProps = getDynamicBadgeProps(testCase.status, statusOptions);
+
+  // Get labels from dropdown options
+  const priorityLabel = priorityOptions.find(opt => opt.value === testCase.priority)?.label || testCase.priority;
+  const statusLabel = statusOptions.find(opt => opt.value === testCase.status)?.label || testCase.status;
+
   return (
     <Card
       variant="glass"
@@ -58,15 +70,17 @@ export function TestCaseCard({ testCase, onDelete, onClick }: TestCaseCardProps)
             <div className="flex flex-wrap gap-2">
               <Badge
                 variant="outline"
-                className={getPriorityColor(testCase.priority)}
+                className={priorityBadgeProps.className}
+                style={priorityBadgeProps.style}
               >
-                {testCase.priority}
+                {priorityLabel}
               </Badge>
               <Badge
                 variant="outline"
-                className={getStatusColor(testCase.status)}
+                className={statusBadgeProps.className}
+                style={statusBadgeProps.style}
               >
-                {testCase.status}
+                {statusLabel}
               </Badge>
             </div>
           </div>

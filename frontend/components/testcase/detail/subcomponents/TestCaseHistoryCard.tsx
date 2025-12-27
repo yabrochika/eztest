@@ -15,10 +15,12 @@ import {
   User,
   Clock
 } from 'lucide-react';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface TestResult {
   id: string;
-  status: 'PASSED' | 'FAILED' | 'BLOCKED' | 'SKIPPED' | 'RETEST';
+  status: string;
   comment?: string;
   duration?: number;
   executedAt: string;
@@ -40,6 +42,7 @@ interface TestCaseHistoryCardProps {
 export function TestCaseHistoryCard({ testCaseId }: TestCaseHistoryCardProps) {
   const [history, setHistory] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const { options: statusOptions } = useDropdownOptions('TestResult', 'status');
 
   useEffect(() => {
     fetchHistory();
@@ -111,12 +114,14 @@ export function TestCaseHistoryCard({ testCaseId }: TestCaseHistoryCardProps) {
       label: 'Status',
       render: (value: unknown, row: TestResult) => {
         const status = value as string;
+        const badgeProps = getDynamicBadgeProps(status, statusOptions);
         return (
           <div className="flex items-center gap-2">
             {getStatusIcon(status)}
             <Badge
               variant="outline"
-              className={`text-xs ${getStatusColor(status)}`}
+              className={`text-xs ${badgeProps.className}`}
+              style={badgeProps.style}
             >
               {status}
             </Badge>

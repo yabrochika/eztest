@@ -85,7 +85,7 @@ export function TestCaseDetailsCard({
               value={formData.title}
               onChange={(e) => handleFieldChange('title', e.target.value)}
               placeholder="Enter test case title"
-              maxLength={50}
+              maxLength={200}
             />
             {errors.title && <p className="text-xs text-red-400">{errors.title}</p>}
           </div>

@@ -78,7 +78,7 @@ export function CreateTestCaseDialog({
       type: 'text',
       required: true,
       minLength: 3,
-      maxLength: 50,
+      maxLength: 200,
       cols: 2,
     },
     {

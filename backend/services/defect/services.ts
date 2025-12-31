@@ -733,17 +733,12 @@ export class DefectService {
    */
   async associateAttachments(
     defectId: string, 
-    attachments: Array<{ id: string; fieldName?: string }>
+    attachments: Array<{ id: string; fieldName?: string }>,
+    userId: string
   ) {
-    // Get user from session
-    const { getServerSession } = await import('next-auth');
-    const { authOptions } = await import('@/lib/auth');
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      throw new Error('User not authenticated');
+    if (!userId) {
+      throw new Error('User ID is required');
     }
-    const userId = session.user.id;
 
     // Verify defect exists
     const defect = await prisma.defect.findUnique({

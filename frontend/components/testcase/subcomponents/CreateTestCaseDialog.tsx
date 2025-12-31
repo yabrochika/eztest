@@ -5,6 +5,7 @@ import { TestCase, Module } from '../types';
 import { useEffect, useState } from 'react';
 import { attachmentStorage } from '@/lib/attachment-storage';
 import type { Attachment } from '@/lib/s3';
+import { uploadFileToS3 } from '@/lib/s3';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 
 interface CreateTestCaseDialogProps {
@@ -189,7 +190,6 @@ export function CreateTestCaseDialog({
       if (!file) continue;
 
       try {
-        const { uploadFileToS3 } = await import('@/lib/s3');
         const result = await uploadFileToS3({
           file,
           fieldName: attachment.fieldName || 'attachment',

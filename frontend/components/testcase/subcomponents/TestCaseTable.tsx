@@ -128,12 +128,15 @@ export function TestCaseTable({
       width: '100px',
       render: (row) => {
         const badgeProps = getDynamicBadgeProps(row.priority, priorityOptions);
+        const priorityLabel = priorityOptions.find(opt => opt.value === row.priority)?.label || row.priority;
         return (
           <PriorityBadge
             priority={row.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'critical'}
             dynamicClassName={badgeProps.className}
             dynamicStyle={badgeProps.style}
-          />
+          >
+            {priorityLabel}
+          </PriorityBadge>
         );
       },
     },

@@ -86,6 +86,12 @@ export function TestRunCard({
     ? getDynamicBadgeProps(testRun.environment, environmentOptions)
     : null;
 
+  // Get labels from dropdown options
+  const statusLabel = statusOptions.find(opt => opt.value === testRun.status)?.label || testRun.status.replace('_', ' ');
+  const environmentLabel = testRun.environment 
+    ? (environmentOptions.find(opt => opt.value === testRun.environment)?.label || testRun.environment.toUpperCase())
+    : null;
+
   const badges = (
     <>
       <Badge 
@@ -93,7 +99,7 @@ export function TestRunCard({
         className={statusBadgeProps.className}
         style={statusBadgeProps.style}
       >
-        {testRun.status.replace('_', ' ')}
+        {statusLabel}
       </Badge>
       {testRun.environment && environmentBadgeProps && (
         <Badge
@@ -101,7 +107,7 @@ export function TestRunCard({
           className={environmentBadgeProps.className}
           style={environmentBadgeProps.style}
         >
-          {testRun.environment?.toUpperCase()}
+          {environmentLabel}
         </Badge>
       )}
     </>

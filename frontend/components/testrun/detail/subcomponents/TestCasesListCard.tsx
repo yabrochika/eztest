@@ -80,13 +80,16 @@ export function TestCasesListCard({
       label: 'Priority',
       render: (_, row: ResultRow) => {
         const badgeProps = getDynamicBadgeProps(row.testCase.priority, priorityOptions);
+        const priorityLabel = !loadingPriority && priorityOptions.length > 0
+          ? priorityOptions.find(opt => opt.value === row.testCase.priority)?.label || row.testCase.priority
+          : row.testCase.priority;
         return (
           <Badge 
             variant="outline" 
             className={`text-xs px-2 py-0.5 ${badgeProps.className}`}
             style={badgeProps.style}
           >
-            {row.testCase.priority?.toUpperCase()}
+            {priorityLabel}
           </Badge>
         );
       },

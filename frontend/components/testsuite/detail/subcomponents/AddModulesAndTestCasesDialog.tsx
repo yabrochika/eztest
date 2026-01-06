@@ -16,6 +16,8 @@ import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { ChevronDown, ChevronRight, FolderOpen, TestTube2 } from 'lucide-react';
 import { PriorityBadge } from '@/frontend/reusable-components/badges/PriorityBadge';
 import { Module, TestCase } from '@/frontend/components/testcase/types';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface AddModulesAndTestCasesDialogProps {
   open: boolean;
@@ -43,6 +45,8 @@ export function AddModulesAndTestCasesDialog({
   onSubmit,
 }: AddModulesAndTestCasesDialogProps) {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
+  const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
 
   const toggleModuleExpanded = (moduleId: string) => {
     const newExpanded = new Set(expandedModules);
@@ -236,21 +240,32 @@ export function AddModulesAndTestCasesDialog({
                                 <p className="font-medium text-white/90 text-sm">
                                   {testCase.title}
                                 </p>
-                                <PriorityBadge
-                                  priority={testCase.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'critical'}
-                                />
-                                <Badge
-                                  variant="outline"
-                                  className={`text-xs ${
-                                    testCase.status === 'ACTIVE'
-                                      ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                                      : testCase.status === 'DRAFT'
-                                      ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                                      : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
-                                  }`}
-                                >
-                                  {testCase.status}
-                                </Badge>
+                                {(() => {
+                                  const priorityBadgeProps = getDynamicBadgeProps(testCase.priority, priorityOptions);
+                                  const priorityLabel = priorityOptions.find(opt => opt.value === testCase.priority)?.label || testCase.priority;
+                                  return (
+                                    <PriorityBadge
+                                      priority={testCase.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'critical'}
+                                      dynamicClassName={priorityBadgeProps.className}
+                                      dynamicStyle={priorityBadgeProps.style}
+                                    >
+                                      {priorityLabel}
+                                    </PriorityBadge>
+                                  );
+                                })()}
+                                {(() => {
+                                  const statusBadgeProps = getDynamicBadgeProps(testCase.status, statusOptions);
+                                  const statusLabel = statusOptions.find(opt => opt.value === testCase.status)?.label || testCase.status;
+                                  return (
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-xs ${statusBadgeProps.className}`}
+                                      style={statusBadgeProps.style}
+                                    >
+                                      {statusLabel}
+                                    </Badge>
+                                  );
+                                })()}
                               </div>
                               {testCase.description && (
                                 <p className="text-xs text-white/60 line-clamp-2 mt-1">

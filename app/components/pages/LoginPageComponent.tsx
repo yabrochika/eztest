@@ -11,7 +11,6 @@ import { LoginLeftPanel } from './subcomponents/LoginLeftPanel';
 import { OtpVerification } from '@/frontend/reusable-components/auth/OtpVerification';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
-import { isDefaultAdminCredentials } from '@/lib/auth-utils';
 
 const navItems = [
   { label: 'Features', href: '/#features' },
@@ -136,8 +135,20 @@ export default function LoginPageComponent() {
     setIsLoading(true);
 
     try {
+      // Check if credentials match default admin (server-side check via API)
+      const checkDefaultAdminResponse = await fetch('/api/auth/check-default-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password,
+        }),
+      });
+
+      const checkDefaultAdminData = await checkDefaultAdminResponse.json();
+
       // Skip OTP for default admin credentials
-      if (isDefaultAdminCredentials(formData.email.trim(), formData.password)) {
+      if (checkDefaultAdminData.success && checkDefaultAdminData.isDefaultAdmin) {
         console.log('[LOGIN] Default admin credentials - skipping OTP verification');
         await handleOtpVerified();
         return;

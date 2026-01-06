@@ -85,13 +85,14 @@ export function LinkedDefectsCard({ testCase, onRefresh }: LinkedDefectsCardProp
       label: 'Severity',
       render: (value: unknown, row: DefectRow) => {
         const badgeProps = getDynamicBadgeProps(row.severity, severityOptions);
+        const severityLabel = severityOptions.find(opt => opt.value === row.severity)?.label || row.severity;
         return (
           <Badge 
             variant="outline" 
             className={`text-xs ${badgeProps.className}`}
             style={badgeProps.style}
           >
-            {value as string}
+            {severityLabel}
           </Badge>
         );
       },
@@ -101,13 +102,14 @@ export function LinkedDefectsCard({ testCase, onRefresh }: LinkedDefectsCardProp
       label: 'Status',
       render: (value: unknown, row: DefectRow) => {
         const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
+        const statusLabel = statusOptions.find(opt => opt.value === row.status)?.label || row.status;
         return (
           <Badge 
             variant="outline" 
             className={`text-xs ${badgeProps.className}`}
             style={badgeProps.style}
           >
-            {(value as string).replace('_', ' ')}
+            {statusLabel}
           </Badge>
         );
       },

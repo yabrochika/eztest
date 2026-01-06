@@ -27,8 +27,18 @@ export function DefectStatistics({ projectId, refreshTrigger }: DefectStatistics
     try {
       setLoading(true);
       const response = await fetch(`/api/projects/${projectId}/defects/statistics`);
+      
+      if (!response.ok) {
+        console.error(
+          'Error fetching defect statistics: HTTP error',
+          response.status,
+          response.statusText
+        );
+        return;
+      }
+      
       const data = await response.json();
-      if (data.data) {
+      if (data && data.data) {
         setStatistics(data.data);
       }
     } catch (error) {

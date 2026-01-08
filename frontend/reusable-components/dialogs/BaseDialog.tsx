@@ -220,15 +220,6 @@ export const BaseDialog = <T = unknown,>({
     }
   }, [triggerOpen]);
 
-  // Track dialog open state
-  const [wasOpened, setWasOpened] = useState(false);
-  
-  useEffect(() => {
-    if (open && !wasOpened) {
-      setWasOpened(true);
-    }
-  }, [open, wasOpened]);
-
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     

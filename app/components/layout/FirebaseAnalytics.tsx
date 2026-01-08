@@ -62,7 +62,9 @@ export function FirebaseAnalytics() {
           if (DEBUG_ANALYTICS) {
             console.log('✅ Firebase Analytics: Successfully initialized');
             console.log('📍 Test in Firebase Console: https://console.firebase.google.com/');
-            if (isFirebaseDebugModeEnabled()) {
+            // Check debug mode from config (fetched from API)
+            const debugModeEnabled = await isFirebaseDebugModeEnabled();
+            if (debugModeEnabled) {
               console.log('🔍 Firebase Debug Mode: ENABLED - Events will appear in DebugView');
               console.log('📍 View DebugView: Firebase Console → Analytics → DebugView');
             }

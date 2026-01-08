@@ -20,6 +20,7 @@ interface FirebaseConfig {
   messagingSenderId?: string;
   appId?: string;
   measurementId?: string;
+  debugMode?: boolean; // Debug mode flag from backend
 }
 
 // Runtime config fetch promise (cached in memory)
@@ -175,10 +176,24 @@ export async function getFirebaseApp(): Promise<FirebaseApp | undefined> {
 /**
  * Check if Firebase Debug Mode is enabled
  * Debug mode sends events to Firebase Console DebugView for real-time monitoring
+ * 
+ * On server-side: reads from env var directly
+ * On client-side: gets from Firebase config (fetched from API)
  */
-export function isFirebaseDebugModeEnabled(): boolean {
-  // BACKEND-ONLY: Only check server-side env var
-  return process.env.FIREBASE_DEBUG_MODE === 'true';
+export async function isFirebaseDebugModeEnabled(): Promise<boolean> {
+  // On server-side, check env var directly
+  if (typeof window === 'undefined') {
+    return process.env.FIREBASE_DEBUG_MODE === 'true';
+  }
+
+  // On client-side, get from Firebase config (fetched from API)
+  try {
+    const config = await getFirebaseConfig();
+    return config.debugMode === true;
+  } catch {
+    // If config fetch fails, default to false
+    return false;
+  }
 }
 
 /**
@@ -217,7 +232,8 @@ export async function getFirebaseAnalytics(): Promise<Analytics | null> {
     
     // Enable Firebase Debug Mode if configured
     // This sends events to Firebase Console DebugView for real-time monitoring
-    if (isFirebaseDebugModeEnabled() && config.measurementId) {
+    // Check debug mode from config (fetched from API)
+    if (config.debugMode === true && config.measurementId) {
       // Use gtag to enable debug mode for all events
       // gtag is initialized by Firebase Analytics SDK
       const enableDebugMode = () => {

@@ -30,6 +30,7 @@ export async function GET() {
     messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.FIREBASE_APP_ID,
     measurementId: process.env.FIREBASE_MEASUREMENT_ID,
+    debugMode: process.env.FIREBASE_DEBUG_MODE === 'true', // Include debug mode flag
   };
 
   // Check if Firebase is configured

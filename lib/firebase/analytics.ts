@@ -40,7 +40,9 @@ export async function trackEvent(
     const isConsoleDebugMode = process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_ANALYTICS_DEBUG !== 'false';
     if (isConsoleDebugMode) {
       console.log(`✅ Analytics: Event "${eventName}" tracked`, eventParams || '');
-      if (isFirebaseDebugModeEnabled()) {
+      // Check debug mode from config (fetched from API)
+      const debugModeEnabled = await isFirebaseDebugModeEnabled();
+      if (debugModeEnabled) {
         console.log('🔍 Firebase Debug Mode: Event will appear in DebugView');
       }
     }

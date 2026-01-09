@@ -6,6 +6,45 @@ import { seedDropdownOptions } from './seed-dropdown-options';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const prisma: any = new PrismaClient();
 
+/**
+ * Ensures all demo users are added as project members
+ * @param projectId - The project ID to add members to
+ * @param adminUser - Admin user object
+ * @param projectManager - Project manager user object
+ * @param testers - Array of tester user objects
+ * @param viewer - Viewer user object
+ */
+async function ensureDemoProjectMembers(
+  projectId: string,
+  adminUser: { id: string },
+  projectManager: { id: string },
+  testers: Array<{ id: string }>,
+  viewer: { id: string }
+) {
+  console.log('\n👥 Ensuring all demo users are project members...');
+  const existingMembers = await prisma.projectMember.findMany({
+    where: { projectId },
+    select: { userId: true },
+  });
+  const existingMemberIds = new Set(existingMembers.map((m: { userId: string }) => m.userId));
+  
+  const allUsers = [adminUser, projectManager, ...testers, viewer];
+  const usersToAdd = allUsers.filter(u => !existingMemberIds.has(u.id));
+  
+  if (usersToAdd.length > 0) {
+    await prisma.projectMember.createMany({
+      data: usersToAdd.map(u => ({
+        projectId,
+        userId: u.id,
+      })),
+      skipDuplicates: true,
+    });
+    console.log(`   ✅ Added ${usersToAdd.length} users as project members`);
+  } else {
+    console.log('   ✅ All demo users are already project members');
+  }
+}
+
 async function main() {
   console.log('🌱 Starting database seed...\n');
 
@@ -138,64 +177,140 @@ async function main() {
 
   console.log('✅ Demo users created/verified!\n');
 
-  // Check if any project already exists for admin
-  const existingProject = await prisma.project.findFirst({
+  // Check if the demo project specifically exists (by key 'DEMO'), including deleted ones
+  const existingDemoProject = await prisma.project.findFirst({
     where: {
-      createdById: adminUser.id,
+      key: 'DEMO',
     },
   });
 
-  let demoProject = existingProject;
+  let demoProject = existingDemoProject;
+  let shouldCreateDemoData = false;
 
-  if (existingProject) {
-    console.log('✅ Project(s) already exist for admin user - skipping demo project creation');
-    demoProject = existingProject;
-    
-    // Ensure all demo users are added as project members
-    console.log('\n👥 Ensuring all demo users are project members...');
-    const existingMembers = await prisma.projectMember.findMany({
-      where: { projectId: demoProject.id },
-      select: { userId: true },
-    });
-    const existingMemberIds = new Set(existingMembers.map((m: { userId: string }) => m.userId));
-    
-    const allUsers = [adminUser, projectManager, ...testers, viewer];
-    const usersToAdd = allUsers.filter(u => !existingMemberIds.has(u.id));
-    
-    if (usersToAdd.length > 0) {
-      await prisma.projectMember.createMany({
-        data: usersToAdd.map(u => ({
-          projectId: demoProject.id,
-          userId: u.id,
-        })),
-        skipDuplicates: true,
+  if (existingDemoProject) {
+    // If demo project exists but is deleted, restore it and clean up old data
+    if (existingDemoProject.isDeleted) {
+      console.log('🔄 Demo project was deleted - restoring it...');
+      
+      // Safety check: Ensure we're only deleting for the demo project
+      if (existingDemoProject.key !== 'DEMO') {
+        throw new Error('Safety check failed: Attempted to delete data for non-demo project');
+      }
+      
+      const projectId = existingDemoProject.id; // Only delete data for this specific demo project ID
+      
+      // Wrap cleanup and restore in a transaction for atomicity
+      await prisma.$transaction(async (tx: typeof prisma) => {
+        // Delete all old demo data before restoring (ONLY for the demo project ID)
+        console.log('   🗑️  Cleaning up old demo data...');
+        
+        // Get IDs first, then delete in order to respect foreign key constraints
+        const defects = await tx.defect.findMany({ where: { projectId }, select: { id: true } });
+        const defectIds = defects.map((d: { id: string }) => d.id);
+        
+        const testRuns = await tx.testRun.findMany({ where: { projectId }, select: { id: true } });
+        const testRunIds = testRuns.map((tr: { id: string }) => tr.id);
+        
+        const testCases = await tx.testCase.findMany({ where: { projectId }, select: { id: true } });
+        const testCaseIds = testCases.map((tc: { id: string }) => tc.id);
+        
+        const testSuites = await tx.testSuite.findMany({ where: { projectId }, select: { id: true } });
+        const testSuiteIds = testSuites.map((ts: { id: string }) => ts.id);
+        
+        // Delete in order to respect foreign key constraints
+        if (defectIds.length > 0) {
+          await tx.defectComment.deleteMany({ where: { defectId: { in: defectIds } } });
+          await tx.defectAttachment.deleteMany({ where: { defectId: { in: defectIds } } });
+          await tx.testCaseDefect.deleteMany({ where: { defectId: { in: defectIds } } });
+        }
+        await tx.defect.deleteMany({ where: { projectId } });
+        
+        if (testRunIds.length > 0) {
+          await tx.testResult.deleteMany({ where: { testRunId: { in: testRunIds } } });
+          await tx.testRunSuite.deleteMany({ where: { testRunId: { in: testRunIds } } });
+        }
+        await tx.testRun.deleteMany({ where: { projectId } });
+        
+        if (testCaseIds.length > 0) {
+          await tx.comment.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
+          await tx.attachment.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
+          await tx.testStep.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
+          await tx.testCaseSuite.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
+          await tx.testCaseDefect.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
+        }
+        await tx.testCase.deleteMany({ where: { projectId } });
+        
+        if (testSuiteIds.length > 0) {
+          await tx.testRunSuite.deleteMany({ where: { testSuiteId: { in: testSuiteIds } } });
+          await tx.testCaseSuite.deleteMany({ where: { testSuiteId: { in: testSuiteIds } } });
+        }
+        await tx.testSuite.deleteMany({ where: { projectId } });
+        
+        // Delete requirements and modules in parallel (no dependencies)
+        await Promise.all([
+          tx.requirement.deleteMany({ where: { projectId } }),
+          tx.module.deleteMany({ where: { projectId } }),
+        ]);
+        
+        // Delete project members to ensure clean restoration
+        await tx.projectMember.deleteMany({ where: { projectId } });
+        
+        // Restore the project
+        await tx.project.update({
+          where: { id: existingDemoProject.id },
+          data: { isDeleted: false },
+        });
       });
-      console.log(`   ✅ Added ${usersToAdd.length} users as project members`);
+      
+      console.log('   ✅ Old demo data cleaned up');
+      console.log('   ✅ Demo project restored');
+      
+      // Get the restored project
+      demoProject = await prisma.project.findUnique({
+        where: { id: existingDemoProject.id },
+      });
+      
+      shouldCreateDemoData = true; // Recreate demo data since project was deleted
     } else {
-      console.log('   ✅ All demo users are already project members');
+      console.log('✅ Demo project already exists - skipping demo project creation');
+      demoProject = existingDemoProject;
+      
+      // Ensure all demo users are added as project members
+      await ensureDemoProjectMembers(demoProject.id, adminUser, projectManager, testers, viewer);
     }
   } else {
-    // Create demo project for admin user with all team members
-    demoProject = await prisma.project.create({
-      data: {
-        name: 'Demo Project',
-        key: 'DEMO',
-        description: 'Welcome to EZTest! This is a demo project to help you get started. Feel free to explore the features and create your own test suites, test cases, and test plans.',
-        createdById: adminUser.id,
-        members: {
-          create: [
-            { userId: adminUser.id },
-            { userId: projectManager.id },
-            { userId: testers[0].id },
-            { userId: testers[1].id },
-            { userId: testers[2].id },
-            { userId: viewer.id },
-          ],
-        },
-      },
-    });
+    shouldCreateDemoData = true; // Create new demo project with all data
+  }
 
-    console.log('✅ Demo project created:', demoProject.name);
+  if (shouldCreateDemoData) {
+    // Check if demo project needs to be created (doesn't exist) or was restored
+    if (!demoProject) {
+      // Create demo project for admin user with all team members
+      demoProject = await prisma.project.create({
+        data: {
+          name: 'Demo Project',
+          key: 'DEMO',
+          description: 'Welcome to EZTest! This is a demo project to help you get started. Feel free to explore the features and create your own test suites, test cases, and test plans.',
+          createdById: adminUser.id,
+          members: {
+            create: [
+              { userId: adminUser.id },
+              { userId: projectManager.id },
+              { userId: testers[0].id },
+              { userId: testers[1].id },
+              { userId: testers[2].id },
+              { userId: viewer.id },
+            ],
+          },
+        },
+      });
+      console.log('✅ Demo project created:', demoProject.name);
+    } else {
+      // Project was restored, ensure all demo users are project members
+      await ensureDemoProjectMembers(demoProject.id, adminUser, projectManager, testers, viewer);
+    }
+
+    // Create fresh demo data (old data was already cleaned up if project was restored)
 
     // Create demo test suites
     // Test suites are groups of modules that can be used for test runs

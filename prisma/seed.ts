@@ -1125,67 +1125,67 @@ async function main() {
         {
           testRunId: testRun3.id,
           testCaseId: loginTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: logoutTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: passwordResetTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: sessionManagementTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: dashboardTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: navigationTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: responsiveDesignTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: formValidationTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: apiAuthTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: apiProjectsTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: apiErrorHandlingTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
       ],
@@ -1195,7 +1195,7 @@ async function main() {
 
     console.log('   ✅ Test Run: Sprint 1 Regression Testing');
     console.log('      - 8 tests executed (7 passed, 1 failed)');
-    console.log('      - 3 tests pending');
+    console.log('      - 3 tests skipped');
   }
 
   // Create sample defects (outside the demo project creation block)

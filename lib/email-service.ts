@@ -170,10 +170,12 @@ function getTransporter(): nodemailer.Transporter | null {
 /**
  * Validate email address format
  * Returns true if valid, false otherwise
+ * 
+ * Allows the default admin email from environment variables (even if it has invalid domains)
  */
 function isValidEmail(email: string): boolean {
-  // Allow admin@eztest.local as it's the default admin email
-  if (email.toLowerCase() === 'admin@eztest.local') {
+  // Allow default admin email from environment (even if it has .local domain)
+  if (isDefaultAdminEmail(email)) {
     return true;
   }
 
@@ -204,12 +206,6 @@ function isValidEmail(email: string): boolean {
  */
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
-    // Skip sending emails to default admin email
-    if (isDefaultAdminEmail(options.to)) {
-      console.log(`[EMAIL] Skipping email to default admin email: ${options.to}`);
-      return true; // Return true to indicate "success" (email was intentionally skipped)
-    }
-
     console.log(`[EMAIL] Preparing to send email to: ${options.to}`);
     
     const transporter = getTransporter();

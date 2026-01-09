@@ -137,25 +137,6 @@ export default function LoginPageComponent() {
     setIsLoading(true);
 
     try {
-      // Check if credentials match default admin (server-side check via API)
-      const checkDefaultAdminResponse = await fetch('/api/auth/check-default-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email.trim(),
-          password: formData.password,
-        }),
-      });
-
-      const checkDefaultAdminData = await checkDefaultAdminResponse.json();
-
-      // Skip OTP for default admin credentials
-      if (checkDefaultAdminData.success && checkDefaultAdminData.isDefaultAdmin) {
-        console.log('[LOGIN] Default admin credentials - skipping OTP verification');
-        await handleOtpVerified();
-        return;
-      }
-
       // First, send OTP to email (also verify password)
       const otpResponse = await fetch('/api/auth/otp/send', {
         method: 'POST',

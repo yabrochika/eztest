@@ -1,4 +1,5 @@
 import { otpService } from '@/backend/services/otp/services';
+import { getDefaultAdminEmail } from '@/lib/auth-utils';
 
 interface SendOtpInput {
   email: string;
@@ -10,6 +11,34 @@ interface VerifyOtpInput {
   email: string;
   otp: string;
   type: 'login' | 'register';
+}
+
+/**
+ * Validate email format (allows default admin email from environment)
+ */
+function isValidEmailForOtp(email: string): boolean {
+  // Allow default admin email from environment (even if it has invalid domains like .local)
+  const defaultAdminEmail = getDefaultAdminEmail().toLowerCase().trim();
+  if (email.toLowerCase().trim() === defaultAdminEmail) {
+    return true;
+  }
+  
+  // Standard email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return false;
+  }
+  
+  // Check for invalid domains like .local, .invalid, .test, .example
+  const invalidDomains = ['.local', '.invalid', '.test', '.example', '.localhost'];
+  const lowerEmail = email.toLowerCase();
+  for (const domain of invalidDomains) {
+    if (lowerEmail.endsWith(domain)) {
+      return false;
+    }
+  }
+  
+  return true;
 }
 
 export class OtpController {
@@ -25,6 +54,14 @@ export class OtpController {
         return {
           success: false,
           message: 'Email and type are required',
+        };
+      }
+
+      // Validate email format (allows default admin email from environment)
+      if (!isValidEmailForOtp(email)) {
+        return {
+          success: false,
+          message: 'Invalid email format. Email addresses with .local, .invalid, .test, .example domains are not allowed (except default admin email).',
         };
       }
 
@@ -66,6 +103,14 @@ export class OtpController {
         return {
           success: false,
           message: 'Email, OTP, and type are required',
+        };
+      }
+
+      // Validate email format (allows default admin email from environment)
+      if (!isValidEmailForOtp(email)) {
+        return {
+          success: false,
+          message: 'Invalid email format. Email addresses with .local, .invalid, .test, .example domains are not allowed (except default admin email).',
         };
       }
 
@@ -111,6 +156,14 @@ export class OtpController {
         return {
           success: false,
           message: 'Email and type are required',
+        };
+      }
+
+      // Validate email format (allows default admin email from environment)
+      if (!isValidEmailForOtp(email)) {
+        return {
+          success: false,
+          message: 'Invalid email format. Email addresses with .local, .invalid, .test, .example domains are not allowed (except default admin email).',
         };
       }
 

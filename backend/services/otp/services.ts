@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { sendOtpEmail } from '@/lib/email-service';
 import { isEmailServiceAvailable } from '@/lib/email-service';
-import { isDefaultAdminEmail } from '@/lib/auth-utils';
 import * as bcrypt from 'bcryptjs';
 
 interface SendOtpInput {
@@ -31,16 +30,6 @@ export class OtpService {
    */
   async sendOtp(input: SendOtpInput): Promise<{ success: boolean; message: string; smtpDisabled?: boolean }> {
     const { email, type, appUrl } = input;
-
-    // Skip OTP for default admin email
-    if (isDefaultAdminEmail(email)) {
-      console.log('[OTP] Default admin email - skipping OTP verification');
-      return {
-        success: true,
-        message: 'Authentication will proceed without email verification.',
-        smtpDisabled: true,
-      };
-    }
 
     // For login type, check if user exists and password is correct before sending OTP
     if (type === 'login') {
@@ -174,15 +163,6 @@ export class OtpService {
   async verifyOtp(input: VerifyOtpInput): Promise<{ success: boolean; message: string }> {
     const { email, otp, type } = input;
 
-    // Skip OTP verification for default admin email
-    if (isDefaultAdminEmail(email)) {
-      console.log('[OTP] Default admin email - auto-verifying OTP');
-      return {
-        success: true,
-        message: 'Verification successful',
-      };
-    }
-
     // When SMTP is disabled, auto-verify to allow authentication
     const isAvailable = await isEmailServiceAvailable();
     if (!isAvailable) {
@@ -265,12 +245,6 @@ export class OtpService {
    * Check if email has been verified with OTP
    */
   async isEmailVerified(email: string, type: 'login' | 'register'): Promise<boolean> {
-    // Skip OTP verification for default admin email
-    if (isDefaultAdminEmail(email)) {
-      console.log('[OTP] Default admin email - auto-verifying email');
-      return true;
-    }
-
     // When SMTP is disabled, consider all emails as verified
     const isAvailable = await isEmailServiceAvailable();
     if (!isAvailable) {

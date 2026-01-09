@@ -101,10 +101,32 @@ function saveConfigToStorage(config: FirebaseConfig): void {
 async function fetchFirebaseConfigFromAPI(): Promise<FirebaseConfig | null> {
   try {
     const response = await fetch('/api/config/firebase');
+    
+    // Check if response is ok
     if (!response.ok) {
+      // Don't log errors for 404 - Firebase is just not configured
+      if (response.status !== 404) {
+        console.warn(`Firebase config API returned status ${response.status}`);
+      }
       return null;
     }
-    const data = await response.json();
+
+    // Check content-type before parsing JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.warn('Firebase config API returned non-JSON response');
+      return null;
+    }
+
+    const data = await response.json().catch(() => {
+      console.warn('Failed to parse Firebase config response as JSON');
+      return null;
+    });
+
+    if (!data) {
+      return null;
+    }
+
     if (data.configured && data.data) {
       // Save to localStorage for persistence across browser sessions
       saveConfigToStorage(data.data);
@@ -112,7 +134,10 @@ async function fetchFirebaseConfigFromAPI(): Promise<FirebaseConfig | null> {
     }
     return null;
   } catch (error) {
-    console.error('Failed to fetch Firebase config from API:', error);
+    // Only log if it's not a JSON parse error (which we handle above)
+    if (!(error instanceof SyntaxError)) {
+      console.error('Failed to fetch Firebase config from API:', error);
+    }
     return null;
   }
 }

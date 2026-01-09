@@ -11,7 +11,6 @@ import { LoginLeftPanel } from './subcomponents/LoginLeftPanel';
 import { OtpVerification } from '@/frontend/reusable-components/auth/OtpVerification';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
-import { useAnalytics } from '@/hooks/useAnalytics';
 
 const navItems = [
   { label: 'Features', href: '/#features' },
@@ -25,7 +24,6 @@ interface FieldErrors {
 
 export default function LoginPageComponent() {
   const router = useRouter();
-  const { trackForm } = useAnalytics();
   const [stars, setStars] = useState<number | null>(null);
   const [showOtpVerification, setShowOtpVerification] = useState(false);
   const [formData, setFormData, clearFormData] = useFormPersistence('login-form', {
@@ -137,25 +135,6 @@ export default function LoginPageComponent() {
     setIsLoading(true);
 
     try {
-      // Check if credentials match default admin (server-side check via API)
-      const checkDefaultAdminResponse = await fetch('/api/auth/check-default-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email.trim(),
-          password: formData.password,
-        }),
-      });
-
-      const checkDefaultAdminData = await checkDefaultAdminResponse.json();
-
-      // Skip OTP for default admin credentials
-      if (checkDefaultAdminData.success && checkDefaultAdminData.isDefaultAdmin) {
-        console.log('[LOGIN] Default admin credentials - skipping OTP verification');
-        await handleOtpVerified();
-        return;
-      }
-
       // First, send OTP to email (also verify password)
       const otpResponse = await fetch('/api/auth/otp/send', {
         method: 'POST',
@@ -197,10 +176,6 @@ export default function LoginPageComponent() {
       setShowOtpVerification(true);
     } catch (error) {
       const errorMsg = 'An unexpected error occurred';
-      
-      // Track failed form submission
-      trackForm('Login', false, errorMsg).catch(console.error);
-      
       setError(errorMsg);
       setAlert({
         type: 'error',
@@ -223,10 +198,6 @@ export default function LoginPageComponent() {
 
       if (result?.error) {
         const errorMsg = 'Invalid email or password';
-        
-        // Track failed login
-        trackForm('Login', false, errorMsg).catch(console.error);
-        
         setError(errorMsg);
         setAlert({
           type: 'error',
@@ -239,9 +210,6 @@ export default function LoginPageComponent() {
       }
 
       if (result?.ok) {
-        // Track successful login
-        trackForm('Login', true).catch(console.error);
-        
         // Clear form data on successful login
         clearFormData();
         setAlert({

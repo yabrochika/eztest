@@ -6,6 +6,45 @@ import { seedDropdownOptions } from './seed-dropdown-options';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const prisma: any = new PrismaClient();
 
+/**
+ * Ensures all demo users are added as project members
+ * @param projectId - The project ID to add members to
+ * @param adminUser - Admin user object
+ * @param projectManager - Project manager user object
+ * @param testers - Array of tester user objects
+ * @param viewer - Viewer user object
+ */
+async function ensureDemoProjectMembers(
+  projectId: string,
+  adminUser: { id: string },
+  projectManager: { id: string },
+  testers: Array<{ id: string }>,
+  viewer: { id: string }
+) {
+  console.log('\n👥 Ensuring all demo users are project members...');
+  const existingMembers = await prisma.projectMember.findMany({
+    where: { projectId },
+    select: { userId: true },
+  });
+  const existingMemberIds = new Set(existingMembers.map((m: { userId: string }) => m.userId));
+  
+  const allUsers = [adminUser, projectManager, ...testers, viewer];
+  const usersToAdd = allUsers.filter(u => !existingMemberIds.has(u.id));
+  
+  if (usersToAdd.length > 0) {
+    await prisma.projectMember.createMany({
+      data: usersToAdd.map(u => ({
+        projectId,
+        userId: u.id,
+      })),
+      skipDuplicates: true,
+    });
+    console.log(`   ✅ Added ${usersToAdd.length} users as project members`);
+  } else {
+    console.log('   ✅ All demo users are already project members');
+  }
+}
+
 async function main() {
   console.log('🌱 Starting database seed...\n');
 
@@ -153,96 +192,91 @@ async function main() {
     if (existingDemoProject.isDeleted) {
       console.log('🔄 Demo project was deleted - restoring it...');
       
-      // Delete all old demo data before restoring (ONLY for the demo project ID)
-      console.log('   🗑️  Cleaning up old demo data...');
-      const projectId = existingDemoProject.id; // Only delete data for this specific demo project ID
-      
       // Safety check: Ensure we're only deleting for the demo project
       if (existingDemoProject.key !== 'DEMO') {
         throw new Error('Safety check failed: Attempted to delete data for non-demo project');
       }
       
-      // Get IDs first, then delete in order to respect foreign key constraints
-      const defects = await prisma.defect.findMany({ where: { projectId }, select: { id: true } });
-      const defectIds = defects.map((d: { id: string }) => d.id);
+      const projectId = existingDemoProject.id; // Only delete data for this specific demo project ID
       
-      const testRuns = await prisma.testRun.findMany({ where: { projectId }, select: { id: true } });
-      const testRunIds = testRuns.map((tr: { id: string }) => tr.id);
-      
-      const testCases = await prisma.testCase.findMany({ where: { projectId }, select: { id: true } });
-      const testCaseIds = testCases.map((tc: { id: string }) => tc.id);
-      
-      const testSuites = await prisma.testSuite.findMany({ where: { projectId }, select: { id: true } });
-      const testSuiteIds = testSuites.map((ts: { id: string }) => ts.id);
-      
-      // Delete in order to respect foreign key constraints
-      if (defectIds.length > 0) {
-        await prisma.defectComment.deleteMany({ where: { defectId: { in: defectIds } } });
-        await prisma.defectAttachment.deleteMany({ where: { defectId: { in: defectIds } } });
-        await prisma.testCaseDefect.deleteMany({ where: { defectId: { in: defectIds } } });
-      }
-      await prisma.defect.deleteMany({ where: { projectId } });
-      
-      if (testRunIds.length > 0) {
-        await prisma.testResult.deleteMany({ where: { testRunId: { in: testRunIds } } });
-        await prisma.testRunSuite.deleteMany({ where: { testRunId: { in: testRunIds } } });
-      }
-      await prisma.testRun.deleteMany({ where: { projectId } });
-      
-      if (testCaseIds.length > 0) {
-        await prisma.comment.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
-        await prisma.attachment.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
-        await prisma.testStep.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
-        await prisma.testCaseSuite.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
-        await prisma.testCaseDefect.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
-      }
-      await prisma.testCase.deleteMany({ where: { projectId } });
-      
-      if (testSuiteIds.length > 0) {
-        await prisma.testRunSuite.deleteMany({ where: { testSuiteId: { in: testSuiteIds } } });
-        await prisma.testCaseSuite.deleteMany({ where: { testSuiteId: { in: testSuiteIds } } });
-      }
-      await prisma.testSuite.deleteMany({ where: { projectId } });
-      
-      await prisma.requirement.deleteMany({ where: { projectId } });
-      await prisma.module.deleteMany({ where: { projectId } });
+      // Wrap cleanup and restore in a transaction for atomicity
+      await prisma.$transaction(async (tx: typeof prisma) => {
+        // Delete all old demo data before restoring (ONLY for the demo project ID)
+        console.log('   🗑️  Cleaning up old demo data...');
+        
+        // Get IDs first, then delete in order to respect foreign key constraints
+        const defects = await tx.defect.findMany({ where: { projectId }, select: { id: true } });
+        const defectIds = defects.map((d: { id: string }) => d.id);
+        
+        const testRuns = await tx.testRun.findMany({ where: { projectId }, select: { id: true } });
+        const testRunIds = testRuns.map((tr: { id: string }) => tr.id);
+        
+        const testCases = await tx.testCase.findMany({ where: { projectId }, select: { id: true } });
+        const testCaseIds = testCases.map((tc: { id: string }) => tc.id);
+        
+        const testSuites = await tx.testSuite.findMany({ where: { projectId }, select: { id: true } });
+        const testSuiteIds = testSuites.map((ts: { id: string }) => ts.id);
+        
+        // Delete in order to respect foreign key constraints
+        if (defectIds.length > 0) {
+          await tx.defectComment.deleteMany({ where: { defectId: { in: defectIds } } });
+          await tx.defectAttachment.deleteMany({ where: { defectId: { in: defectIds } } });
+          await tx.testCaseDefect.deleteMany({ where: { defectId: { in: defectIds } } });
+        }
+        await tx.defect.deleteMany({ where: { projectId } });
+        
+        if (testRunIds.length > 0) {
+          await tx.testResult.deleteMany({ where: { testRunId: { in: testRunIds } } });
+          await tx.testRunSuite.deleteMany({ where: { testRunId: { in: testRunIds } } });
+        }
+        await tx.testRun.deleteMany({ where: { projectId } });
+        
+        if (testCaseIds.length > 0) {
+          await tx.comment.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
+          await tx.attachment.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
+          await tx.testStep.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
+          await tx.testCaseSuite.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
+          await tx.testCaseDefect.deleteMany({ where: { testCaseId: { in: testCaseIds } } });
+        }
+        await tx.testCase.deleteMany({ where: { projectId } });
+        
+        if (testSuiteIds.length > 0) {
+          await tx.testRunSuite.deleteMany({ where: { testSuiteId: { in: testSuiteIds } } });
+          await tx.testCaseSuite.deleteMany({ where: { testSuiteId: { in: testSuiteIds } } });
+        }
+        await tx.testSuite.deleteMany({ where: { projectId } });
+        
+        // Delete requirements and modules in parallel (no dependencies)
+        await Promise.all([
+          tx.requirement.deleteMany({ where: { projectId } }),
+          tx.module.deleteMany({ where: { projectId } }),
+        ]);
+        
+        // Delete project members to ensure clean restoration
+        await tx.projectMember.deleteMany({ where: { projectId } });
+        
+        // Restore the project
+        await tx.project.update({
+          where: { id: existingDemoProject.id },
+          data: { isDeleted: false },
+        });
+      });
       
       console.log('   ✅ Old demo data cleaned up');
-      
-      // Restore the project
-      demoProject = await prisma.project.update({
-        where: { id: existingDemoProject.id },
-        data: { isDeleted: false },
-      });
       console.log('   ✅ Demo project restored');
+      
+      // Get the restored project
+      demoProject = await prisma.project.findUnique({
+        where: { id: existingDemoProject.id },
+      });
+      
       shouldCreateDemoData = true; // Recreate demo data since project was deleted
     } else {
       console.log('✅ Demo project already exists - skipping demo project creation');
       demoProject = existingDemoProject;
       
       // Ensure all demo users are added as project members
-      console.log('\n👥 Ensuring all demo users are project members...');
-      const existingMembers = await prisma.projectMember.findMany({
-        where: { projectId: demoProject.id },
-        select: { userId: true },
-      });
-      const existingMemberIds = new Set(existingMembers.map((m: { userId: string }) => m.userId));
-      
-      const allUsers = [adminUser, projectManager, ...testers, viewer];
-      const usersToAdd = allUsers.filter(u => !existingMemberIds.has(u.id));
-      
-      if (usersToAdd.length > 0) {
-        await prisma.projectMember.createMany({
-          data: usersToAdd.map(u => ({
-            projectId: demoProject.id,
-            userId: u.id,
-          })),
-          skipDuplicates: true,
-        });
-        console.log(`   ✅ Added ${usersToAdd.length} users as project members`);
-      } else {
-        console.log('   ✅ All demo users are already project members');
-      }
+      await ensureDemoProjectMembers(demoProject.id, adminUser, projectManager, testers, viewer);
     }
   } else {
     shouldCreateDemoData = true; // Create new demo project with all data
@@ -273,28 +307,7 @@ async function main() {
       console.log('✅ Demo project created:', demoProject.name);
     } else {
       // Project was restored, ensure all demo users are project members
-      console.log('\n👥 Ensuring all demo users are project members...');
-      const existingMembers = await prisma.projectMember.findMany({
-        where: { projectId: demoProject.id },
-        select: { userId: true },
-      });
-      const existingMemberIds = new Set(existingMembers.map((m: { userId: string }) => m.userId));
-      
-      const allUsers = [adminUser, projectManager, ...testers, viewer];
-      const usersToAdd = allUsers.filter(u => !existingMemberIds.has(u.id));
-      
-      if (usersToAdd.length > 0) {
-        await prisma.projectMember.createMany({
-          data: usersToAdd.map(u => ({
-            projectId: demoProject.id,
-            userId: u.id,
-          })),
-          skipDuplicates: true,
-        });
-        console.log(`   ✅ Added ${usersToAdd.length} users as project members`);
-      } else {
-        console.log('   ✅ All demo users are already project members');
-      }
+      await ensureDemoProjectMembers(demoProject.id, adminUser, projectManager, testers, viewer);
     }
 
     // Create fresh demo data (old data was already cleaned up if project was restored)

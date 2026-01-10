@@ -147,13 +147,38 @@ export class ExportService {
     const exportData = testCases.map((tc) => {
       const suites = tc.testCaseSuites.map((tcs) => tcs.testSuite.name).join('; ');
 
-      // Format test steps as JSON array (matching import format)
-      const testStepsArray = tc.steps.map((step) => ({
-        stepNumber: step.stepNumber,
-        action: step.action,
-        expectedResult: step.expectedResult || '',
-      }));
-      const testStepsJson = JSON.stringify(testStepsArray);
+      // Format test steps in import format (numbered list, newline-separated)
+      // Format: "1. Action 1\n2. Action 2\n..."
+      const testStepsFormatted = tc.steps
+        .map((step) => {
+          return `${step.stepNumber}. ${step.action || ''}`;
+        })
+        .join('\n');
+
+      // Format expected results in import format
+      // Single result: plain string (no numbering)
+      // Multiple results: numbered list, newline-separated
+      const expectedResultsList: string[] = [];
+      tc.steps.forEach((step) => {
+        if (step.expectedResult && step.expectedResult.trim()) {
+          expectedResultsList.push(step.expectedResult.trim());
+        }
+      });
+      
+      let expectedResultFormatted = '';
+      if (expectedResultsList.length > 1) {
+        // Multiple results: format as numbered list "1. Result 1\n2. Result 2\n..."
+        expectedResultFormatted = expectedResultsList
+          .map((result, index) => `${index + 1}. ${result}`)
+          .join('\n');
+      } else if (expectedResultsList.length === 1) {
+        // Single result: export as plain string (no numbering)
+        expectedResultFormatted = expectedResultsList[0];
+      } else if (tc.expectedResult && tc.expectedResult.trim()) {
+        // Fall back to test case level expected result if no step-level results
+        expectedResultFormatted = tc.expectedResult.trim();
+      }
+      // If empty, expectedResultFormatted remains empty string
 
       // Get test data (from testData field if available)
       const testData = tc.testData || '';
@@ -168,9 +193,9 @@ export class ExportService {
         'Module / Feature': tc.module?.name || '',
         'Priority': tc.priority,
         'Preconditions': tc.preconditions || '',
-        'Test Steps': testStepsJson,
+        'Test Steps': testStepsFormatted,
         'Test Data': testData,
-        'Expected Result': tc.expectedResult || '',
+        'Expected Result': expectedResultFormatted,
         'Status': tc.status,
         'Defect ID': defectIds,
         // Older fields (for backward compatibility)

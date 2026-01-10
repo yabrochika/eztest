@@ -17,6 +17,26 @@ EZTest is a lightweight, open-source test management platform built with Next.js
 **License:** AGPL-3.0  
 **Maintainers:** Philip Moses (philip.moses@belsterns.com), Kavin (kavin.p@belsterns.com)
 
+## 📸 Screenshots
+
+<div align="center">
+
+### Public Homepage
+
+![Home Page](./docs/images/screenshots/Home_Page.png)
+
+### Main Application
+
+| **Projects Dashboard** | **Test Cases** |
+|:---:|:---:|
+| ![Projects](./docs/images/screenshots/Project_List_Page.png) | ![Test Cases](./docs/images/screenshots/TestCase_List_Page.png) |
+
+| **Test Runs** | **Defect Tracking** |
+|:---:|:---:|
+| ![Test Runs](./docs/images/screenshots/TestRun_List_Page.png) | ![Defects](./docs/images/screenshots/Defects_List_Page.png) |
+
+</div>
+
 ### 🎯 Core Features Status
 
 | Feature | Status | Details |

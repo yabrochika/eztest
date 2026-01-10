@@ -45,45 +45,6 @@ async function ensureDemoProjectMembers(
   }
 }
 
-/**
- * Ensures all demo users are added as project members
- * @param projectId - The project ID to add members to
- * @param adminUser - Admin user object
- * @param projectManager - Project manager user object
- * @param testers - Array of tester user objects
- * @param viewer - Viewer user object
- */
-async function ensureDemoProjectMembers(
-  projectId: string,
-  adminUser: { id: string },
-  projectManager: { id: string },
-  testers: Array<{ id: string }>,
-  viewer: { id: string }
-) {
-  console.log('\n👥 Ensuring all demo users are project members...');
-  const existingMembers = await prisma.projectMember.findMany({
-    where: { projectId },
-    select: { userId: true },
-  });
-  const existingMemberIds = new Set(existingMembers.map((m: { userId: string }) => m.userId));
-  
-  const allUsers = [adminUser, projectManager, ...testers, viewer];
-  const usersToAdd = allUsers.filter(u => !existingMemberIds.has(u.id));
-  
-  if (usersToAdd.length > 0) {
-    await prisma.projectMember.createMany({
-      data: usersToAdd.map(u => ({
-        projectId,
-        userId: u.id,
-      })),
-      skipDuplicates: true,
-    });
-    console.log(`   ✅ Added ${usersToAdd.length} users as project members`);
-  } else {
-    console.log('   ✅ All demo users are already project members');
-  }
-}
-
 async function main() {
   console.log('🌱 Starting database seed...\n');
 
@@ -169,7 +130,7 @@ async function main() {
     { email: 'tester3@eztest.local', name: 'Michael Chen', bio: 'Automation Test Engineer' },
   ];
 
-  const testers = [];
+  const testers: Array<{ id: string }> = [];
   for (const testerData of testerEmails) {
     let tester = await prisma.user.findUnique({
       where: { email: testerData.email },
@@ -190,7 +151,7 @@ async function main() {
     } else {
       console.log('   ✅ Tester already exists:', tester.email);
     }
-    testers.push(tester);
+    testers.push({ id: tester.id });
   }
 
   // Viewer
@@ -218,10 +179,7 @@ async function main() {
 
   // Check if the demo project specifically exists (by key 'DEMO'), including deleted ones
   const existingDemoProject = await prisma.project.findFirst({
-  // Check if the demo project specifically exists (by key 'DEMO'), including deleted ones
-  const existingDemoProject = await prisma.project.findFirst({
     where: {
-      key: 'DEMO',
       key: 'DEMO',
     },
   });

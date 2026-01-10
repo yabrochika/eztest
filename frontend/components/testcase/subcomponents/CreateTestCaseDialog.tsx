@@ -27,7 +27,8 @@ export function CreateTestCaseDialog({
 }: CreateTestCaseDialogProps) {
   const [modules, setModules] = useState<Module[]>([]);
   const [descriptionAttachments, setDescriptionAttachments] = useState<Attachment[]>([]);
-  const [expectedResultAttachments, setExpectedResultAttachments] = useState<Attachment[]>([]);
+  // TODO: Uncomment for future use - Expected Result field at test case level
+  // const [expectedResultAttachments, setExpectedResultAttachments] = useState<Attachment[]>([]);
   const [preconditionsAttachments, setPreconditionsAttachments] = useState<Attachment[]>([]);
   const [postconditionsAttachments, setPostconditionsAttachments] = useState<Attachment[]>([]);
 
@@ -127,16 +128,17 @@ export function CreateTestCaseDialog({
       attachments: descriptionAttachments,
       onAttachmentsChange: setDescriptionAttachments,
     },
-    {
-      name: 'expectedResult',
-      label: 'Expected Result',
-      type: 'textarea-with-attachments',
-      placeholder: 'Enter the expected result',
-      rows: 3,
-      cols: 1,
-      attachments: expectedResultAttachments,
-      onAttachmentsChange: setExpectedResultAttachments,
-    },
+    // TODO: Uncomment for future use - Expected Result field at test case level
+    // {
+    //   name: 'expectedResult',
+    //   label: 'Expected Result',
+    //   type: 'textarea-with-attachments',
+    //   placeholder: 'Enter the expected result',
+    //   rows: 3,
+    //   cols: 1,
+    //   attachments: expectedResultAttachments,
+    //   onAttachmentsChange: setExpectedResultAttachments,
+    // },
     {
       name: 'preconditions',
       label: 'Preconditions',
@@ -163,14 +165,15 @@ export function CreateTestCaseDialog({
       type: 'textarea',
       placeholder: 'Enter test data or input values',
       rows: 3,
-      cols: 2,
+      cols: 1,
     },
   ];
 
   const uploadPendingAttachments = async (): Promise<Array<{ id?: string; s3Key: string; fileName: string; mimeType: string; fieldName?: string }>> => {
     const allAttachments = [
       ...descriptionAttachments,
-      ...expectedResultAttachments,
+      // TODO: Uncomment for future use - Expected Result attachments
+      // ...expectedResultAttachments,
       ...preconditionsAttachments,
       ...postconditionsAttachments,
     ];
@@ -235,7 +238,8 @@ export function CreateTestCaseDialog({
       body: JSON.stringify({
         title: formData.title,
         description: formData.description || undefined,
-        expectedResult: formData.expectedResult || undefined,
+        // TODO: Uncomment for future use - Expected Result at test case level
+        // expectedResult: formData.expectedResult || undefined,
         testData: formData.testData || undefined,
         priority: formData.priority,
         status: formData.status,
@@ -271,41 +275,42 @@ export function CreateTestCaseDialog({
         
         await attachmentResponse.json();
 
+        // TODO: Uncomment for future use - Link expectedResult attachments to first step
         // If there's an expectedResult with attachments, also link them to the first step
         // This follows the same pattern as expectedResult text - it's saved at test case level
         // and displayed in the first step, so attachments should also be associated with the first step
-        const expectedResultAttachmentsToLink = uploadedAttachments.filter(
-          (att) => att.fieldName === 'expectedResult'
-        );
+        // const expectedResultAttachmentsToLink = uploadedAttachments.filter(
+        //   (att) => att.fieldName === 'expectedResult'
+        // );
 
-        if (expectedResultAttachmentsToLink.length > 0 && formData.expectedResult) {
-          try {
-            // Fetch the test case with steps to check if there's a first step
-            const testCaseResponse = await fetch(`/api/testcases/${createdTestCase.id}`);
-            if (testCaseResponse.ok) {
-              const testCaseData = await testCaseResponse.json();
-              const steps = testCaseData.data?.steps || [];
-              
-              // If there's a first step, link expectedResult attachments to it
-              // This mirrors how expectedResult text is handled - it's shown in the first step
-              if (steps.length > 0 && steps[0]?.id) {
-                const firstStepId = steps[0].id;
-                const stepAttachmentResponse = await fetch(`/api/teststeps/${firstStepId}/attachments`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ attachments: expectedResultAttachmentsToLink }),
-                });
-                
-                if (!stepAttachmentResponse.ok) {
-                  console.warn('Failed to link expectedResult attachments to first step, but test case attachments are saved');
-                }
-              }
-            }
-          } catch (error) {
-            // Non-critical error - attachments are already linked to test case
-            console.warn('Error linking expectedResult attachments to step:', error);
-          }
-        }
+        // if (expectedResultAttachmentsToLink.length > 0 && formData.expectedResult) {
+        //   try {
+        //     // Fetch the test case with steps to check if there's a first step
+        //     const testCaseResponse = await fetch(`/api/testcases/${createdTestCase.id}`);
+        //     if (testCaseResponse.ok) {
+        //       const testCaseData = await testCaseResponse.json();
+        //       const steps = testCaseData.data?.steps || [];
+        //       
+        //       // If there's a first step, link expectedResult attachments to it
+        //       // This mirrors how expectedResult text is handled - it's shown in the first step
+        //       if (steps.length > 0 && steps[0]?.id) {
+        //         const firstStepId = steps[0].id;
+        //         const stepAttachmentResponse = await fetch(`/api/teststeps/${firstStepId}/attachments`, {
+        //           method: 'POST',
+        //           headers: { 'Content-Type': 'application/json' },
+        //           body: JSON.stringify({ attachments: expectedResultAttachmentsToLink }),
+        //         });
+        //         
+        //         if (!stepAttachmentResponse.ok) {
+        //           console.warn('Failed to link expectedResult attachments to first step, but test case attachments are saved');
+        //         }
+        //       }
+        //     }
+        //   } catch (error) {
+        //     // Non-critical error - attachments are already linked to test case
+        //     console.warn('Error linking expectedResult attachments to step:', error);
+        //   }
+        // }
       } catch (error) {
         console.error('Error associating attachments:', error);
         throw new Error('Failed to link attachments. Test case was created but attachments were not saved.');

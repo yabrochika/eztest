@@ -559,15 +559,27 @@ export class ImportService {
 
         // Determine the expected result value to use for the test case
         // If there are no test steps, use the parsed expected result (singleExpectedResult) or original value
-        // If there are test steps, use the original expectedResult value (individual step results are stored in steps)
+        // If there are test steps with individual expected results, only set test case level if single value
         let finalExpectedResult: string | null = null;
         if (!testStepsData || testStepsData.length === 0) {
           // No test steps - use the parsed expected result if available, otherwise use original value
           finalExpectedResult = singleExpectedResult || (expectedResult && typeof expectedResult === 'string' && expectedResult.toString().trim() ? expectedResult.toString().trim() : null);
         } else {
-          // Has test steps - use the original expectedResult value for the test case's expectedResult field
-          // (Individual step expected results are already stored in testStepsData)
-          finalExpectedResult = expectedResult && typeof expectedResult === 'string' && expectedResult.toString().trim() ? expectedResult.toString().trim() : null;
+          // Has test steps - check if multiple expected results were parsed
+          if (expectedResultsList.length > 1) {
+            // Multiple expected results assigned to steps - don't set test case level expectedResult
+            // to avoid overwriting first step's individual expected result in the UI
+            finalExpectedResult = null;
+          } else if (expectedResultsList.length === 1) {
+            // Single expected result in list - use it for test case level
+            finalExpectedResult = expectedResultsList[0];
+          } else if (singleExpectedResult) {
+            // Single expected result - use it for test case level
+            finalExpectedResult = singleExpectedResult;
+          } else {
+            // No expected results parsed - use original value if provided
+            finalExpectedResult = expectedResult && typeof expectedResult === 'string' && expectedResult.toString().trim() ? expectedResult.toString().trim() : null;
+          }
         }
 
         // Always auto-generate tcId (Test Case ID column removed from import)

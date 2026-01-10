@@ -6,6 +6,45 @@ import { seedDropdownOptions } from './seed-dropdown-options';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const prisma: any = new PrismaClient();
 
+/**
+ * Ensures all demo users are added as project members
+ * @param projectId - The project ID to add members to
+ * @param adminUser - Admin user object
+ * @param projectManager - Project manager user object
+ * @param testers - Array of tester user objects
+ * @param viewer - Viewer user object
+ */
+async function ensureDemoProjectMembers(
+  projectId: string,
+  adminUser: { id: string },
+  projectManager: { id: string },
+  testers: Array<{ id: string }>,
+  viewer: { id: string }
+) {
+  console.log('\n👥 Ensuring all demo users are project members...');
+  const existingMembers = await prisma.projectMember.findMany({
+    where: { projectId },
+    select: { userId: true },
+  });
+  const existingMemberIds = new Set(existingMembers.map((m: { userId: string }) => m.userId));
+  
+  const allUsers = [adminUser, projectManager, ...testers, viewer];
+  const usersToAdd = allUsers.filter(u => !existingMemberIds.has(u.id));
+  
+  if (usersToAdd.length > 0) {
+    await prisma.projectMember.createMany({
+      data: usersToAdd.map(u => ({
+        projectId,
+        userId: u.id,
+      })),
+      skipDuplicates: true,
+    });
+    console.log(`   ✅ Added ${usersToAdd.length} users as project members`);
+  } else {
+    console.log('   ✅ All demo users are already project members');
+  }
+}
+
 async function main() {
   console.log('🌱 Starting database seed...\n');
 
@@ -91,7 +130,7 @@ async function main() {
     { email: 'tester3@eztest.local', name: 'Michael Chen', bio: 'Automation Test Engineer' },
   ];
 
-  const testers = [];
+  const testers: Array<{ id: string }> = [];
   for (const testerData of testerEmails) {
     let tester = await prisma.user.findUnique({
       where: { email: testerData.email },
@@ -112,7 +151,7 @@ async function main() {
     } else {
       console.log('   ✅ Tester already exists:', tester.email);
     }
-    testers.push(tester);
+    testers.push({ id: tester.id });
   }
 
   // Viewer
@@ -138,43 +177,36 @@ async function main() {
 
   console.log('✅ Demo users created/verified!\n');
 
-  // Check if any project already exists for admin
-  const existingProject = await prisma.project.findFirst({
+  // Check if the demo project specifically exists (by key 'DEMO'), including deleted ones
+  const existingDemoProject = await prisma.project.findFirst({
     where: {
-      createdById: adminUser.id,
+      key: 'DEMO',
     },
   });
 
-  let demoProject = existingProject;
+  let demoProject = existingDemoProject;
+  let shouldCreateDemoData = false;
 
-  if (existingProject) {
-    console.log('✅ Project(s) already exist for admin user - skipping demo project creation');
-    demoProject = existingProject;
-    
-    // Ensure all demo users are added as project members
-    console.log('\n👥 Ensuring all demo users are project members...');
-    const existingMembers = await prisma.projectMember.findMany({
-      where: { projectId: demoProject.id },
-      select: { userId: true },
-    });
-    const existingMemberIds = new Set(existingMembers.map((m: { userId: string }) => m.userId));
-    
-    const allUsers = [adminUser, projectManager, ...testers, viewer];
-    const usersToAdd = allUsers.filter(u => !existingMemberIds.has(u.id));
-    
-    if (usersToAdd.length > 0) {
-      await prisma.projectMember.createMany({
-        data: usersToAdd.map(u => ({
-          projectId: demoProject.id,
-          userId: u.id,
-        })),
-        skipDuplicates: true,
-      });
-      console.log(`   ✅ Added ${usersToAdd.length} users as project members`);
+  if (existingDemoProject) {
+    // If demo project exists (whether deleted or not), skip creating demo data
+    // Don't restore it if it's deleted - leave it as deleted
+    if (existingDemoProject.isDeleted) {
+      console.log('✅ Demo project exists but is deleted - skipping demo project creation (keeping it deleted)');
     } else {
-      console.log('   ✅ All demo users are already project members');
+      console.log('✅ Demo project already exists - skipping demo project creation');
+      
+      // Only ensure members if project is not deleted
+      demoProject = existingDemoProject;
+      await ensureDemoProjectMembers(demoProject.id, adminUser, projectManager, testers, viewer);
     }
+    
+    // Skip creating demo data since project already exists (deleted or not)
+    shouldCreateDemoData = false;
   } else {
+    shouldCreateDemoData = true; // Create new demo project with all data
+  }
+
+  if (shouldCreateDemoData) {
     // Create demo project for admin user with all team members
     demoProject = await prisma.project.create({
       data: {
@@ -194,8 +226,9 @@ async function main() {
         },
       },
     });
-
     console.log('✅ Demo project created:', demoProject.name);
+
+    // Create fresh demo data for new project
 
     // Create demo test suites
     // Test suites are groups of modules that can be used for test runs
@@ -1125,67 +1158,67 @@ async function main() {
         {
           testRunId: testRun3.id,
           testCaseId: loginTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: logoutTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: passwordResetTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: sessionManagementTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: dashboardTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: navigationTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: responsiveDesignTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: formValidationTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: apiAuthTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: apiProjectsTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
         {
           testRunId: testRun3.id,
           testCaseId: apiErrorHandlingTestCase.id,
-          status: 'PENDING',
+          status: 'SKIPPED',
           executedById: testers[1].id,
         },
       ],
@@ -1195,7 +1228,7 @@ async function main() {
 
     console.log('   ✅ Test Run: Sprint 1 Regression Testing');
     console.log('      - 8 tests executed (7 passed, 1 failed)');
-    console.log('      - 3 tests pending');
+    console.log('      - 3 tests skipped');
   }
 
   // Create sample defects (outside the demo project creation block)

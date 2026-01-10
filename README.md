@@ -17,6 +17,69 @@ EZTest is a lightweight, open-source test management platform built with Next.js
 **License:** AGPL-3.0  
 **Maintainers:** Philip Moses (philip.moses@belsterns.com), Kavin (kavin.p@belsterns.com)
 
+## 📸 Screenshots
+
+> **Note:** Screenshots are located in `docs/images/screenshots/` directory.
+
+### Public Pages (Before Login)
+
+| Public Homepage | Login Page | Register Page |
+|-----------------|------------|---------------|
+| ![Home Page](./docs/images/screenshots/Home_Page.png) | ![Login](./docs/images/screenshots/Login_Page.png) | ![Register](./docs/images/screenshots/Register_Page.png) |
+
+*Public landing page shown to visitors before authentication. Users can navigate to login or register from here.*
+
+### Main Application Views (After Login)
+
+| Projects (Homepage) | Project Detail | Test Cases |
+|---------------------|----------------|------------|
+| ![Projects](./docs/images/screenshots/Project_List_Page.png) | ![Project Detail](./docs/images/screenshots/Project_Detail_Page.png) | ![Test Cases](./docs/images/screenshots/TestCase_List_Page.png) |
+
+| Test Runs | Defects | Test Suites |
+|-----------|---------|-------------|
+| ![Test Runs](./docs/images/screenshots/TestRun_List_Page.png) | ![Defects](./docs/images/screenshots/Defects_List_Page.png) | ![Test Suites](./docs/images/screenshots/Test_Suite_List_Page.png) |
+
+### Detail Views
+
+| Test Case Detail | Test Run Execution | Defect Detail |
+|------------------|-------------------|---------------|
+| ![Test Case Detail](./docs/images/screenshots/TestCase_Detail_Page.png) | ![Test Run Execution](./docs/images/screenshots/TestRun_Detail_Page.png) | ![Defect Detail](./docs/images/screenshots/Defects_Detail_Page.png) |
+
+| Test Suite Detail | Modules |
+|-------------------|---------|
+| ![Test Suite Detail](./docs/images/screenshots/Test_Suite_Detail_Page.png) | ![Modules](./docs/images/screenshots/Module_List_Page.png) |
+
+**Core Screenshots:**
+
+**Public Pages (Before Authentication):**
+- `Home_Page.png` - Public landing page (shown to visitors before login/register) with hero section, features, and call-to-action
+- `Login_Page.png` - Login/authentication page
+- `Register_Page.png` - User registration page
+
+**Main Application (After Login):**
+- `Project_List_Page.png` - Projects list page (main homepage after login - this is where authenticated users land)
+- `Project_Detail_Page.png` - Project detail page with tabs (Overview, Test Suites, Test Cases, Test Runs, Defects, Members, Settings)
+- `TestCase_List_Page.png` - Test cases list and management view
+- `TestCase_Detail_Page.png` - Detailed test case view with steps
+- `TestRun_List_Page.png` - Test runs list and execution interface
+- `TestRun_Detail_Page.png` - Active test run execution with progress
+- `Defects_List_Page.png` - Defects tracking and management
+- `Defects_Detail_Page.png` - Individual defect detail view
+- `Login_Page.png` - Login/authentication page
+- `Register_Page.png` - User registration page
+- `Test_Suite_List_Page.png` - Test suites organization view
+- `Test_Suite_Detail_Page.png` - Test suite detail with test cases
+- `Module_List_Page.png` - Modules organization view
+
+**Dialog Screenshots (Optional):**
+- `Create_Project_Dialog.png` - Create project dialog
+- `Create_TestCase_Dialog.png` - Create test case dialog
+- `Create_Test_Suite_Dialog.png` - Create test suite dialog
+- `Create_TestRun_Dialog.png` - Create test run dialog
+- `Create_Defect_Dialog.png` - Create defect dialog
+
+> 📖 **For detailed screenshot guidelines and instructions**, see [docs/images/screenshots/README.md](./docs/images/screenshots/README.md)
+
 ### 🎯 Core Features Status
 
 | Feature | Status | Details |

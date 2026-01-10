@@ -153,11 +153,18 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
               },
             ];
           } else {
-            // Ensure first step shows the test case expected result.
-            apiSteps[0] = {
-              ...apiSteps[0],
-              expectedResult: data.data.expectedResult,
-            };
+            // Only sync test case expected result to first step if first step doesn't already have one
+            // This prevents overwriting individual step expected results when multiple expected results exist
+            const firstStep = apiSteps[0];
+            if (!firstStep.expectedResult || firstStep.expectedResult.trim() === '') {
+              // First step has no expected result - use test case level one
+              apiSteps[0] = {
+                ...firstStep,
+                expectedResult: data.data.expectedResult,
+              };
+            }
+            // If first step already has an expected result, don't overwrite it
+            // This preserves individual step expected results when multiple were imported
           }
         }
 

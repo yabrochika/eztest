@@ -38,7 +38,7 @@ services:
 
 ```bash
 # Cron job (every 5 minutes)
-*/5 * * * * curl -sf http://localhost:3000/api/health || echo "EzTest is down" | mail -s "Alert" admin@example.com
+*/5 * * * * curl -sf http://localhost:3000/api/health || echo "EzTest is down" | mail -s "Alert" admin@eztest.local
 ```
 
 ---
@@ -148,7 +148,7 @@ docker system df
 # health-check.sh
 
 HEALTH_URL="http://localhost:3000/api/health"
-ALERT_EMAIL="admin@example.com"
+ALERT_EMAIL=""
 
 response=$(curl -sf $HEALTH_URL)
 if [ $? -ne 0 ]; then

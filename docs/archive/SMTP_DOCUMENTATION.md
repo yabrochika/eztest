@@ -257,7 +257,7 @@ Permission: testruns:read
     "failedRecipients": [],
     "recipientDetails": [
       {
-        "email": "admin@example.com",
+        "email": "admin@eztest.local",
         "role": "ADMIN",
         "status": "sent"
       }

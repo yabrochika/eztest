@@ -96,7 +96,11 @@ docker-compose exec app npx prisma db seed
 # Open http://localhost:3000
 ```
 
-✅ Register a new account or use seeded credentials
+**Default Admin Credentials :**
+- **Email**: `admin@eztest.local`
+- **Password**: `Admin@123456`
+
+> 💡 You can also register a new account, or customize admin credentials by setting `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables before seeding.
 
 📖 For production deployment and advanced configuration, see [DOCKER.md](./DOCKER.md)
 

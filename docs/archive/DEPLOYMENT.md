@@ -232,7 +232,7 @@ services:
       - "--entryPoints.web.address=:80"
       - "--entryPoints.websecure.address=:443"
       - "--certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=web"
-      - "--certificatesResolvers.letsencrypt.acme.email=admin@example.com"
+      - "--certificatesResolvers.letsencrypt.acme.email=admin@eztest.local"
       - "--certificatesResolvers.letsencrypt.acme.storage=/acme.json"
 
   app:

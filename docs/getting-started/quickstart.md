@@ -30,9 +30,9 @@ docker-compose exec app npx prisma db seed
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-**Login with:**
-- **Email**: `admin@example.com`
-- **Password**: `Admin123!`
+**Login with Default Admin Credentials:**
+- **Email**: `admin@eztest.local`
+- **Password**: `Admin@123456`
 
 ---
 

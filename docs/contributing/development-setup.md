@@ -113,8 +113,7 @@ Visit http://localhost:3000
 ### 7. Login
 
 Use seeded credentials:
-- **Admin:** admin@example.com / Admin123!
-- **Tester:** tester@example.com / Tester123!
+- **Admin:** admin@eztest.local / Admin@123456
 
 ---
 
@@ -237,3 +236,4 @@ git push origin main
 - [Coding Standards](./coding-standards.md) - Code style guide
 - [Pull Request Guide](./pull-requests.md) - Submit changes
 - [Architecture](../architecture/README.md) - Understand the codebase
+

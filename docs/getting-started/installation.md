@@ -84,8 +84,7 @@ http://localhost:3000
 ```
 
 Default credentials (if seeded):
-- **Admin**: admin@example.com / Admin123!
-- **Tester**: tester@example.com / Tester123!
+- **Admin**: admin@eztest.local / Admin@123456
 
 ---
 

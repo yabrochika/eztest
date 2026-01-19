@@ -1,11 +1,96 @@
 import { prisma } from '@/lib/prisma';
 
+/**
+ * Simple TestNG XML Parser
+ */
+class TestNGXMLParser {
+  parse(xmlContent: string) {
+    const testMethods: Array<{
+      name: string;
+      status: string;
+      isConfig: boolean;
+      durationMs?: number;
+      startedAt?: string;
+      finishedAt?: string;
+    }> = [];
+
+    // Extract test-method elements using regex
+    // Pattern: <test-method ... name="METHOD_NAME" ... status="STATUS" ...>
+    const testMethodRegex = /<test-method[^>]*>/g;
+    const matches = xmlContent.matchAll(testMethodRegex);
+
+    for (const match of matches) {
+      const testMethodTag = match[0];
+      
+      // Extract attributes
+      const nameMatch = testMethodTag.match(/name="([^"]+)"/);
+      const statusMatch = testMethodTag.match(/status="([^"]+)"/);
+      const isConfigMatch = testMethodTag.match(/is-config="([^"]+)"/);
+      const startedAtMatch = testMethodTag.match(/started-at="([^"]+)"/);
+      const finishedAtMatch = testMethodTag.match(/finished-at="([^"]+)"/);
+      const durationMatch = testMethodTag.match(/duration-ms="([^"]+)"/);
+
+      if (nameMatch && statusMatch) {
+        const name = nameMatch[1];
+        const status = statusMatch[1];
+        const isConfig = isConfigMatch ? isConfigMatch[1].toLowerCase() === 'true' : false;
+
+        // Parse duration
+        let durationMs: number | undefined;
+        if (durationMatch) {
+          const duration = parseInt(durationMatch[1], 10);
+          if (!isNaN(duration)) {
+            durationMs = duration;
+          }
+        }
+
+        // Parse dates - TestNG uses format like "2026-01-13T21:38:37 IST"
+        // We need to handle timezone abbreviations or convert to ISO format
+        let startedAt: string | undefined;
+        let finishedAt: string | undefined;
+        
+        if (startedAtMatch) {
+          const dateStr = startedAtMatch[1];
+          // Remove timezone abbreviations like "IST", "GMT", etc. and try to parse
+          // Format: "2026-01-13T21:38:37 IST" -> "2026-01-13T21:38:37"
+          const cleanedDate = dateStr.replace(/\s+(IST|GMT|UTC|PST|EST|CST|EDT|PDT|CDT|MDT|MST)$/i, '');
+          const parsedDate = new Date(cleanedDate);
+          if (!isNaN(parsedDate.getTime())) {
+            startedAt = parsedDate.toISOString();
+          }
+        }
+        
+        if (finishedAtMatch) {
+          const dateStr = finishedAtMatch[1];
+          const cleanedDate = dateStr.replace(/\s+(IST|GMT|UTC|PST|EST|CST|EDT|PDT|CDT|MDT|MST)$/i, '');
+          const parsedDate = new Date(cleanedDate);
+          if (!isNaN(parsedDate.getTime())) {
+            finishedAt = parsedDate.toISOString();
+          }
+        }
+
+        testMethods.push({
+          name,
+          status,
+          isConfig,
+          durationMs,
+          startedAt,
+          finishedAt,
+        });
+      }
+    }
+
+    return { testMethods };
+  }
+}
+
 interface CreateTestRunInput {
   projectId: string;
   name: string;
   description?: string;
   assignedToId?: string;
   environment?: string;
+  status?: string;
   testCaseIds?: string[];
   testSuiteIds?: string[];
   createdById: string;
@@ -111,6 +196,7 @@ export class TestRunService {
             testCase: {
               select: {
                 id: true,
+                tcId: true,
                 title: true,
                 description: true,
                 priority: true,
@@ -165,6 +251,7 @@ export class TestRunService {
     }
 
     // Create the test run
+    const status = data.status || 'PLANNED';
     const testRun = await prisma.testRun.create({
       data: {
         projectId: data.projectId,
@@ -172,7 +259,8 @@ export class TestRunService {
         description: data.description,
         assignedToId: data.assignedToId || null,
         environment: data.environment,
-        status: 'PLANNED',
+        status,
+        completedAt: status === 'COMPLETED' ? new Date() : null,
         createdById: data.createdById,
       },
       include: {
@@ -281,6 +369,7 @@ export class TestRunService {
             testCase: {
               select: {
                 id: true,
+                tcId: true,
                 title: true,
                 description: true,
                 priority: true,
@@ -366,6 +455,7 @@ export class TestRunService {
         testCase: {
           select: {
             id: true,
+            tcId: true,
             title: true,
             priority: true,
           },
@@ -426,6 +516,206 @@ export class TestRunService {
     });
 
     return stats;
+  }
+
+  /**
+   * Check how many test cases will match from XML (without importing)
+   */
+  async checkXMLTestCasesMatch(
+    xmlContent: string,
+    projectId: string
+  ): Promise<{ matchCount: number; totalTestMethods: number }> {
+    // Parse XML content
+    const parser = new TestNGXMLParser();
+    const parseResult = parser.parse(xmlContent);
+
+    // Get all test cases for the project indexed by tcId
+    const testCases = await prisma.testCase.findMany({
+      where: {
+        projectId,
+      },
+      select: {
+        id: true,
+        tcId: true,
+        title: true,
+      },
+    });
+
+    // Create a map of tcId -> testCase
+    const testCaseMap = new Map<string, typeof testCases[0]>();
+    testCases.forEach((tc) => {
+      testCaseMap.set(tc.tcId, tc);
+    });
+
+    let matchCount = 0;
+    let totalTestMethods = 0;
+
+    // Count matches
+    for (const testMethod of parseResult.testMethods) {
+      // Skip config methods
+      if (testMethod.isConfig) {
+        continue;
+      }
+
+      totalTestMethods++;
+      
+      // Check if test case exists
+      if (testCaseMap.has(testMethod.name)) {
+        matchCount++;
+      }
+    }
+
+    return { matchCount, totalTestMethods };
+  }
+
+  /**
+   * Parse TestNG XML and import test results
+   */
+  async parseTestNGXMLAndImportResults(
+    xmlContent: string,
+    testRunId: string,
+    projectId: string,
+    executedById: string
+  ) {
+    // Verify test run exists and belongs to project
+    const testRun = await prisma.testRun.findFirst({
+      where: {
+        id: testRunId,
+        projectId,
+      },
+    });
+
+    if (!testRun) {
+      throw new Error('Test run not found');
+    }
+
+    // Parse XML content
+    const parser = new TestNGXMLParser();
+    const parseResult = parser.parse(xmlContent);
+
+    // Get all test cases for the project indexed by tcId
+    const testCases = await prisma.testCase.findMany({
+      where: {
+        projectId,
+      },
+      select: {
+        id: true,
+        tcId: true,
+        title: true,
+      },
+    });
+
+    // Create a map of tcId -> testCase
+    const testCaseMap = new Map<string, typeof testCases[0]>();
+    testCases.forEach((tc) => {
+      testCaseMap.set(tc.tcId, tc);
+    });
+
+    const results = {
+      success: 0,
+      failed: 0,
+      skipped: 0,
+      errors: [] as Array<{ testMethodName: string; error: string }>,
+      skippedItems: [] as Array<{ testMethodName: string; reason: string }>,
+      imported: [] as Array<{ testCaseId: string; testCaseTcId: string; testMethodName: string; status: string }>,
+    };
+
+    // Process each test method
+    for (const testMethod of parseResult.testMethods) {
+      // Skip config methods (beforeSuite, afterSuite, beforeMethod, afterMethod, etc.)
+      if (testMethod.isConfig) {
+        continue;
+      }
+
+      // Match test method name with test case tcId
+      const testCase = testCaseMap.get(testMethod.name);
+
+      if (!testCase) {
+        // Test case not found - skip
+        results.skipped++;
+        results.skippedItems.push({
+          testMethodName: testMethod.name,
+          reason: `Test case ID "${testMethod.name}" not found in project`,
+        });
+        continue;
+      }
+
+      // Map TestNG status to our status
+      let status: string;
+      switch (testMethod.status.toUpperCase()) {
+        case 'PASS':
+          status = 'PASSED';
+          break;
+        case 'FAIL':
+          status = 'FAILED';
+          break;
+        case 'SKIP':
+          status = 'SKIPPED';
+          break;
+        default:
+          status = 'PASSED'; // Default to PASSED if unknown
+      }
+
+      try {
+        // Calculate duration in seconds
+        const duration = testMethod.durationMs
+          ? Math.round(testMethod.durationMs / 1000)
+          : undefined;
+
+        // Parse executedAt date - use startedAt if available and valid, otherwise use current date
+        let executedAt: Date;
+        if (testMethod.startedAt) {
+          const parsedDate = new Date(testMethod.startedAt);
+          if (!isNaN(parsedDate.getTime())) {
+            executedAt = parsedDate;
+          } else {
+            executedAt = new Date();
+          }
+        } else {
+          executedAt = new Date();
+        }
+
+        // Create or update test result
+        await prisma.testResult.upsert({
+          where: {
+            testRunId_testCaseId: {
+              testRunId,
+              testCaseId: testCase.id,
+            },
+          },
+          update: {
+            status,
+            executedById,
+            duration,
+            executedAt,
+          },
+          create: {
+            testRunId,
+            testCaseId: testCase.id,
+            status,
+            executedById,
+            duration,
+            executedAt,
+          },
+        });
+
+        results.success++;
+        results.imported.push({
+          testCaseId: testCase.id,
+          testCaseTcId: testCase.tcId,
+          testMethodName: testMethod.name,
+          status,
+        });
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          testMethodName: testMethod.name,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    return results;
   }
 
   /**

@@ -13,6 +13,7 @@ import { GlassPanel } from '@/frontend/reusable-components/layout/GlassPanel';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/frontend/reusable-elements/dialogs/Dialog';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
 import { SettingsSidebar } from '@/app/components/layout/SettingsSidebar';
+import { Key, Copy, Trash2, Eye, EyeOff, Plus } from 'lucide-react';
 
 interface AccountStatus {
   isMarkedForDeletion: boolean;
@@ -24,6 +25,15 @@ interface UserInfo {
   name: string;
   email: string;
   role: string;
+}
+
+interface ApiKey {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
 }
 
 export default function AccountSettingsPage() {
@@ -47,6 +57,14 @@ export default function AccountSettingsPage() {
     confirmPassword: '',
   });
   const [changingPassword, setChangingPassword] = useState(false);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [loadingKeys, setLoadingKeys] = useState(false);
+  const [showNewKeyDialog, setShowNewKeyDialog] = useState(false);
+  const [newApiKeyName, setNewApiKeyName] = useState('');
+  const [newApiKeyExpiresInDays, setNewApiKeyExpiresInDays] = useState<number | undefined>(undefined);
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [newKey, setNewKey] = useState<string | null>(null);
+  const [showKey, setShowKey] = useState(false);
 
   // Fetch user info and account status
   useEffect(() => {
@@ -77,7 +95,95 @@ export default function AccountSettingsPage() {
     };
 
     fetchData();
+    fetchApiKeys();
   }, []);
+
+  const fetchApiKeys = async () => {
+    setLoadingKeys(true);
+    try {
+      const response = await fetch('/api/apikeys');
+      if (response.ok) {
+        const data = await response.json();
+        setApiKeys(data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching API keys:', err);
+    } finally {
+      setLoadingKeys(false);
+    }
+  };
+
+  const handleCreateApiKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setCreatingKey(true);
+
+    try {
+      let expiresAt: string | null = null;
+      if (newApiKeyExpiresInDays && newApiKeyExpiresInDays > 0) {
+        const expiresDate = new Date();
+        expiresDate.setDate(expiresDate.getDate() + newApiKeyExpiresInDays);
+        expiresAt = expiresDate.toISOString();
+      }
+
+      const response = await fetch('/api/apikeys', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newApiKeyName,
+          expiresAt,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create API key');
+      }
+
+      const data = await response.json();
+      // /api/apikeys returns { key, apiKey }
+      setNewKey(data.key);
+      setNewApiKeyName('');
+      setNewApiKeyExpiresInDays(undefined);
+      setShowNewKeyDialog(false);
+      await fetchApiKeys();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error creating API key');
+    } finally {
+      setCreatingKey(false);
+    }
+  };
+
+  const handleRevokeApiKey = async (apiKeyId: string) => {
+    if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/apikeys/${apiKeyId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to revoke API key');
+      }
+
+      setSuccess('API key revoked successfully');
+      await fetchApiKeys();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error revoking API key');
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setSuccess('API key copied to clipboard');
+    setTimeout(() => setSuccess(null), 2000);
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,6 +319,87 @@ export default function AccountSettingsPage() {
             <AlertDescription className="text-green-300">{success}</AlertDescription>
           </Alert>
         )}
+
+        {/* API Tokens Section */}
+        <GlassPanel className="mb-6" contentClassName="p-8">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                <Key className="w-6 h-6" />
+                API Keys
+              </h2>
+              <p className="text-muted-foreground text-sm mt-1">
+                Manage API keys for programmatic access to EZTest
+              </p>
+            </div>
+            <ButtonPrimary
+              onClick={() => {
+                setShowNewKeyDialog(true);
+                setNewKey(null);
+                setShowKey(false);
+              }}
+              className="rounded-[10px]"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create API Key
+            </ButtonPrimary>
+          </div>
+
+          {loadingKeys ? (
+            <p className="text-muted-foreground text-sm">Loading API keys...</p>
+          ) : apiKeys.length === 0 ? (
+            <div className="rounded-lg p-4 border border-primary/30 bg-primary/5">
+              <p className="text-muted-foreground text-sm">
+                No API keys created yet. Create one to get started.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {apiKeys.map((apiKey) => (
+                <div
+                  key={apiKey.id}
+                  className="flex items-center justify-between p-4 rounded-lg border border-primary/30 bg-primary/5"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-medium text-foreground">{apiKey.name}</h3>
+                      {apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date() && (
+                        <span className="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-400">
+                          Expired
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground font-mono">
+                      {apiKey.keyPrefix}...
+                    </p>
+                    <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                      <span>
+                        Created: {new Date(apiKey.createdAt).toLocaleDateString()}
+                      </span>
+                      {apiKey.lastUsedAt && (
+                        <span>
+                          Last used: {new Date(apiKey.lastUsedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                      {apiKey.expiresAt && (
+                        <span>
+                          Expires: {new Date(apiKey.expiresAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <ButtonDestructive
+                    onClick={() => handleRevokeApiKey(apiKey.id)}
+                    className="rounded-[10px]"
+                    variant="ghost"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </ButtonDestructive>
+                </div>
+              ))}
+            </div>
+          )}
+        </GlassPanel>
 
         {/* Change Password Section */}
         <GlassPanel className="mb-6" contentClassName="p-8">
@@ -445,6 +632,138 @@ export default function AccountSettingsPage() {
               </ButtonDestructive>
             </div>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create API Token Dialog */}
+      <Dialog open={showNewKeyDialog} onOpenChange={setShowNewKeyDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create API Key</DialogTitle>
+            <DialogDescription>
+              {newKey
+                ? 'Copy your API key now. You won&apos;t be able to see it again!'
+                : 'Create a new API key for programmatic access to EZTest'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {newKey ? (
+            <div className="space-y-4">
+              <div className="rounded-lg p-4 border border-yellow-500/40 bg-yellow-500/10">
+                <p className="text-sm text-yellow-200 mb-2 font-medium">
+                  ⚠️ Important: Copy this API key now
+                </p>
+                <p className="text-xs text-yellow-200/90">
+                  This is the only time you&apos;ll be able to see the full API key. Make sure to store it securely.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Your API Key</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type={showKey ? 'text' : 'password'}
+                    value={newKey}
+                    readOnly
+                    variant="glass"
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => setShowKey(!showKey)}
+                    variant="glass"
+                    className="rounded-[10px] cursor-pointer"
+                  >
+                    {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => copyToClipboard(newKey)}
+                    variant="glass"
+                    className="rounded-[10px] cursor-pointer"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <ButtonPrimary
+                  onClick={() => {
+                    setShowNewKeyDialog(false);
+                    setNewKey(null);
+                    setShowKey(false);
+                  }}
+                  className="flex-1 rounded-[10px]"
+                >
+                  Done
+                </ButtonPrimary>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleCreateApiKey} className="space-y-4">
+              <div>
+                <Label className="block text-sm font-medium text-muted-foreground mb-2">
+                  API Key Name
+                </Label>
+                <Input
+                  variant="glass"
+                  value={newApiKeyName}
+                  onChange={(e) => setNewApiKeyName(e.target.value)}
+                  required
+                  placeholder="e.g., CI/CD Pipeline, Local Development"
+                  maxLength={100}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Give your token a descriptive name to identify its purpose
+                </p>
+              </div>
+
+              <div>
+                <Label className="block text-sm font-medium text-muted-foreground mb-2">
+                  Expiration (Optional)
+                </Label>
+                <Input
+                  type="number"
+                  variant="glass"
+                  value={newApiKeyExpiresInDays || ''}
+                  onChange={(e) =>
+                    setNewApiKeyExpiresInDays(
+                      e.target.value ? parseInt(e.target.value, 10) : undefined
+                    )
+                  }
+                  placeholder="Days (leave empty for no expiration)"
+                  min={1}
+                  max={3650}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Token will expire after this many days (max 3650 days / 10 years)
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <ButtonPrimary
+                  type="submit"
+                  disabled={creatingKey || !newApiKeyName.trim()}
+                  className="flex-1 rounded-[10px]"
+                >
+                  {creatingKey ? 'Creating...' : 'Create API Key'}
+                </ButtonPrimary>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowNewKeyDialog(false);
+                    setNewApiKeyName('');
+                    setNewApiKeyExpiresInDays(undefined);
+                  }}
+                  variant="glass"
+                  className="flex-1 rounded-[10px] cursor-pointer"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
       </div>

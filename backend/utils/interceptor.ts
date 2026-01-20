@@ -17,4 +17,5 @@ export interface UserInfo {
 export interface CustomRequest extends NextRequest {
   scopeInfo: ScopeInfo;
   userInfo: UserInfo;
+  apiKeyProjectId?: string;
 }

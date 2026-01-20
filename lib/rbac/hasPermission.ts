@@ -9,6 +9,61 @@ type UserWithRole = Prisma.UserGetPayload<{
   include: { role: { include: { permissions: { include: { permission: true } } } } };
 }>;
 
+function toUserWithRole(user: AuthenticatedUser | UserWithRole): UserWithRole {
+  // If this already looks like a Prisma user payload, just return it
+  if ((user as UserWithRole).role?.permissions?.[0]?.permission) {
+    return user as UserWithRole;
+  }
+
+  const authUser = user as AuthenticatedUser;
+
+  const mapped = {
+    // Minimal shape required by our permission helpers
+    id: authUser.id,
+    email: authUser.email,
+    name: authUser.name,
+    password: '',
+    roleId: '',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    role: {
+      id: '',
+      name: authUser.role.name,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      permissions: authUser.role.permissions.map((rp) => ({
+        id: '',
+        roleId: '',
+        permissionId: '',
+        createdAt: new Date(),
+        permission: {
+          id: '',
+          name: rp.permission.name,
+          description: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      })),
+    },
+    projects: [],
+    testCases: [],
+    assignedTestRuns: [],
+    createdTestRuns: [],
+    testResults: [],
+    comments: [],
+    createdProjects: [],
+    passwordResetTokens: [],
+    apiKeys: [],
+    assignedDefects: [],
+    createdDefects: [],
+    defectComments: [],
+    defectAttachments: [],
+    commentAttachments: [],
+  };
+
+  return mapped as unknown as UserWithRole;
+}
+
 /**
  * Simple permission checking for RBAC
  * Checks if a user has a specific permission string
@@ -88,9 +143,8 @@ export function hasPermission(
   apiMethod: BaseApiMethod<CustomRequest>,
   module: string,
   action: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): any {
-  return baseInterceptor<CustomRequest>(async (request: NextRequest, context) => {
+) {
+  return baseInterceptor(async (request: NextRequest, context) => {
     // Extract projectId from URL if available (for project-specific key validation)
     let projectId: string | undefined;
     try {
@@ -113,8 +167,7 @@ export function hasPermission(
     }
 
     // Convert authenticated user to UserWithRole format for permission checking
-    // The authenticatedUser already has the correct structure from Prisma
-    const user = authenticatedUser as unknown as UserWithRole;
+    const user = toUserWithRole(authenticatedUser);
 
     // Check if API key is project-specific and matches the requested project
     if (projectId && authenticatedUser.projectId) {
@@ -183,7 +236,7 @@ export function hasPermission(
 
     // Attach projectId if API key is scoped
     if (authenticatedUser.projectId) {
-      (customRequest as any).apiKeyProjectId = authenticatedUser.projectId;
+      customRequest.apiKeyProjectId = authenticatedUser.projectId;
     }
 
     // Call the actual API method with enhanced request

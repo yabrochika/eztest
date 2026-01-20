@@ -27,10 +27,10 @@ interface UserInfo {
   role: string;
 }
 
-interface ApiToken {
+interface ApiKey {
   id: string;
   name: string;
-  tokenPrefix: string;
+  keyPrefix: string;
   lastUsedAt: string | null;
   expiresAt: string | null;
   createdAt: string;
@@ -57,14 +57,14 @@ export default function AccountSettingsPage() {
     confirmPassword: '',
   });
   const [changingPassword, setChangingPassword] = useState(false);
-  const [apiTokens, setApiTokens] = useState<ApiToken[]>([]);
-  const [loadingTokens, setLoadingTokens] = useState(false);
-  const [showNewTokenDialog, setShowNewTokenDialog] = useState(false);
-  const [newTokenName, setNewTokenName] = useState('');
-  const [newTokenExpiresInDays, setNewTokenExpiresInDays] = useState<number | undefined>(undefined);
-  const [creatingToken, setCreatingToken] = useState(false);
-  const [newToken, setNewToken] = useState<string | null>(null);
-  const [showToken, setShowToken] = useState(false);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [loadingKeys, setLoadingKeys] = useState(false);
+  const [showNewKeyDialog, setShowNewKeyDialog] = useState(false);
+  const [newApiKeyName, setNewApiKeyName] = useState('');
+  const [newApiKeyExpiresInDays, setNewApiKeyExpiresInDays] = useState<number | undefined>(undefined);
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [newKey, setNewKey] = useState<string | null>(null);
+  const [showKey, setShowKey] = useState(false);
 
   // Fetch user info and account status
   useEffect(() => {
@@ -95,85 +95,93 @@ export default function AccountSettingsPage() {
     };
 
     fetchData();
-    fetchApiTokens();
+    fetchApiKeys();
   }, []);
 
-  const fetchApiTokens = async () => {
-    setLoadingTokens(true);
+  const fetchApiKeys = async () => {
+    setLoadingKeys(true);
     try {
-      const response = await fetch('/api/users/api-tokens');
+      const response = await fetch('/api/apikeys');
       if (response.ok) {
         const data = await response.json();
-        setApiTokens(data || []);
+        setApiKeys(data || []);
       }
     } catch (err) {
-      console.error('Error fetching API tokens:', err);
+      console.error('Error fetching API keys:', err);
     } finally {
-      setLoadingTokens(false);
+      setLoadingKeys(false);
     }
   };
 
-  const handleCreateToken = async (e: React.FormEvent) => {
+  const handleCreateApiKey = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setCreatingToken(true);
+    setCreatingKey(true);
 
     try {
-      const response = await fetch('/api/users/api-tokens', {
+      let expiresAt: string | null = null;
+      if (newApiKeyExpiresInDays && newApiKeyExpiresInDays > 0) {
+        const expiresDate = new Date();
+        expiresDate.setDate(expiresDate.getDate() + newApiKeyExpiresInDays);
+        expiresAt = expiresDate.toISOString();
+      }
+
+      const response = await fetch('/api/apikeys', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: newTokenName,
-          expiresInDays: newTokenExpiresInDays || undefined,
+          name: newApiKeyName,
+          expiresAt,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create API token');
+        throw new Error(errorData.error || 'Failed to create API key');
       }
 
       const data = await response.json();
-      setNewToken(data.token);
-      setNewTokenName('');
-      setNewTokenExpiresInDays(undefined);
-      setShowNewTokenDialog(false);
-      await fetchApiTokens();
+      // /api/apikeys returns { key, apiKey }
+      setNewKey(data.key);
+      setNewApiKeyName('');
+      setNewApiKeyExpiresInDays(undefined);
+      setShowNewKeyDialog(false);
+      await fetchApiKeys();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error creating API token');
+      setError(err instanceof Error ? err.message : 'Error creating API key');
     } finally {
-      setCreatingToken(false);
+      setCreatingKey(false);
     }
   };
 
-  const handleRevokeToken = async (tokenId: string) => {
-    if (!confirm('Are you sure you want to revoke this API token? This action cannot be undone.')) {
+  const handleRevokeApiKey = async (apiKeyId: string) => {
+    if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
       return;
     }
 
     try {
-      const response = await fetch(`/api/users/api-tokens/${tokenId}`, {
+      const response = await fetch(`/api/apikeys/${apiKeyId}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to revoke API token');
+        throw new Error(errorData.error || 'Failed to revoke API key');
       }
 
-      setSuccess('API token revoked successfully');
-      await fetchApiTokens();
+      setSuccess('API key revoked successfully');
+      await fetchApiKeys();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error revoking API token');
+      setError(err instanceof Error ? err.message : 'Error revoking API key');
     }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    setSuccess('Token copied to clipboard');
+    setSuccess('API key copied to clipboard');
     setTimeout(() => setSuccess(null), 2000);
   };
 
@@ -318,70 +326,70 @@ export default function AccountSettingsPage() {
             <div>
               <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
                 <Key className="w-6 h-6" />
-                API Tokens
+                API Keys
               </h2>
               <p className="text-muted-foreground text-sm mt-1">
-                Manage API tokens for programmatic access to EZTest
+                Manage API keys for programmatic access to EZTest
               </p>
             </div>
             <ButtonPrimary
               onClick={() => {
-                setShowNewTokenDialog(true);
-                setNewToken(null);
-                setShowToken(false);
+                setShowNewKeyDialog(true);
+                setNewKey(null);
+                setShowKey(false);
               }}
               className="rounded-[10px]"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Create Token
+              Create API Key
             </ButtonPrimary>
           </div>
 
-          {loadingTokens ? (
-            <p className="text-muted-foreground text-sm">Loading tokens...</p>
-          ) : apiTokens.length === 0 ? (
+          {loadingKeys ? (
+            <p className="text-muted-foreground text-sm">Loading API keys...</p>
+          ) : apiKeys.length === 0 ? (
             <div className="rounded-lg p-4 border border-primary/30 bg-primary/5">
               <p className="text-muted-foreground text-sm">
-                No API tokens created yet. Create one to get started.
+                No API keys created yet. Create one to get started.
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {apiTokens.map((token) => (
+              {apiKeys.map((apiKey) => (
                 <div
-                  key={token.id}
+                  key={apiKey.id}
                   className="flex items-center justify-between p-4 rounded-lg border border-primary/30 bg-primary/5"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-foreground">{token.name}</h3>
-                      {token.expiresAt && new Date(token.expiresAt) < new Date() && (
+                      <h3 className="font-medium text-foreground">{apiKey.name}</h3>
+                      {apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date() && (
                         <span className="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-400">
                           Expired
                         </span>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground font-mono">
-                      {token.tokenPrefix}...
+                      {apiKey.keyPrefix}...
                     </p>
                     <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                       <span>
-                        Created: {new Date(token.createdAt).toLocaleDateString()}
+                        Created: {new Date(apiKey.createdAt).toLocaleDateString()}
                       </span>
-                      {token.lastUsedAt && (
+                      {apiKey.lastUsedAt && (
                         <span>
-                          Last used: {new Date(token.lastUsedAt).toLocaleDateString()}
+                          Last used: {new Date(apiKey.lastUsedAt).toLocaleDateString()}
                         </span>
                       )}
-                      {token.expiresAt && (
+                      {apiKey.expiresAt && (
                         <span>
-                          Expires: {new Date(token.expiresAt).toLocaleDateString()}
+                          Expires: {new Date(apiKey.expiresAt).toLocaleDateString()}
                         </span>
                       )}
                     </div>
                   </div>
                   <ButtonDestructive
-                    onClick={() => handleRevokeToken(token.id)}
+                    onClick={() => handleRevokeApiKey(apiKey.id)}
                     className="rounded-[10px]"
                     variant="ghost"
                   >
@@ -628,49 +636,49 @@ export default function AccountSettingsPage() {
       </Dialog>
 
       {/* Create API Token Dialog */}
-      <Dialog open={showNewTokenDialog} onOpenChange={setShowNewTokenDialog}>
+      <Dialog open={showNewKeyDialog} onOpenChange={setShowNewKeyDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Create API Token</DialogTitle>
+            <DialogTitle>Create API Key</DialogTitle>
             <DialogDescription>
-              {newToken
-                ? 'Copy your token now. You won\'t be able to see it again!'
-                : 'Create a new API token for programmatic access to EZTest'}
+              {newKey
+                ? 'Copy your API key now. You won&apos;t be able to see it again!'
+                : 'Create a new API key for programmatic access to EZTest'}
             </DialogDescription>
           </DialogHeader>
 
-          {newToken ? (
+          {newKey ? (
             <div className="space-y-4">
               <div className="rounded-lg p-4 border border-yellow-500/40 bg-yellow-500/10">
                 <p className="text-sm text-yellow-200 mb-2 font-medium">
-                  ⚠️ Important: Copy this token now
+                  ⚠️ Important: Copy this API key now
                 </p>
                 <p className="text-xs text-yellow-200/90">
-                  This is the only time you'll be able to see the full token. Make sure to store it securely.
+                  This is the only time you&apos;ll be able to see the full API key. Make sure to store it securely.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Your API Token</Label>
+                <Label>Your API Key</Label>
                 <div className="flex gap-2">
                   <Input
-                    type={showToken ? 'text' : 'password'}
-                    value={newToken}
+                    type={showKey ? 'text' : 'password'}
+                    value={newKey}
                     readOnly
                     variant="glass"
                     className="font-mono text-sm"
                   />
                   <Button
                     type="button"
-                    onClick={() => setShowToken(!showToken)}
+                    onClick={() => setShowKey(!showKey)}
                     variant="glass"
                     className="rounded-[10px] cursor-pointer"
                   >
-                    {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
                   <Button
                     type="button"
-                    onClick={() => copyToClipboard(newToken)}
+                    onClick={() => copyToClipboard(newKey)}
                     variant="glass"
                     className="rounded-[10px] cursor-pointer"
                   >
@@ -682,9 +690,9 @@ export default function AccountSettingsPage() {
               <div className="flex gap-3 pt-4">
                 <ButtonPrimary
                   onClick={() => {
-                    setShowNewTokenDialog(false);
-                    setNewToken(null);
-                    setShowToken(false);
+                    setShowNewKeyDialog(false);
+                    setNewKey(null);
+                    setShowKey(false);
                   }}
                   className="flex-1 rounded-[10px]"
                 >
@@ -693,15 +701,15 @@ export default function AccountSettingsPage() {
               </div>
             </div>
           ) : (
-            <form onSubmit={handleCreateToken} className="space-y-4">
+            <form onSubmit={handleCreateApiKey} className="space-y-4">
               <div>
                 <Label className="block text-sm font-medium text-muted-foreground mb-2">
-                  Token Name
+                  API Key Name
                 </Label>
                 <Input
                   variant="glass"
-                  value={newTokenName}
-                  onChange={(e) => setNewTokenName(e.target.value)}
+                  value={newApiKeyName}
+                  onChange={(e) => setNewApiKeyName(e.target.value)}
                   required
                   placeholder="e.g., CI/CD Pipeline, Local Development"
                   maxLength={100}
@@ -718,9 +726,9 @@ export default function AccountSettingsPage() {
                 <Input
                   type="number"
                   variant="glass"
-                  value={newTokenExpiresInDays || ''}
+                  value={newApiKeyExpiresInDays || ''}
                   onChange={(e) =>
-                    setNewTokenExpiresInDays(
+                    setNewApiKeyExpiresInDays(
                       e.target.value ? parseInt(e.target.value, 10) : undefined
                     )
                   }
@@ -736,17 +744,17 @@ export default function AccountSettingsPage() {
               <div className="flex gap-3 pt-4">
                 <ButtonPrimary
                   type="submit"
-                  disabled={creatingToken || !newTokenName.trim()}
+                  disabled={creatingKey || !newApiKeyName.trim()}
                   className="flex-1 rounded-[10px]"
                 >
-                  {creatingToken ? 'Creating...' : 'Create Token'}
+                  {creatingKey ? 'Creating...' : 'Create API Key'}
                 </ButtonPrimary>
                 <Button
                   type="button"
                   onClick={() => {
-                    setShowNewTokenDialog(false);
-                    setNewTokenName('');
-                    setNewTokenExpiresInDays(undefined);
+                    setShowNewKeyDialog(false);
+                    setNewApiKeyName('');
+                    setNewApiKeyExpiresInDays(undefined);
                   }}
                   variant="glass"
                   className="flex-1 rounded-[10px] cursor-pointer"

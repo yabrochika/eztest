@@ -132,10 +132,14 @@ export class ApiKeyService {
     projectId: string | null;
     apiKeyId: string;
   } | null> {
-    // Find all active API keys
+    // Extract prefix to limit search space before bcrypt comparison
+    const keyPrefix = apiKey.substring(0, 11);
+
+    // Find candidate active API keys with matching prefix
     const apiKeys = await prisma.apiKey.findMany({
       where: {
         isActive: true,
+        keyPrefix,
         OR: [
           { expiresAt: { gt: new Date() } },
           { expiresAt: null },

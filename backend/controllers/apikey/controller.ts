@@ -7,7 +7,16 @@ import { z } from 'zod';
 const createApiKeySchema = z.object({
   name: z.string().min(1, 'Name is required').max(255, 'Name must be less than 255 characters'),
   projectId: z.string().optional().nullable(),
-  expiresAt: z.string().datetime().optional().nullable().transform((val) => val ? new Date(val) : null),
+  expiresAt: z
+    .string()
+    .datetime()
+    .optional()
+    .nullable()
+    .transform((val) => (val ? new Date(val) : null))
+    .refine(
+      (date) => date === null || date.getTime() > Date.now(),
+      { message: 'Expiration date must be in the future' }
+    ),
 });
 
 export class ApiKeyController {

@@ -217,7 +217,8 @@ public class EZTestUploadMain {
             EZTestCreateTestRunUploader uploader =
                 new EZTestCreateTestRunUploader(
                     EnvConfig.require("EZTEST_BASE_URL"),
-                    EnvConfig.require("EZTEST_API_TOKEN")
+                    // Prefer EZTEST_API_KEY, fall back to legacy EZTEST_API_TOKEN
+                    EnvConfig.require("EZTEST_API_KEY")
                 );
 
             uploader.upload(
@@ -265,7 +266,7 @@ Create a file named `.env` in your project root (or set OS/CI environment variab
 
 ```env
 EZTEST_BASE_URL=https://your-eztest-domain.com
-EZTEST_API_TOKEN=your_api_token_here
+EZTEST_API_KEY=your_api_key_here
 EZTEST_PROJECT_ID=your_project_id
 EZTEST_ENVIRONMENT=STAGING
 ```

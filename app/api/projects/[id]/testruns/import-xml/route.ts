@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { testRunController } from '@/backend/controllers/testrun/controller';
 import { hasPermission } from '@/lib/rbac';
 
@@ -39,8 +40,8 @@ export const POST = hasPermission(
     if (contentType.includes('application/xml') || contentType.includes('text/xml')) {
       try {
         xmlContent = await request.text();
-      } catch (error) {
-        return Response.json(
+      } catch {
+        return NextResponse.json(
           { error: 'Failed to read XML content from request body' },
           { status: 400 }
         );
@@ -60,22 +61,22 @@ export const POST = hasPermission(
       };
       try {
         body = await request.json();
-      } catch (error) {
-        return Response.json(
+      } catch {
+        return NextResponse.json(
           { error: 'Invalid request body. Expected JSON with xmlContent field or raw XML with Content-Type: application/xml' },
           { status: 400 }
         );
       }
 
       if (!body.xmlContent) {
-        return Response.json(
+        return NextResponse.json(
           { error: 'xmlContent is required in request body' },
           { status: 400 }
         );
       }
 
       if (typeof body.xmlContent !== 'string') {
-        return Response.json(
+        return NextResponse.json(
           { error: 'xmlContent must be a string' },
           { status: 400 }
         );
@@ -89,7 +90,7 @@ export const POST = hasPermission(
 
     // Validate XML content is not empty
     if (!xmlContent || xmlContent.trim().length === 0) {
-      return Response.json(
+      return NextResponse.json(
         { error: 'XML content cannot be empty' },
         { status: 400 }
       );
@@ -97,23 +98,31 @@ export const POST = hasPermission(
 
     // Validate environment is provided (required for test run creation)
     if (!environment) {
-      return Response.json(
+      return NextResponse.json(
         { error: 'environment is required. Provide it in query params (?environment=ENV_NAME) or in JSON body' },
         { status: 400 }
       );
     }
 
     // Step 1: Check XML for matching test cases (same as UI)
-    const checkResult = await testRunController.checkXMLMatches(
-      xmlContent,
-      projectId
-    );
+    let checkResult;
+    try {
+      checkResult = await testRunController.checkXMLMatches(
+        xmlContent,
+        projectId
+      );
+    } catch {
+      return NextResponse.json(
+        { error: 'Failed to check XML for matching test cases' },
+        { status: 500 }
+      );
+    }
 
     const { matchCount = 0, totalTestMethods = 0 } = checkResult.data || {};
 
     // Step 2: If no matches found, don't create test run (exact same behavior as UI)
     if (matchCount === 0) {
-      return Response.json(
+      return NextResponse.json(
         { 
           error: `No matching items found. The file contains ${totalTestMethods} item(s), but none match existing records.`
         },
@@ -148,16 +157,24 @@ export const POST = hasPermission(
       testCaseIds: [],
     };
 
-    const createResult = await testRunController.createTestRun(
-      createBody,
-      projectId,
-      request.userInfo.id
-    );
+    let createResult;
+    try {
+      createResult = await testRunController.createTestRun(
+        createBody,
+        projectId,
+        request.userInfo.id
+      );
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Failed to create test run', details: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      );
+    }
 
     const createData = createResult.data;
     if (!createData || !createData.id) {
-      return Response.json(
-        { error: 'Failed to create test run' },
+      return NextResponse.json(
+        { error: 'Failed to create test run: invalid response from controller' },
         { status: 500 }
       );
     }
@@ -165,14 +182,34 @@ export const POST = hasPermission(
     const testRunId = createData.id;
 
     // Step 5: Upload XML to the created test run (same as UI)
-    const uploadResult = await testRunController.uploadTestNGXML(
-      xmlContent,
-      testRunId,
-      request.userInfo.id
-    );
+    let uploadResult;
+    try {
+      uploadResult = await testRunController.uploadTestNGXML(
+        xmlContent,
+        testRunId,
+        request.userInfo.id
+      );
+    } catch (error) {
+      // Test run was created but upload failed - still return success with warning
+      return NextResponse.json(
+        { 
+          data: {
+            testRunId,
+            success: false,
+            message: 'Test run created but XML upload failed',
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }
+        },
+        { status: 500 }
+      );
+    }
 
     // Return the exact same format as upload endpoint (same as UI expects)
-    return uploadResult;
+    // Controller returns { data, statusCode }, convert to NextResponse
+    return NextResponse.json(
+      uploadResult.data,
+      { status: uploadResult.statusCode || 200 }
+    );
   },
   'testruns',
   'create'

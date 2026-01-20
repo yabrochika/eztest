@@ -22,6 +22,12 @@ export default withAuth(
           return true;
         }
 
+        // API routes handle their own authentication via hasPermission
+        // Don't block them here - let the route handler decide
+        if (pathname.startsWith('/api/')) {
+          return true;
+        }
+
         // Settings routes require authentication
         if (pathname.startsWith('/settings/')) {
           return !!token;

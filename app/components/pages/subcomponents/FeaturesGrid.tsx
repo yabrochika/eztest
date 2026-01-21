@@ -9,34 +9,34 @@ interface Feature {
 
 const features: Feature[] = [
   {
-    image: '/icons/project-support.svg',
-    title: 'Multi-Project Support',
-    description: 'Manage multiple projects with role-based access control. Keep everything organized in one place.',
+    image: '/icons/Single system for cases.png',
+    title: 'Single System for Cases, Runs & Defects',
+    description: 'Manage test cases, test runs, and defects in one unified platform. Eliminate spreadsheets and scattered tools.',
   },
   {
-    image: '/icons/002-hierarchy.svg',
-    title: 'Hierarchical Tests',
-    description: 'Organize tests in hierarchical suites. Create detailed test cases with steps and expected results.',
+    image: '/icons/Data migration.png',
+    title: 'Data Migration & Bulk Import',
+    description: 'Import test cases, test runs, and defects from spreadsheets or CSV files. Migrate from other tools quickly and with minimal effort.',
   },
   {
-    image: '/icons/defect.svg',
-    title: 'Defect Management',
-    description: 'Run tests and track results in real-time. Monitor progress with comprehensive dashboards.',
+    image: '/icons/End to end tarceability.png',
+    title: 'End-to-End Traceability',
+    description: 'Track relationships between test cases, test runs, and defects. See the complete picture of what\'s tested, what failed, and what\'s fixed.',
   },
   {
-    image: '/icons/traceability.svg',
-    title: 'Traceability',
-    description: 'Link test cases to requirements. Ensure complete coverage and maintain audit trails.',
+    image: '/icons/Manual and automation testing.png',
+    title: 'Manual + Automation Testing',
+    description: 'Plan and track manual tests alongside automated suites in one open-source platform. Unified reporting for all stakeholders.',
   },
   {
-    image: '/icons/collaboration.svg',
-    title: 'Collaboration',
-    description: 'Add comments, attach files, and collaborate with your team. Everything in context.',
+    image: '/icons/Comments and collaboration.png',
+    title: 'Comments & Collaboration',
+    description: 'Add comments and discussions on defects and test artifacts. Collaborate with your team in context with threaded conversations.',
   },
   {
-    image: '/icons/lightweight.svg',
-    title: 'Lightweight',
-    description: 'Runs efficiently on minimal hardware. 1 core, 2GB RAM is all you need to get started.',
+    image: '/icons/Email notification.png',
+    title: 'Email Notifications',
+    description: 'Get automated notifications for test runs, defect assignments, and status changes so your team can react quickly to issues.',
   },
 ];
 
@@ -88,3 +88,4 @@ export const FeaturesGrid = () => {
     </Card>
   );
 };
+

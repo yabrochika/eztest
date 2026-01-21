@@ -10,6 +10,7 @@ import { GlassFooter } from '@/frontend/reusable-components/layout/GlassFooter';
 import { HeroSection } from './subcomponents/HeroSection';
 import { FeaturesGrid } from './subcomponents/FeaturesGrid';
 import { StatsSection } from './subcomponents/StatsSection';
+import { PhilosophySection } from './subcomponents/PhilosophySection';
 
 const navItems = [
   { label: 'Features', href: '#features' },
@@ -83,6 +84,7 @@ export default function HomePage() {
         <div id="why-choose" className="scroll-mt-24">
           <StatsSection />
         </div>
+        <PhilosophySection />
       </div>
 
       <GlassFooter />

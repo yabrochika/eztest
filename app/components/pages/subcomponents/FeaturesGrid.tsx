@@ -9,17 +9,17 @@ interface Feature {
 
 const features: Feature[] = [
   {
-    image: '/icons/Single system for cases.png',
+    image: '/icons/End to end tarceability.png',
     title: 'Unified Traceability',
     description: 'Link test cases to defects, test runs, and modules for complete end-to-end traceability across your testing lifecycle.',
   },
   {
-    image: '/icons/Data migration.png',
+    image: '/icons/bug.svg',
     title: 'Defect Management',
     description: 'Track bugs with severity, priority, status, and file attachments. Link defects directly to test cases.',
   },
   {
-    image: '/icons/End to end tarceability.png',
+    image: '/icons/Data migration.png',
     title: 'Built-in Migration Support',
     description: 'Import test cases and defects in bulk using CSV or Excel files. Auto-create modules and test suites during import.',
   },
@@ -29,7 +29,7 @@ const features: Feature[] = [
     description: 'Open-source and self-hosted platform. Full source code access allows complete customization to fit your team\'s needs.',
   },
   {
-    image: '/icons/Comments and collaboration.png',
+    image: '/icons/shield-check.svg',
     title: 'AuthN + AuthZ',
     description: 'Secure authentication with email/password, JWT sessions, and role-based access control with 27 granular permissions.',
   },
@@ -40,7 +40,7 @@ export const FeaturesGrid = () => {
     <Card variant="glass" className="mb-24">
       <CardContent className="py-12">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Why Choose EZTest? 🤔</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Why Choose EZTest?</h2>
           <p className="text-base text-white/60">Powerful features that make test management simple</p>
         </div>
         <div className="flex flex-wrap gap-6 justify-center">
@@ -58,8 +58,8 @@ export const FeaturesGrid = () => {
                       <Image
                         src={feature.image}
                         alt={feature.title}
-                        width={56}
-                        height={56}
+                        width={feature.title === 'Defect Management' || feature.title === 'AuthN + AuthZ' ? 40 : 56}
+                        height={feature.title === 'Defect Management' || feature.title === 'AuthN + AuthZ' ? 40 : 56}
                         className="object-contain"
                         priority
                       />

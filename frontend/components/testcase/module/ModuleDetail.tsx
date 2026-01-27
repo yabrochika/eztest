@@ -212,7 +212,7 @@ export default function ModuleDetail({ projectId, moduleId }: ModuleDetailProps)
     if (!selectedTestCase) return;
 
     try {
-      const response = await fetch(`/api/testcases/${selectedTestCase.id}`, {
+      const response = await fetch(`/api/projects/${projectId}/testcases/${selectedTestCase.id}`, {
         method: 'DELETE',
       });
 

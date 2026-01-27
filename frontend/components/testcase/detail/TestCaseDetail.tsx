@@ -128,7 +128,21 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
   const fetchTestCase = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/testcases/${testCaseId}`);
+      // Get projectId from testCase data when available, otherwise extract from URL
+      let projectId = testCase?.project?.id;
+      if (!projectId && typeof window !== 'undefined') {
+        // Extract projectId from URL path: /projects/[id]/testcases/[testcaseId]
+        const pathSegments = window.location.pathname.split('/');
+        const projectIndex = pathSegments.indexOf('projects');
+        if (projectIndex !== -1 && projectIndex + 1 < pathSegments.length) {
+          projectId = pathSegments[projectIndex + 1];
+        }
+      }
+      if (!projectId) {
+        throw new Error('Project ID not available');
+      }
+      const url = `/api/projects/${projectId}/testcases/${testCaseId}`;
+      const response = await fetch(url);
       const data = await response.json();
 
       if (data.data) {
@@ -183,7 +197,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
         // Fetch attachments for all fields
         if (data.data.id) {
           try {
-            const attachmentsResponse = await fetch(`/api/testcases/${data.data.id}/attachments`);
+            const attachmentsResponse = await fetch(`/api/projects/${data.data.project.id}/testcases/${data.data.id}/attachments`);
             if (!attachmentsResponse.ok) {
               console.error('Failed to fetch attachments:', attachmentsResponse.status);
               return;
@@ -368,7 +382,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
       };
       setFormData(updatedFormData);
 
-      const response = await fetch(`/api/testcases/${testCaseId}`, {
+      const response = await fetch(`/api/projects/${testCase?.project.id}/testcases/${testCaseId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -383,7 +397,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
         // Associate uploaded attachments with the test case
         if (uploadedAttachments.length > 0) {
           try {
-            await fetch(`/api/testcases/${testCaseId}/attachments`, {
+            await fetch(`/api/projects/${testCase?.project.id}/testcases/${testCaseId}/attachments`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ attachments: uploadedAttachments }),
@@ -634,7 +648,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
         expectedResult: step.expectedResult,
       }));
       
-      const response = await fetch(`/api/testcases/${testCaseId}/steps`, {
+      const response = await fetch(`/api/projects/${testCase?.project.id}/testcases/${testCaseId}/steps`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ steps: cleanedSteps }),
@@ -730,7 +744,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
   };
 
   const handleDeleteTestCase = async () => {
-    const response = await fetch(`/api/testcases/${testCaseId}`, {
+    const response = await fetch(`/api/projects/${testCase?.project.id}/testcases/${testCaseId}`, {
       method: 'DELETE',
     });
 
@@ -896,7 +910,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
 
             <LinkedDefectsCard testCase={testCase} onRefresh={fetchTestCase} />
 
-            <TestCaseHistoryCard testCaseId={testCaseId} />
+            <TestCaseHistoryCard projectId={testCase.project.id} testCaseId={testCaseId} />
           </div>
 
           <div className="space-y-6">

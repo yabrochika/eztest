@@ -131,7 +131,7 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
     if (!selectedSuite) return;
 
     try {
-      const response = await fetch(`/api/testsuites/${selectedSuite.id}`, {
+      const response = await fetch(`/api/projects/${projectId}/testsuites/${selectedSuite.id}`, {
         method: 'DELETE',
       });
 

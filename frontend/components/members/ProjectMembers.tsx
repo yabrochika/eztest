@@ -1,11 +1,9 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Plus, Users, LogOut } from 'lucide-react';
-import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
-import { ButtonDestructive } from '@/frontend/reusable-elements/buttons/ButtonDestructive';
+import { Plus, Users } from 'lucide-react';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
 import { Navbar } from '@/frontend/reusable-components/layout/Navbar';
 import { Breadcrumbs } from '@/frontend/reusable-components/layout/Breadcrumbs';
@@ -35,6 +33,28 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
 
   // Check if user is admin or project manager
   const isAdminOrManager = session?.user?.roleName === 'ADMIN' || session?.user?.roleName === 'PROJECT_MANAGER';
+
+  const navbarActions = useMemo(() => {
+    const actions = [];
+    
+    if (isAdminOrManager) {
+      actions.push({
+        type: 'action' as const,
+        label: 'Add Member',
+        icon: Plus,
+        onClick: () => setAddDialogOpen(true),
+        variant: 'primary' as const,
+        buttonName: 'Project Members - Add Member',
+      });
+    }
+
+    actions.push({
+      type: 'signout' as const,
+      showConfirmation: true,
+    });
+
+    return actions;
+  }, [isAdminOrManager]);
 
   const handleSignOut = () => {
     clearAllPersistedForms();
@@ -180,28 +200,7 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
             ]}
           />
         }
-        actions={
-          <div className="flex items-center gap-2">
-            {isAdminOrManager && (
-              <ActionButtonGroup
-                buttons={[
-                  {
-                    label: 'Add Member',
-                    icon: Plus,
-                    onClick: () => setAddDialogOpen(true),
-                    variant: 'primary',
-                  },
-                ]}
-              />
-            )}
-            <form action="/api/auth/signout" method="POST" onSubmit={handleSignOut}>
-              <ButtonDestructive type="submit" size="default" className="px-5">
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </ButtonDestructive>
-            </form>
-          </div>
-        }
+        actions={navbarActions}
       />
       
       <div className="px-8 pt-8 pb-8">

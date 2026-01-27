@@ -35,10 +35,11 @@ interface TestResult {
 }
 
 interface TestCaseHistoryCardProps {
+  projectId: string;
   testCaseId: string;
 }
 
-export function TestCaseHistoryCard({ testCaseId }: TestCaseHistoryCardProps) {
+export function TestCaseHistoryCard({ projectId, testCaseId }: TestCaseHistoryCardProps) {
   const [history, setHistory] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(true);
   const { options: statusOptions } = useDropdownOptions('TestResult', 'status');
@@ -47,12 +48,12 @@ export function TestCaseHistoryCard({ testCaseId }: TestCaseHistoryCardProps) {
   useEffect(() => {
     fetchHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [testCaseId]);
+  }, [testCaseId, projectId]);
 
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/testcases/${testCaseId}/history`);
+      const response = await fetch(`/api/projects/${projectId}/testcases/${testCaseId}/history`);
       const data = await response.json();
       if (data.data) {
         setHistory(data.data);

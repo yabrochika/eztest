@@ -8,7 +8,7 @@ import { hasPermission } from '@/lib/rbac/hasPermission';
 export const POST = hasPermission(
   async (request, context) => {
     const { testrunId } = await context.params;
-    return testRunController.sendTestRunReport(request, testrunId);
+    return testRunController.sendTestRunReport(testrunId, request.userInfo.id);
   },
   'testruns',
   'read'

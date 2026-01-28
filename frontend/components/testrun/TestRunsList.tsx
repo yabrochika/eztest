@@ -143,7 +143,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
     if (!selectedTestRun) return;
 
     try {
-      const response = await fetch(`/api/testruns/${selectedTestRun.id}`, {
+      const response = await fetch(`/api/projects/${projectId}/testruns/${selectedTestRun.id}`, {
         method: 'DELETE',
       });
 
@@ -185,7 +185,8 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
   const navbarActions = useMemo(() => {
     const actions = [];
 
-    if (canReadTestRun) {
+    // Only show import/export if user can create test runs (has permission to import)
+    if (canReadTestRun && canCreateTestRun) {
       actions.push({
         type: 'custom' as const,
         custom: (

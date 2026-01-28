@@ -1,7 +1,6 @@
 ﻿import { useEffect, useState, useMemo } from 'react';
 import { Navbar } from '@/frontend/reusable-components/layout/Navbar';
 import { Breadcrumbs } from '@/frontend/reusable-components/layout/Breadcrumbs';
-import { ButtonDestructive } from '@/frontend/reusable-elements/buttons/ButtonDestructive';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
 import { FloatingAlert, FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { TestRunHeader } from './subcomponents/TestRunHeader';
@@ -23,8 +22,6 @@ import { TestRun, TestCase, ResultFormData, TestRunStats, TestSuite } from './ty
 import { usePermissions } from '@/hooks/usePermissions';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
-import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
-import { clearAllPersistedForms } from '@/hooks/useFormPersistence';
 
 interface TestRunDetailProps {
   testRunId: string;
@@ -71,7 +68,18 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   // Check permissions for navbar
   const canUpdateTestRun = hasPermissionCheck('testruns:update');
   const canCreateTestRun = hasPermissionCheck('testruns:create');
-  const canReadTestRun = hasPermissionCheck('testruns:read');
+  hasPermissionCheck('testruns:read');
+
+  const executionTypeLabel = useMemo(() => {
+    const type = (testRun?.executionType || 'MANUAL').toString().toUpperCase();
+    return type === 'AUTOMATION' ? 'Automation' : 'Manual';
+  }, [testRun?.executionType]);
+
+  // For automation runs, allow defect actions even after completion
+  const showAutomationDefectActions = useMemo(() => {
+    const type = (testRun?.executionType || 'MANUAL').toString().toUpperCase();
+    return type === 'AUTOMATION' && testRun?.status === 'COMPLETED';
+  }, [testRun?.executionType, testRun?.status]);
 
   const navbarActions = useMemo(() => {
     const actions = [];
@@ -702,6 +710,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       <div className="p-4 md:p-6 lg:p-8 pt-8 space-y-6">
         <TestRunHeader
           testRun={testRun}
+          executionTypeLabel={executionTypeLabel}
           actionLoading={actionLoading}
           canUpdate={canUpdateTestRun}
           onStartTestRun={handleStartTestRun}
@@ -731,6 +740,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           }}
           onExecuteTestCase={handleOpenResultDialog}
           onCreateDefect={handleCreateDefect}
+          forceShowDefectActions={showAutomationDefectActions}
           getResultIcon={getResultIcon}
         />
 

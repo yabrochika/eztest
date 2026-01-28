@@ -49,6 +49,7 @@ export function UploadTestNGXMLDialog({
       description: `Test run created from XML file: ${filename}`,
       status: 'COMPLETED',
       environment: environment,
+      executionType: 'AUTOMATION',
       testCaseIds: [],
     }),
   };

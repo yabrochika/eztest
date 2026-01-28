@@ -92,6 +92,16 @@ export function TestRunCard({
     ? (environmentOptions.find(opt => opt.value === testRun.environment)?.label || testRun.environment.toUpperCase())
     : null;
 
+  const executionTypeLabel =
+    (testRun.executionType || 'MANUAL').toString().toUpperCase() === 'AUTOMATION'
+      ? 'Automation'
+      : 'Manual';
+  
+  const executionType = (testRun.executionType || 'MANUAL').toString().toUpperCase();
+  const executionTypeBadgeClassName = executionType === 'AUTOMATION'
+    ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+    : 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+
   const badges = (
     <>
       <Badge 
@@ -100,6 +110,9 @@ export function TestRunCard({
         style={statusBadgeProps.style}
       >
         {statusLabel}
+      </Badge>
+      <Badge variant="outline" className={executionTypeBadgeClassName}>
+        {executionTypeLabel}
       </Badge>
       {testRun.environment && environmentBadgeProps && (
         <Badge

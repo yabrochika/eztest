@@ -25,7 +25,7 @@ interface TestCaseDetailsCardProps {
   errors?: Record<string, string>;
   modules?: Module[];
   onFormChange: (data: TestCaseFormData) => void;
-  onFieldChange?: (field: keyof TestCaseFormData, value: string | number | null) => void;
+  onFieldChange?: (field: keyof TestCaseFormData, value: string | number | boolean | null) => void;
   projectId?: string;
   // Attachments
   descriptionAttachments?: Attachment[];
@@ -464,31 +464,21 @@ export function TestCaseDetailsCard({
             </div>
           )}
 
-          {/* Automation & Platforms */}
-          {(testCase.automationStatus || (testCase.platforms && testCase.platforms.length > 0)) && (
+          {/* Platforms */}
+          {testCase.platforms && testCase.platforms.length > 0 && (
             <div className="border-t border-white/10 pt-6">
-              <div className="grid grid-cols-2 gap-4">
-                {testCase.automationStatus && (
-                  <div>
-                    <span className="text-xs text-white/50">自動化ステータス</span>
-                    <p className="text-sm text-white/90">{testCase.automationStatus}</p>
-                  </div>
-                )}
-                {testCase.platforms && testCase.platforms.length > 0 && (
-                  <div>
-                    <span className="text-xs text-white/50">環境</span>
-                    <div className="flex gap-1 mt-1">
-                      {testCase.platforms.map((platform) => (
-                        <span
-                          key={platform}
-                          className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded"
-                        >
-                          {platform}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div>
+                <span className="text-xs text-white/50">環境</span>
+                <div className="flex gap-1 mt-1">
+                  {testCase.platforms.map((platform) => (
+                    <span
+                      key={platform}
+                      className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded"
+                    >
+                      {platform}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           )}

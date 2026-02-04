@@ -393,41 +393,49 @@ export class ImportService {
           }
         }
 
-        // Parse expected results if provided (can be numbered list, newline-separated, or single value)
-        let expectedResultsList: string[] = [];
+        // Parse expected results with step number mapping to maintain 1-to-1 correspondence
+        // Format: "1. Result1\n2. Result2\n3. " (step 3 has empty result)
+        // This maintains the correspondence between step numbers and expected results
+        const expectedResultsByStepNumber = new Map<number, string>();
         let singleExpectedResult: string | null = null;
-        
+
         if (expectedResult && typeof expectedResult === 'string' && expectedResult.toString().trim()) {
           const expectedResultText = expectedResult.toString().trim();
-          
+
           // Check if it contains numbered points (1., 2., etc.) or newlines
           const hasNumberedPoints = /\d+\./.test(expectedResultText);
           const hasNewlines = expectedResultText.includes('\n');
-          const numberedPointsMatches = expectedResultText.match(/\d+\./g);
-          const numberedPointsCount = numberedPointsMatches ? numberedPointsMatches.length : 0;
-          
-          if (hasNewlines || (hasNumberedPoints && numberedPointsCount > 1)) {
-            // Multi-item format - split by newlines first, then check for numbered points
-            let items: string[] = [];
-            
-            if (hasNewlines) {
-              // Split by newlines first
-              items = expectedResultText.split('\n').map(l => l.trim()).filter(l => l);
-            } else {
-              // No newlines but has multiple numbered points - split by numbered points
-              // Match pattern: number followed by dot and optional space
-              items = expectedResultText.split(/(?=\d+\.\s*)/).map(l => l.trim()).filter(l => l);
+
+          if (hasNewlines || hasNumberedPoints) {
+            // Format with step numbers: "1. Result1\n2. Result2\n3. "
+            // Split by newlines and parse each line
+            const lines = expectedResultText.split('\n');
+
+            for (const line of lines) {
+              const trimmedLine = line.trim();
+              if (!trimmedLine) continue;
+
+              // Try to extract step number and result: "1. Result text"
+              const match = trimmedLine.match(/^(\d+)\.\s*(.*)$/);
+              if (match) {
+                const stepNumber = parseInt(match[1], 10);
+                const result = match[2].trim();
+                // Store even empty results to maintain correspondence
+                expectedResultsByStepNumber.set(stepNumber, result);
+              } else if (!hasNumberedPoints) {
+                // Line without number - treat as content for next step
+                // This handles cases where results are just newline-separated without numbers
+                const stepNumber = expectedResultsByStepNumber.size + 1;
+                expectedResultsByStepNumber.set(stepNumber, trimmedLine);
+              }
             }
-            
-            // Process each item - remove leading number and dot if present
-            expectedResultsList = items.map(item => {
-              return item.replace(/^\d+\.\s*/, '').trim();
-            }).filter(item => item.length > 0);
-          } else if (hasNumberedPoints) {
-            // Single line with number prefix - treat as single result
-            singleExpectedResult = expectedResultText.replace(/^\d+\.\s*/, '').trim();
+
+            // If no numbered results were found but we have text, treat as single result
+            if (expectedResultsByStepNumber.size === 0 && expectedResultText) {
+              singleExpectedResult = expectedResultText;
+            }
           } else {
-            // Single expected result - will apply to all steps
+            // No newlines and no numbering - single expected result for all steps
             singleExpectedResult = expectedResultText;
           }
         }
@@ -435,16 +443,18 @@ export class ImportService {
         // Parse test steps if provided
         // Also handle case where Expected Result column has values but Test Steps is empty
         let testStepsData: Array<{ stepNumber: number; action: string; expectedResult: string }> | undefined;
-        
+
         // If Test Steps is empty but Expected Result has values, create steps from expected results
-        if (!testSteps && (expectedResultsList.length > 0 || singleExpectedResult)) {
-          if (expectedResultsList.length > 0) {
-            // Multiple expected results - create one step per expected result
-            testStepsData = expectedResultsList.map((expectedResult, index) => ({
-              stepNumber: index + 1,
-              action: '', // No action, only expected result
-              expectedResult: expectedResult,
-            }));
+        if (!testSteps && (expectedResultsByStepNumber.size > 0 || singleExpectedResult)) {
+          if (expectedResultsByStepNumber.size > 0) {
+            // Create steps from numbered expected results
+            testStepsData = Array.from(expectedResultsByStepNumber.entries())
+              .sort((a, b) => a[0] - b[0]) // Sort by step number
+              .map(([stepNumber, result]) => ({
+                stepNumber,
+                action: '', // No action, only expected result
+                expectedResult: result,
+              }));
           } else if (singleExpectedResult) {
             // Single expected result - create one step
             testStepsData = [{
@@ -466,17 +476,21 @@ export class ImportService {
                   return Boolean(step);
                 })
                 .map((step, index) => {
-                  const stepAction = (typeof step === 'object' && step !== null) 
-                    ? (step.action || step.step || '') 
+                  const stepNumber = step.stepNumber || (typeof step === 'object' && step !== null ? index + 1 : index + 1);
+                  const stepAction = (typeof step === 'object' && step !== null)
+                    ? (step.action || step.step || '')
                     : String(step);
-                  const stepExpectedResult = (typeof step === 'object' && step !== null) 
-                    ? (step.expectedResult || step.expected || '') 
+                  const stepExpectedResult = (typeof step === 'object' && step !== null)
+                    ? (step.expectedResult || step.expected || '')
                     : '';
-                  // Use Expected Result column if step doesn't have expected result
-                  const finalExpectedResult = stepExpectedResult || expectedResultsList[index] || singleExpectedResult || '';
-                  
+                  // Use Expected Result column by step number if step doesn't have expected result
+                  const finalExpectedResult = stepExpectedResult
+                    || expectedResultsByStepNumber.get(stepNumber)
+                    || singleExpectedResult
+                    || '';
+
                   return {
-                    stepNumber: step.stepNumber || (typeof step === 'object' && step !== null ? index + 1 : index + 1),
+                    stepNumber,
                     action: stepAction,
                     expectedResult: finalExpectedResult,
                   };
@@ -491,13 +505,17 @@ export class ImportService {
                   testStepsData = parsed
                     .filter((step) => step && (step.action || step.step)) // Filter out invalid steps
                     .map((step, index) => {
+                      const stepNumber = step.stepNumber || index + 1;
                       const stepAction = step.action || step.step || '';
                       const stepExpectedResult = step.expectedResult || step.expected || '';
-                      // Use Expected Result column if step doesn't have expected result
-                      const finalExpectedResult = stepExpectedResult || expectedResultsList[index] || singleExpectedResult || '';
-                      
+                      // Use Expected Result column by step number if step doesn't have expected result
+                      const finalExpectedResult = stepExpectedResult
+                        || expectedResultsByStepNumber.get(stepNumber)
+                        || singleExpectedResult
+                        || '';
+
                       return {
-                        stepNumber: step.stepNumber || index + 1,
+                        stepNumber,
                         action: stepAction,
                         expectedResult: finalExpectedResult,
                       };
@@ -527,26 +545,36 @@ export class ImportService {
                   testStepsData = stepLines.map((line, index) => {
                     // Check if line has numbered prefix (e.g., "1. Enter password")
                     const isNumbered = /^\d+\./.test(line);
-                    
-                    // Remove leading number and dot if present
-                    let action = isNumbered ? line.replace(/^\d+\.\s*/, '').trim() : line;
-                    
+
+                    // Extract step number if numbered, otherwise use index + 1
+                    let stepNumber = index + 1;
+                    let action = line;
+
+                    if (isNumbered) {
+                      const match = line.match(/^(\d+)\.\s*(.*)$/);
+                      if (match) {
+                        stepNumber = parseInt(match[1], 10);
+                        action = match[2].trim();
+                      } else {
+                        action = line.replace(/^\d+\.\s*/, '').trim();
+                      }
+                    }
+
                     // Remove expected result from action if it's separated by semicolon or colon
                     // We only want the action, expected result comes from Expected Result column
                     const parts = action.split(/[;:]/).map(p => p.trim()).filter(p => p);
                     action = parts[0] || action; // Take only the action part (before semicolon/colon)
-                    
-                    // Get expected result from Expected Result column by index
-                    // If multiple expected results exist, match by index; if single value, apply to all steps
-                    const expectedResultValue = expectedResultsList[index] || singleExpectedResult || '';
-                    
+
+                    // Get expected result from Expected Result column by step number
+                    const expectedResultValue = expectedResultsByStepNumber.get(stepNumber) || singleExpectedResult || '';
+
                     // If action is empty but expected result exists, use expected result as the content
                     // If expected result is empty but action exists, use action only
                     const finalAction = action || '';
                     const finalExpectedResult = expectedResultValue || '';
-                    
+
                     return {
-                      stepNumber: index + 1,
+                      stepNumber,
                       action: finalAction,
                       expectedResult: finalExpectedResult,
                     };
@@ -565,24 +593,36 @@ export class ImportService {
                     testStepsData = stepLines.map((line, index) => {
                       // Check if line has numbered prefix
                       const isNumbered = /^\d+\./.test(line);
-                      let cleanLine = isNumbered ? line.replace(/^\d+\.\s*/, '').trim() : line;
-                      
+
+                      // Extract step number if numbered, otherwise use index + 1
+                      let stepNumber = index + 1;
+                      let cleanLine = line;
+
+                      if (isNumbered) {
+                        const match = line.match(/^(\d+)\.\s*(.*)$/);
+                        if (match) {
+                          stepNumber = parseInt(match[1], 10);
+                          cleanLine = match[2].trim();
+                        } else {
+                          cleanLine = line.replace(/^\d+\.\s*/, '').trim();
+                        }
+                      }
+
                       // Remove expected result from action if it's separated by semicolon or colon
                       // We only want the action, expected result comes from Expected Result column
                       const parts = cleanLine.split(/[;:]/).map(p => p.trim()).filter(p => p);
                       cleanLine = parts[0] || cleanLine; // Take only the action part (before semicolon/colon)
-                      
-                      // Get expected result from Expected Result column by index
-                      // If multiple expected results exist, match by index; if single value, apply to all steps
-                      const expectedResultValue = expectedResultsList[index] || singleExpectedResult || '';
-                      
+
+                      // Get expected result from Expected Result column by step number
+                      const expectedResultValue = expectedResultsByStepNumber.get(stepNumber) || singleExpectedResult || '';
+
                       // If action is empty but expected result exists, use expected result as the content
                       // If expected result is empty but action exists, use action only
                       const finalAction = cleanLine || '';
                       const finalExpectedResult = expectedResultValue || '';
-                      
+
                       return {
-                        stepNumber: index + 1,
+                        stepNumber,
                         action: finalAction,
                         expectedResult: finalExpectedResult,
                       };
@@ -775,15 +815,16 @@ export class ImportService {
           finalExpectedResult = singleExpectedResult || (expectedResult && typeof expectedResult === 'string' && expectedResult.toString().trim() ? expectedResult.toString().trim() : null);
         } else {
           // Has test steps - check if multiple expected results were parsed
-          if (expectedResultsList.length > 1) {
+          if (expectedResultsByStepNumber.size > 1) {
             // Multiple expected results assigned to steps - don't set test case level expectedResult
             // to avoid overwriting first step's individual expected result in the UI
             finalExpectedResult = null;
-          } else if (expectedResultsList.length === 1) {
-            // Single expected result in list - use it for test case level
-            finalExpectedResult = expectedResultsList[0];
+          } else if (expectedResultsByStepNumber.size === 1) {
+            // Single expected result mapped to a specific step - don't set test case level
+            // to avoid duplication (the step already has the expected result)
+            finalExpectedResult = null;
           } else if (singleExpectedResult) {
-            // Single expected result - use it for test case level
+            // Single expected result applied to all steps - use it for test case level
             finalExpectedResult = singleExpectedResult;
           } else {
             // No expected results parsed - use original value if provided

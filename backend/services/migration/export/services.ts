@@ -166,27 +166,23 @@ export class ExportService {
         })
         .join('\n');
 
-      // Format expected results in import format
-      // Single result: plain string (no numbering)
-      // Multiple results: numbered list, newline-separated
-      const expectedResultsList: string[] = [];
-      tc.steps.forEach((step) => {
-        if (step.expectedResult && step.expectedResult.trim()) {
-          expectedResultsList.push(step.expectedResult.trim());
-        }
-      });
-      
+      // Format expected results to maintain step-to-result correspondence
+      // Always use numbered list format to preserve which step has which expected result
+      // This ensures proper round-trip import/export even when only some steps have results
       let expectedResultFormatted = '';
-      if (expectedResultsList.length > 1) {
-        // Multiple results: format as numbered list "1. Result 1\n2. Result 2\n..."
-        expectedResultFormatted = expectedResultsList
-          .map((result, index) => `${index + 1}. ${result}`)
-          .join('\n');
-      } else if (expectedResultsList.length === 1) {
-        // Single result: export as plain string (no numbering)
-        expectedResultFormatted = expectedResultsList[0];
+
+      if (tc.steps.length > 0) {
+        // Map each step to its expected result, maintaining step numbers
+        // Use step number to ensure 1-to-1 correspondence on import
+        const stepResults = tc.steps.map((step) => {
+          const result = step.expectedResult && step.expectedResult.trim()
+            ? step.expectedResult.trim()
+            : ''; // Empty string for steps without expected result
+          return `${step.stepNumber}. ${result}`;
+        });
+        expectedResultFormatted = stepResults.join('\n');
       } else if (tc.expectedResult && tc.expectedResult.trim()) {
-        // Fall back to test case level expected result if no step-level results
+        // Fall back to test case level expected result if no steps exist
         expectedResultFormatted = tc.expectedResult.trim();
       }
       // If empty, expectedResultFormatted remains empty string

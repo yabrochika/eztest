@@ -199,6 +199,8 @@ model TestCase {
   expectedResult String?  // Overall expected result for the test case
   priority      String   @default("MEDIUM") // Dynamic dropdown value
   status        String   @default("ACTIVE") // Dynamic dropdown value
+  domain        String?  // Dynamic dropdown value (e.g., "USER_MANAGEMENT", "AUTH", "PAYMENT")
+  function      String?  // Dynamic dropdown value (e.g., "LOGIN", "REGISTER", "SEARCH")
   estimatedTime Int?     // in minutes
   preconditions String?
   postconditions String?
@@ -227,6 +229,8 @@ model TestCase {
   @@index([createdById])
   @@index([status])
   @@index([priority])
+  @@index([domain])
+  @@index([function])
 }
 
 // Join table for many-to-many relationship between TestCase and TestSuite

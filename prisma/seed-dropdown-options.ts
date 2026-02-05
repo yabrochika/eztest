@@ -21,6 +21,23 @@ export async function seedDropdownOptions() {
     { entity: 'TestCase', field: 'status', value: 'DEPRECATED', label: 'DEPRECATED', order: 2 },
     { entity: 'TestCase', field: 'status', value: 'DRAFT', label: 'DRAFT', order: 3 },
 
+    // Domain options (used in TestCase)
+    { entity: 'TestCase', field: 'domain', value: 'USER_MANAGEMENT', label: 'User Management', order: 1 },
+    { entity: 'TestCase', field: 'domain', value: 'AUTH', label: 'Authentication', order: 2 },
+    { entity: 'TestCase', field: 'domain', value: 'PAYMENT', label: 'Payment', order: 3 },
+    { entity: 'TestCase', field: 'domain', value: 'REPORT', label: 'Report', order: 4 },
+    { entity: 'TestCase', field: 'domain', value: 'SETTINGS', label: 'Settings', order: 5 },
+
+    // Function options (used in TestCase)
+    { entity: 'TestCase', field: 'function', value: 'LOGIN', label: 'Login', order: 1 },
+    { entity: 'TestCase', field: 'function', value: 'REGISTER', label: 'Register', order: 2 },
+    { entity: 'TestCase', field: 'function', value: 'SEARCH', label: 'Search', order: 3 },
+    { entity: 'TestCase', field: 'function', value: 'LIST', label: 'List', order: 4 },
+    { entity: 'TestCase', field: 'function', value: 'DETAIL', label: 'Detail', order: 5 },
+    { entity: 'TestCase', field: 'function', value: 'CREATE', label: 'Create', order: 6 },
+    { entity: 'TestCase', field: 'function', value: 'EDIT', label: 'Edit', order: 7 },
+    { entity: 'TestCase', field: 'function', value: 'DELETE', label: 'Delete', order: 8 },
+
     // TestRunStatus options (used in TestRun)
     { entity: 'TestRun', field: 'status', value: 'PLANNED', label: 'PLANNED', order: 1 },
     { entity: 'TestRun', field: 'status', value: 'IN_PROGRESS', label: 'IN PROGRESS', order: 2 },

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { SearchInput } from '@/frontend/reusable-elements/inputs/SearchInput';
 import { FilterDropdown, type FilterOption } from '@/frontend/reusable-components/inputs/FilterDropdown';
@@ -8,22 +8,32 @@ interface TestCaseFiltersProps {
   searchQuery: string;
   priorityFilter: string;
   statusFilter: string;
+  domainFilter: string;
+  functionFilter: string;
   onSearchChange: (value: string) => void;
   onPriorityChange: (value: string) => void;
   onStatusChange: (value: string) => void;
+  onDomainChange: (value: string) => void;
+  onFunctionChange: (value: string) => void;
 }
 
 export function TestCaseFilters({
   searchQuery,
   priorityFilter,
   statusFilter,
+  domainFilter,
+  functionFilter,
   onSearchChange,
   onPriorityChange,
   onStatusChange,
+  onDomainChange,
+  onFunctionChange,
 }: TestCaseFiltersProps) {
   // Fetch dynamic dropdown options
   const { options: priorityOptionsData, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptionsData, loading: loadingStatus } = useDropdownOptions('TestCase', 'status');
+  const { options: domainOptionsData, loading: loadingDomain } = useDropdownOptions('TestCase', 'domain');
+  const { options: functionOptionsData, loading: loadingFunction } = useDropdownOptions('TestCase', 'function');
 
   // Map to FilterOption format with "All" option
   const priorityOptions: FilterOption[] = [
@@ -35,9 +45,19 @@ export function TestCaseFilters({
     { value: 'all', label: 'All Statuses' },
     ...statusOptionsData.map(opt => ({ value: opt.value, label: opt.label })),
   ];
+
+  const domainOptions: FilterOption[] = [
+    { value: 'all', label: 'All Domains' },
+    ...domainOptionsData.map(opt => ({ value: opt.value, label: opt.label })),
+  ];
+
+  const functionOptions: FilterOption[] = [
+    { value: 'all', label: 'All Functions' },
+    ...functionOptionsData.map(opt => ({ value: opt.value, label: opt.label })),
+  ];
   return (
     <div className="mb-6 w-full min-w-0">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 w-full min-w-0">
         <div className="sm:col-span-2 min-w-0">
           <SearchInput
             value={searchQuery}
@@ -61,6 +81,24 @@ export function TestCaseFilters({
             onValueChange={onStatusChange}
             placeholder="Status"
             options={statusOptions}
+          />
+        </div>
+
+        <div className="min-w-0 w-full">
+          <FilterDropdown
+            value={domainFilter}
+            onValueChange={onDomainChange}
+            placeholder="Domain"
+            options={domainOptions}
+          />
+        </div>
+
+        <div className="min-w-0 w-full">
+          <FilterDropdown
+            value={functionFilter}
+            onValueChange={onFunctionChange}
+            placeholder="Function"
+            options={functionOptions}
           />
         </div>
       </div>

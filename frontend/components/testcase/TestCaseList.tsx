@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -52,6 +52,8 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [domainFilter, setDomainFilter] = useState<string>('all');
+  const [functionFilter, setFunctionFilter] = useState<string>('all');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -77,7 +79,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
   useEffect(() => {
     fetchTestCases();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, currentPage, itemsPerPage, searchQuery, priorityFilter, statusFilter]);
+  }, [projectId, currentPage, itemsPerPage, searchQuery, priorityFilter, statusFilter, domainFilter, functionFilter]);
 
   useEffect(() => {
     if (project) {
@@ -116,6 +118,8 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
       if (searchQuery) params.append('search', searchQuery);
       if (priorityFilter !== 'all') params.append('priority', priorityFilter);
       if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (domainFilter !== 'all') params.append('domain', domainFilter);
+      if (functionFilter !== 'all') params.append('function', functionFilter);
       
       const response = await fetch(`/api/projects/${projectId}/testcases?${params}`);
       const data = await response.json();
@@ -356,9 +360,13 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
                 searchQuery={searchQuery}
                 priorityFilter={priorityFilter}
                 statusFilter={statusFilter}
+                domainFilter={domainFilter}
+                functionFilter={functionFilter}
                 onSearchChange={setSearchQuery}
                 onPriorityChange={setPriorityFilter}
                 onStatusChange={setStatusFilter}
+                onDomainChange={setDomainFilter}
+                onFunctionChange={setFunctionFilter}
               />
             ) : null
           }
@@ -460,6 +468,8 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
               suiteId: undefined,
               status: statusFilter !== 'all' ? statusFilter : undefined,
               priority: priorityFilter !== 'all' ? priorityFilter : undefined,
+              domain: domainFilter !== 'all' ? domainFilter : undefined,
+              function: functionFilter !== 'all' ? functionFilter : undefined,
             },
           }}
           itemName="test cases"

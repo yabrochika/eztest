@@ -11,6 +11,8 @@ interface CreateTestCaseInput {
   testData?: string;
   priority?: string;
   status?: string;
+  domain?: string;
+  function?: string;
   estimatedTime?: number;
   preconditions?: string;
   postconditions?: string;
@@ -29,6 +31,8 @@ interface UpdateTestCaseInput {
   testData?: string;
   priority?: string;
   status?: string;
+  domain?: string | null;
+  function?: string | null;
   estimatedTime?: number;
   preconditions?: string;
   postconditions?: string;
@@ -40,6 +44,8 @@ interface TestCaseFilters {
   suiteId?: string;
   priority?: string;
   status?: string;
+  domain?: string;
+  function?: string;
   search?: string;
 }
 
@@ -115,6 +121,14 @@ export class TestCaseService {
       where.status = filters.status;
     }
 
+    if (filters?.domain) {
+      where.domain = filters.domain;
+    }
+
+    if (filters?.function) {
+      where.function = filters.function;
+    }
+
     if (filters?.search) {
       where.OR = [
         { title: { contains: filters.search, mode: 'insensitive' } },
@@ -186,6 +200,14 @@ export class TestCaseService {
     
     if (filters?.moduleId) {
       where.moduleId = filters.moduleId;
+    }
+
+    if (filters?.domain) {
+      where.domain = filters.domain;
+    }
+
+    if (filters?.function) {
+      where.function = filters.function;
     }
     
     if (filters?.search) {
@@ -554,6 +576,8 @@ export class TestCaseService {
             testData: data.testData,
             priority: data.priority || 'MEDIUM',
             status: data.status || 'DRAFT',
+            domain: data.domain,
+            function: data.function,
             estimatedTime: data.estimatedTime,
             preconditions: data.preconditions,
             postconditions: data.postconditions,
@@ -696,6 +720,8 @@ export class TestCaseService {
     if (data.testData !== undefined) updateData.testData = data.testData;
     if (data.priority !== undefined) updateData.priority = data.priority;
     if (data.status !== undefined) updateData.status = data.status;
+    if (data.domain !== undefined) updateData.domain = data.domain;
+    if (data.function !== undefined) updateData.function = data.function;
     if (data.estimatedTime !== undefined) updateData.estimatedTime = data.estimatedTime;
     if (data.preconditions !== undefined) updateData.preconditions = data.preconditions;
     if (data.postconditions !== undefined) updateData.postconditions = data.postconditions;

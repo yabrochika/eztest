@@ -39,6 +39,8 @@ export const createTestCaseSchema = z.object({
   testData: z.string().optional(),
   priority: z.string().optional(),
   status: z.string().optional(),
+  domain: z.string().optional().nullable(),
+  function: z.string().optional().nullable(),
   estimatedTime: z
     .number()
     .nonnegative('Estimated time must be a positive number')
@@ -58,6 +60,8 @@ export const updateTestCaseSchema = z.object({
   testData: z.string().optional(),
   priority: z.string().optional(),
   status: z.string().optional(),
+  domain: z.string().optional().nullable(),
+  function: z.string().optional().nullable(),
   estimatedTime: z
     .number()
     .nonnegative('Estimated time must be a positive number')
@@ -85,7 +89,10 @@ export const testCaseQuerySchema = z.object({
   suiteId: z.string().min(1, 'Suite ID cannot be empty').optional(),
   priority: z.string().optional(),
   status: z.string().optional(),
+  domain: z.string().optional(),
+  function: z.string().optional(),
   search: z.string().optional(),
+  moduleId: z.string().optional(),
 });
 
 /**

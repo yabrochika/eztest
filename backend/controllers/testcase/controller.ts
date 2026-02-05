@@ -19,6 +19,8 @@ export class TestCaseController {
       suiteId: searchParams.get('suiteId') || undefined,
       priority: searchParams.get('priority') || undefined,
       status: searchParams.get('status') || undefined,
+      domain: searchParams.get('domain') || undefined,
+      function: searchParams.get('function') || undefined,
       search: searchParams.get('search') || undefined,
     };
 
@@ -61,6 +63,8 @@ export class TestCaseController {
       suiteId: searchParams.get('suiteId') || undefined,
       priority: searchParams.get('priority') || undefined,
       status: searchParams.get('status') || undefined,
+      domain: searchParams.get('domain') || undefined,
+      function: searchParams.get('function') || undefined,
       search: searchParams.get('search') || undefined,
       moduleId: searchParams.get('moduleId') || undefined,
     };
@@ -131,6 +135,8 @@ export class TestCaseController {
       testData: validatedData.testData,
       priority: validatedData.priority,
       status: validatedData.status,
+      domain: validatedData.domain ?? undefined,
+      function: validatedData.function ?? undefined,
       estimatedTime: validatedData.estimatedTime,
       preconditions: validatedData.preconditions,
       postconditions: validatedData.postconditions,
@@ -197,6 +203,8 @@ export class TestCaseController {
           testData: validatedData.testData,
           priority: validatedData.priority,
           status: validatedData.status,
+          domain: validatedData.domain,
+          function: validatedData.function,
           estimatedTime: validatedData.estimatedTime,
           preconditions: validatedData.preconditions,
           postconditions: validatedData.postconditions,

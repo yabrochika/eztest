@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { DetailPageHeader } from '@/frontend/reusable-components/layout/DetailPageHeader';
 import { Edit, Trash2 } from 'lucide-react';
@@ -95,14 +95,14 @@ export function TestCaseHeader({
       ]}
       actions={[
         { 
-          label: 'Edit', 
+          label: '編集', 
           icon: Edit, 
           onClick: onEdit, 
           show: canUpdate,
           buttonName: 'TestCase Detail - Edit',
         },
         { 
-          label: 'Delete', 
+          label: '削除', 
           icon: Trash2, 
           onClick: onDelete, 
           variant: 'destructive', 

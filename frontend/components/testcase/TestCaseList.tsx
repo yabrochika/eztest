@@ -292,18 +292,18 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <ButtonSecondary className="cursor-pointer flex items-center gap-2">
-                Migration
+                データ移行
                 <ChevronDown className="w-4 h-4" />
               </ButtonSecondary>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
                 <Import className="w-4 h-4" />
-                Import Test Cases
+                テストケースをインポート
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setExportDialogOpen(true)}>
                 <Upload className="w-4 h-4" />
-                Export Test Cases
+                テストケースをエクスポート
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -320,7 +320,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
   }, [canCreateTestCase, canImport]);
 
   if (loading || permissionsLoading) {
-    return <Loader fullScreen text="Loading test cases..." />;
+    return <Loader fullScreen text="テストケースを読み込み中..." />;
   }
 
   return (
@@ -443,11 +443,11 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
         <FileImportDialog
           open={importDialogOpen}
           onOpenChange={setImportDialogOpen}
-          title="Import Test Cases"
-          description="Upload a CSV or Excel file to import multiple test cases at once."
+          title="テストケースをインポート"
+          description="CSVまたはExcelファイルをアップロードして、複数のテストケースを一括でインポートします。"
           importEndpoint={`/api/projects/${projectId}/testcases/import`}
           templateEndpoint={`/api/projects/${projectId}/testcases/import/template`}
-          itemName="test cases"
+          itemName="テストケース"
           onImportComplete={() => {
             fetchTestCases();
             setImportDialogOpen(false);
@@ -458,8 +458,8 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
         <FileExportDialog
           open={exportDialogOpen}
           onOpenChange={setExportDialogOpen}
-          title="Export Test Cases"
-          description="Choose a format to export your test cases."
+          title="テストケースをエクスポート"
+          description="テストケースをエクスポートするフォーマットを選択してください。"
           exportOptions={{
             projectId,
             endpoint: `/api/projects/${projectId}/testcases/export`,
@@ -472,7 +472,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
               function: functionFilter !== 'all' ? functionFilter : undefined,
             },
           }}
-          itemName="test cases"
+          itemName="テストケース"
         />
       </div>
     </>

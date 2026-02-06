@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -68,12 +68,12 @@ export function LinkedDefectsCard({ testCase, onRefresh }: LinkedDefectsCardProp
   return (
     <>
       <DetailCard 
-        title="Linked Defects"
+        title="リンクされた欠陥"
         headerAction={
           <div className="flex items-center gap-3">
             {defects.length > 0 && (
               <span className="text-sm text-white/60 bg-white/10 px-3 py-1 rounded-full">
-                {defects.length} {defects.length === 1 ? 'Defect' : 'Defects'}
+                {defects.length} 件
               </span>
             )}
             {canLinkDefect && (
@@ -83,7 +83,7 @@ export function LinkedDefectsCard({ testCase, onRefresh }: LinkedDefectsCardProp
                 className="flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                Link Defect
+                欠陥をリンク
               </ButtonPrimary>
             )}
           </div>
@@ -94,10 +94,10 @@ export function LinkedDefectsCard({ testCase, onRefresh }: LinkedDefectsCardProp
           <div className="text-center py-8">
             <Bug className="w-12 h-12 text-white/20 mx-auto mb-3" />
             <p className="text-white/60 text-sm">
-              No defects linked to this test case yet
+              このテストケースにリンクされた欠陥はまだありません
             </p>
             <p className="text-white/40 text-xs mt-1">
-              Defects will appear here when they are linked to this test case
+              欠陥がリンクされるとここに表示されます
             </p>
           </div>
         ) : (
@@ -107,10 +107,10 @@ export function LinkedDefectsCard({ testCase, onRefresh }: LinkedDefectsCardProp
               className="grid gap-3 px-3 py-2 text-xs font-semibold text-white/60 border-b border-white/10 rounded-t-md"
               style={{ gridTemplateColumns: 'auto 1fr 120px 120px' }}
             >
-              <div>Defect ID</div>
-              <div>Title</div>
-              <div>Severity</div>
-              <div className="text-right">Status</div>
+              <div>欠陥ID</div>
+              <div>タイトル</div>
+              <div>重要度</div>
+              <div className="text-right">ステータス</div>
             </div>
 
             {/* Data Rows */}

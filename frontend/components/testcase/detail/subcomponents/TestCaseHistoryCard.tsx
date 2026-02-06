@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { formatDateTime } from '@/lib/date-utils';
@@ -116,19 +116,19 @@ export function TestCaseHistoryCard({ projectId, testCaseId }: TestCaseHistoryCa
   };
 
   return (
-    <DetailCard title="Execution History" contentClassName="">
+    <DetailCard title="実行履歴" contentClassName="">
       {loading ? (
         <div className="py-8 flex justify-center">
-          <Loader fullScreen={false} text="Loading history..." />
+          <Loader fullScreen={false} text="読み込み中..." />
         </div>
       ) : history.length === 0 ? (
         <div className="text-center py-8">
           <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
           <p className="text-white/60 text-sm">
-            No execution history yet
+            実行履歴はまだありません
           </p>
           <p className="text-white/40 text-xs mt-1">
-            This test case hasn&apos;t been executed in any test run
+            このテストケースはまだテスト実行されていません
           </p>
         </div>
       ) : (
@@ -138,11 +138,11 @@ export function TestCaseHistoryCard({ projectId, testCaseId }: TestCaseHistoryCa
             className="grid gap-3 px-3 py-2 text-xs font-semibold text-white/60 border-b border-white/10 rounded-t-md"
             style={{ gridTemplateColumns: '80px 180px 140px 180px 80px' }}
           >
-            <div>Status</div>
-            <div>Test Run</div>
-            <div>Executed By</div>
-            <div>Date</div>
-            <div className="text-right">Duration</div>
+            <div>ステータス</div>
+            <div>テスト実行</div>
+            <div>実行者</div>
+            <div>日時</div>
+            <div className="text-right">所要時間</div>
           </div>
 
           {/* Data Rows */}

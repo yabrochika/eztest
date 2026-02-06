@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
@@ -13,9 +13,9 @@ interface TestCaseInfoCardProps {
 
 export function TestCaseInfoCard({ testCase }: TestCaseInfoCardProps) {
   return (
-    <DetailCard title="Information" contentClassName="space-y-3">
+    <DetailCard title="情報" contentClassName="space-y-3">
       <UserInfoSection
-        label="Created By"
+        label="作成者"
         user={{
           name: testCase.createdBy.name,
           email: testCase.createdBy.email,
@@ -25,7 +25,7 @@ export function TestCaseInfoCard({ testCase }: TestCaseInfoCardProps) {
       {testCase.suite && (
         <div>
           <h4 className="text-sm font-medium text-white/60 mb-1">
-            Test Suite
+            テストスイート
           </h4>
           <Badge variant="outline">{testCase.suite.name}</Badge>
         </div>
@@ -33,14 +33,14 @@ export function TestCaseInfoCard({ testCase }: TestCaseInfoCardProps) {
 
       <StatisticsSection
         statistics={[
-          { label: 'Test Runs', value: testCase._count.results ?? 0 },
-          { label: 'Comments', value: testCase._count.comments ?? 0 },
-          { label: 'Attachments', value: testCase._count.attachments ?? 0 },
+          { label: 'テスト実行', value: testCase._count.results ?? 0 },
+          { label: 'コメント', value: testCase._count.comments ?? 0 },
+          { label: '添付ファイル', value: testCase._count.attachments ?? 0 },
         ]}
       />
 
-      <DateInfoSection label="Created" date={testCase.createdAt} />
-      <DateInfoSection label="Last Updated" date={testCase.updatedAt} />
+      <DateInfoSection label="作成日" date={testCase.createdAt} />
+      <DateInfoSection label="最終更新" date={testCase.updatedAt} />
     </DetailCard>
   );
 }

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -47,6 +47,20 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
     postconditions: '',
     suiteId: null,
     moduleId: null,
+    // Additional fields
+    domain: '',
+    function: '',
+    rtcId: '',
+    flowId: '',
+    layer: '',
+    target: '',
+    testType: '',
+    evidence: '',
+    notes: '',
+    automation: '',
+    environment: '',
+    moduleCategory: '',
+    featureCategory: '',
   });
 
   const [steps, setSteps] = useState<TestStep[]>([]);
@@ -159,6 +173,20 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
           postconditions: data.data.postconditions || '',
           suiteId: data.data.suiteId || null,
           moduleId: data.data.moduleId || null,
+          // Additional fields
+          domain: data.data.domain || '',
+          function: data.data.function || '',
+          rtcId: data.data.rtcId || '',
+          flowId: data.data.flowId || '',
+          layer: data.data.layer || '',
+          target: data.data.target || '',
+          testType: data.data.testType || '',
+          evidence: data.data.evidence || '',
+          notes: data.data.notes || '',
+          automation: data.data.automation || '',
+          environment: data.data.environment || '',
+          moduleCategory: data.data.moduleCategory || '',
+          featureCategory: data.data.featureCategory || '',
         });
 
         // Initialize steps and ensure the test case level expected result is
@@ -836,7 +864,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
         <ActionButtonGroup
           buttons={[
             {
-              label: 'View All Test Cases',
+              label: '全テストケースを表示',
               icon: TestTube2,
               onClick: () => router.push(`/projects/${testCase.project.id}/testcases`),
               variant: 'secondary',
@@ -849,7 +877,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
               show: !!testCase.suite,
             },
             {
-              label: 'View All Test Suites',
+              label: '全テストスイートを表示',
               icon: Folder,
               onClick: () => router.push(`/projects/${testCase.project.id}/testsuites`),
               variant: 'secondary',

@@ -14,6 +14,8 @@ export interface ExportOptions {
     suiteId?: string;
     status?: string;
     priority?: string;
+    domain?: string;
+    function?: string;
     // Defect filters
     severity?: string;
     assignedToId?: string;
@@ -50,6 +52,8 @@ export class ExportService {
       moduleId?: string;
       status?: string;
       priority?: string;
+      domain?: string;
+      function?: string;
       testCaseSuites?: {
         some: {
           testSuiteId: string;
@@ -79,6 +83,14 @@ export class ExportService {
       where.priority = filters.priority;
     }
 
+    if (filters.domain) {
+      where.domain = filters.domain;
+    }
+
+    if (filters.function) {
+      where.function = filters.function;
+    }
+
     // Fetch test cases with related data
     const testCases = await prisma.testCase.findMany({
       where,
@@ -90,10 +102,24 @@ export class ExportService {
         expectedResult: true,
         priority: true,
         status: true,
+        domain: true,
+        function: true,
         estimatedTime: true,
         preconditions: true,
         postconditions: true,
         testData: true,
+        // Additional fields
+        rtcId: true,
+        flowId: true,
+        layer: true,
+        target: true,
+        testType: true,
+        evidence: true,
+        notes: true,
+        automation: true,
+        environment: true,
+        moduleCategory: true,
+        featureCategory: true,
         module: {
           select: {
             name: true,
@@ -191,6 +217,8 @@ export class ExportService {
         'Test Case ID': tc.tcId,
         'Test Case Title': tc.title,
         'Module / Feature': tc.module?.name || '',
+        'Domain': tc.domain || '',
+        'Function': tc.function || '',
         'Priority': tc.priority,
         'Preconditions': tc.preconditions || '',
         'Test Steps': testStepsFormatted,
@@ -203,6 +231,18 @@ export class ExportService {
         'Estimated Time (minutes)': tc.estimatedTime || '',
         'Postconditions': tc.postconditions || '',
         'Test Suites': suites,
+        // Additional fields
+        'RTC-ID': tc.rtcId || '',
+        'Flow-ID': tc.flowId || '',
+        'Layer': tc.layer || '',
+        'Target': tc.target || '',
+        'Test Type': tc.testType || '',
+        'Evidence': tc.evidence || '',
+        'Notes': tc.notes || '',
+        'Automation': tc.automation || '',
+        'Environment': tc.environment || '',
+        'Module Category': tc.moduleCategory || '',
+        'Feature Category': tc.featureCategory || '',
       };
     });
 

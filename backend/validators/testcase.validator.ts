@@ -48,6 +48,18 @@ export const createTestCaseSchema = z.object({
   preconditions: z.string().optional(),
   postconditions: z.string().optional(),
   steps: z.array(testStepSchema).optional(),
+  // Additional fields
+  rtcId: z.string().optional().nullable(),
+  flowId: z.string().optional().nullable(),
+  layer: z.string().optional().nullable(),
+  target: z.string().optional().nullable(),
+  testType: z.string().optional().nullable(),
+  evidence: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  automation: z.string().optional().nullable(),
+  environment: z.string().optional().nullable(),
+  moduleCategory: z.string().optional().nullable(),
+  featureCategory: z.string().optional().nullable(),
 });
 
 /**
@@ -70,6 +82,18 @@ export const updateTestCaseSchema = z.object({
   postconditions: z.string().optional(),
   moduleId: z.string().optional().nullable(),
   suiteId: z.string().optional().nullable(),
+  // Additional fields
+  rtcId: z.string().optional().nullable(),
+  flowId: z.string().optional().nullable(),
+  layer: z.string().optional().nullable(),
+  target: z.string().optional().nullable(),
+  testType: z.string().optional().nullable(),
+  evidence: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  automation: z.string().optional().nullable(),
+  environment: z.string().optional().nullable(),
+  moduleCategory: z.string().optional().nullable(),
+  featureCategory: z.string().optional().nullable(),
 });
 
 /**

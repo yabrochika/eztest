@@ -45,6 +45,8 @@ export class ImportService {
       'module/feature': 'module',
       'module': 'module',
       'feature': 'module',
+      'domain': 'domain',
+      'function': 'function',
       'priority': 'priority',
       'preconditions': 'preconditions',
       'test steps': 'testSteps',
@@ -66,6 +68,24 @@ export class ImportService {
       'test suites': 'testsuite',
       'testsuite': 'testsuite',
       'test suite': 'testsuite',
+      // Additional test case fields
+      'rtc-id': 'rtcId',
+      'rtcid': 'rtcId',
+      'rtc id': 'rtcId',
+      'flow-id': 'flowId',
+      'flowid': 'flowId',
+      'flow id': 'flowId',
+      'layer': 'layer',
+      'target': 'target',
+      'test type': 'testType',
+      'testtype': 'testType',
+      'evidence': 'evidence',
+      'notes': 'notes',
+      'automation': 'automation',
+      'module category': 'moduleCategory',
+      'modulecategory': 'moduleCategory',
+      'feature category': 'featureCategory',
+      'featurecategory': 'featureCategory',
       // Defect columns (for defect import)
       'defect title / summary': 'title',
       'defect title': 'title',
@@ -209,6 +229,8 @@ export class ImportService {
         const expectedResult = this.getRowValue(row, 'expectedResult');
         const priority = this.getRowValue(row, 'priority');
         const status = this.getRowValue(row, 'status');
+        const domain = this.getRowValue(row, 'domain');
+        const functionValue = this.getRowValue(row, 'function');
         const estimatedTime = this.getRowValue(row, 'estimatedTime');
         const preconditions = this.getRowValue(row, 'preconditions');
         const postconditions = this.getRowValue(row, 'postconditions');
@@ -217,6 +239,18 @@ export class ImportService {
         const testSteps = this.getRowValue(row, 'testSteps');
         const testData = this.getRowValue(row, 'testData');
         const defectId = this.getRowValue(row, 'defectId');
+        // Additional fields
+        const rtcId = this.getRowValue(row, 'rtcId');
+        const flowId = this.getRowValue(row, 'flowId');
+        const layer = this.getRowValue(row, 'layer');
+        const target = this.getRowValue(row, 'target');
+        const testType = this.getRowValue(row, 'testType');
+        const evidence = this.getRowValue(row, 'evidence');
+        const notes = this.getRowValue(row, 'notes');
+        const automation = this.getRowValue(row, 'automation');
+        const environment = this.getRowValue(row, 'environment');
+        const moduleCategory = this.getRowValue(row, 'moduleCategory');
+        const featureCategory = this.getRowValue(row, 'featureCategory');
 
         // Validate required field
         if (!title || typeof title !== 'string' || title.toString().trim() === '') {
@@ -605,6 +639,12 @@ export class ImportService {
             expectedResult: finalExpectedResult,
             priority: priorityValue,
             status: statusValue,
+            domain: domain
+              ? domain.toString().trim()
+              : null,
+            function: functionValue
+              ? functionValue.toString().trim()
+              : null,
             estimatedTime: estimatedTimeValue,
             preconditions: preconditions
               ? preconditions.toString().trim()
@@ -617,6 +657,18 @@ export class ImportService {
             moduleId,
             suiteId,
             createdById: userId,
+            // Additional fields
+            rtcId: rtcId ? rtcId.toString().trim() : null,
+            flowId: flowId ? flowId.toString().trim() : null,
+            layer: layer ? layer.toString().trim() : null,
+            target: target ? target.toString().trim() : null,
+            testType: testType ? testType.toString().trim() : null,
+            evidence: evidence ? evidence.toString().trim() : null,
+            notes: notes ? notes.toString().trim() : null,
+            automation: automation ? automation.toString().trim() : null,
+            environment: environment ? environment.toString().trim() : null,
+            moduleCategory: moduleCategory ? moduleCategory.toString().trim() : null,
+            featureCategory: featureCategory ? featureCategory.toString().trim() : null,
             steps: testStepsData && testStepsData.length > 0
               ? {
                   create: testStepsData

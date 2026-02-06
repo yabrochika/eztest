@@ -94,6 +94,44 @@ export async function seedDropdownOptions() {
     { entity: 'Defect', field: 'environment', value: 'Staging', label: 'STAGING', order: 2 },
     { entity: 'Defect', field: 'environment', value: 'QA', label: 'QA', order: 3 },
     { entity: 'Defect', field: 'environment', value: 'Development', label: 'DEVELOPMENT', order: 4 },
+
+    // Layer options (used in TestCase)
+    { entity: 'TestCase', field: 'layer', value: 'SMOKE', label: 'Smoke', order: 1 },
+    { entity: 'TestCase', field: 'layer', value: 'CORE', label: 'Core', order: 2 },
+    { entity: 'TestCase', field: 'layer', value: 'EXTENDED', label: 'Extended', order: 3 },
+
+    // TestType options (used in TestCase - テスト種別)
+    { entity: 'TestCase', field: 'testType', value: 'NORMAL', label: '正常系', order: 1 },
+    { entity: 'TestCase', field: 'testType', value: 'ABNORMAL', label: '異常系', order: 2 },
+    { entity: 'TestCase', field: 'testType', value: 'NON_FUNCTIONAL', label: '非機能', order: 3 },
+    { entity: 'TestCase', field: 'testType', value: 'INITIAL_CHECK', label: '初期確認', order: 4 },
+    { entity: 'TestCase', field: 'testType', value: 'DATA_INTEGRITY', label: 'データ整合性確認', order: 5 },
+    { entity: 'TestCase', field: 'testType', value: 'STATE_TRANSITION', label: '状態遷移確認', order: 6 },
+    { entity: 'TestCase', field: 'testType', value: 'OPERATION', label: '運用確認', order: 7 },
+    { entity: 'TestCase', field: 'testType', value: 'FAILURE', label: '障害時確認', order: 8 },
+    { entity: 'TestCase', field: 'testType', value: 'REGRESSION', label: '回帰', order: 9 },
+
+    // Target options (used in TestCase - 対象)
+    { entity: 'TestCase', field: 'target', value: 'API', label: 'API', order: 1 },
+    { entity: 'TestCase', field: 'target', value: 'SCREEN', label: '画面', order: 2 },
+
+    // Automation options (used in TestCase - 自動化)
+    { entity: 'TestCase', field: 'automation', value: 'YES', label: '自動化あり', order: 1 },
+    { entity: 'TestCase', field: 'automation', value: 'NO', label: '自動化なし', order: 2 },
+    { entity: 'TestCase', field: 'automation', value: 'PLANNED', label: '自動化予定', order: 3 },
+
+    // Environment options for TestCase (環境)
+    { entity: 'TestCase', field: 'environment', value: 'IOS', label: 'iOS', order: 1 },
+    { entity: 'TestCase', field: 'environment', value: 'ANDROID', label: 'Android', order: 2 },
+    { entity: 'TestCase', field: 'environment', value: 'WEB', label: 'Web', order: 3 },
+
+    // Module Category options for TestCase
+    { entity: 'TestCase', field: 'moduleCategory', value: 'MODULE1', label: 'Module1', order: 1 },
+    { entity: 'TestCase', field: 'moduleCategory', value: 'MODULE2', label: 'Module2', order: 2 },
+
+    // Feature Category options for TestCase
+    { entity: 'TestCase', field: 'featureCategory', value: 'FEATURE1', label: 'Feature1', order: 1 },
+    { entity: 'TestCase', field: 'featureCategory', value: 'FEATURE2', label: 'Feature2', order: 2 },
   ];
 
   console.log('  📝 Upserting dropdown options...');

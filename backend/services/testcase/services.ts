@@ -22,6 +22,18 @@ interface CreateTestCaseInput {
     action: string;
     expectedResult: string;
   }>;
+  // Additional fields
+  rtcId?: string;
+  flowId?: string;
+  layer?: string;
+  target?: string;
+  testType?: string;
+  evidence?: string;
+  notes?: string;
+  automation?: string;
+  environment?: string;
+  moduleCategory?: string;
+  featureCategory?: string;
 }
 
 interface UpdateTestCaseInput {
@@ -38,6 +50,18 @@ interface UpdateTestCaseInput {
   postconditions?: string;
   moduleId?: string | null;
   suiteId?: string | null;
+  // Additional fields
+  rtcId?: string | null;
+  flowId?: string | null;
+  layer?: string | null;
+  target?: string | null;
+  testType?: string | null;
+  evidence?: string | null;
+  notes?: string | null;
+  automation?: string | null;
+  environment?: string | null;
+  moduleCategory?: string | null;
+  featureCategory?: string | null;
 }
 
 interface TestCaseFilters {
@@ -582,6 +606,18 @@ export class TestCaseService {
             preconditions: data.preconditions,
             postconditions: data.postconditions,
             createdById: data.createdById,
+            // Additional fields
+            rtcId: data.rtcId,
+            flowId: data.flowId,
+            layer: data.layer,
+            target: data.target,
+            testType: data.testType,
+            evidence: data.evidence,
+            notes: data.notes,
+            automation: data.automation,
+            environment: data.environment,
+            moduleCategory: data.moduleCategory,
+            featureCategory: data.featureCategory,
             steps: data.steps
               ? {
                   create: data.steps.map((step) => ({
@@ -727,6 +763,18 @@ export class TestCaseService {
     if (data.postconditions !== undefined) updateData.postconditions = data.postconditions;
     if (data.suiteId !== undefined) updateData.suiteId = data.suiteId;
     if (data.moduleId !== undefined) updateData.moduleId = data.moduleId;
+    // Additional fields
+    if (data.rtcId !== undefined) updateData.rtcId = data.rtcId;
+    if (data.flowId !== undefined) updateData.flowId = data.flowId;
+    if (data.layer !== undefined) updateData.layer = data.layer;
+    if (data.target !== undefined) updateData.target = data.target;
+    if (data.testType !== undefined) updateData.testType = data.testType;
+    if (data.evidence !== undefined) updateData.evidence = data.evidence;
+    if (data.notes !== undefined) updateData.notes = data.notes;
+    if (data.automation !== undefined) updateData.automation = data.automation;
+    if (data.environment !== undefined) updateData.environment = data.environment;
+    if (data.moduleCategory !== undefined) updateData.moduleCategory = data.moduleCategory;
+    if (data.featureCategory !== undefined) updateData.featureCategory = data.featureCategory;
 
     return await prisma.testCase.update({
       where: { id: testCaseId },

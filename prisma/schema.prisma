@@ -2,7 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -206,6 +207,18 @@ model TestCase {
   postconditions String?
   testData      String?  // Test data/input values for the test case
   pendingDefectIds String?  // Comma-separated defect IDs that don't exist yet (e.g., "DEF-1, DEF-2")
+  // Additional fields for enhanced test case management
+  rtcId         String?  // RTC-ID
+  flowId        String?  // Flow-ID
+  layer         String?  // Dynamic dropdown value (Smoke, Core, Extended)
+  target        String?  // 対象(API/画面)
+  testType      String?  // Dynamic dropdown value (テスト種別: 正常系, 異常系, etc.)
+  evidence      String?  // 根拠(ドキュメント)
+  notes         String?  // 備考
+  automation    String?  // 自動化
+  environment   String?  // Dynamic dropdown value (環境: iOS, Android, Web)
+  moduleCategory String?  // Dynamic dropdown value (Module1, Module2, etc.)
+  featureCategory String?  // Dynamic dropdown value (Feature1, Feature2, etc.)
   createdById   String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -231,6 +244,12 @@ model TestCase {
   @@index([priority])
   @@index([domain])
   @@index([function])
+  @@index([layer])
+  @@index([testType])
+  @@index([environment])
+  @@index([target])
+  @@index([moduleCategory])
+  @@index([featureCategory])
 }
 
 // Join table for many-to-many relationship between TestCase and TestSuite

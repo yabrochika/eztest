@@ -142,6 +142,18 @@ export class TestCaseController {
       postconditions: validatedData.postconditions,
       createdById: req.userInfo.id,
       steps: validatedData.steps,
+      // Additional fields
+      rtcId: validatedData.rtcId ?? undefined,
+      flowId: validatedData.flowId ?? undefined,
+      layer: validatedData.layer ?? undefined,
+      target: validatedData.target ?? undefined,
+      testType: validatedData.testType ?? undefined,
+      evidence: validatedData.evidence ?? undefined,
+      notes: validatedData.notes ?? undefined,
+      automation: validatedData.automation ?? undefined,
+      environment: validatedData.environment ?? undefined,
+      moduleCategory: validatedData.moduleCategory ?? undefined,
+      featureCategory: validatedData.featureCategory ?? undefined,
     });
 
     return { data: testCase, statusCode: 201 };
@@ -210,6 +222,18 @@ export class TestCaseController {
           postconditions: validatedData.postconditions,
           suiteId: validatedData.suiteId,
           moduleId: validatedData.moduleId,
+          // Additional fields
+          rtcId: validatedData.rtcId,
+          flowId: validatedData.flowId,
+          layer: validatedData.layer,
+          target: validatedData.target,
+          testType: validatedData.testType,
+          evidence: validatedData.evidence,
+          notes: validatedData.notes,
+          automation: validatedData.automation,
+          environment: validatedData.environment,
+          moduleCategory: validatedData.moduleCategory,
+          featureCategory: validatedData.featureCategory,
         }
       );
 

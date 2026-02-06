@@ -43,6 +43,20 @@ export interface TestCase {
     id: string;
     name: string;
   };
+  // Additional fields
+  domain?: string;
+  function?: string;
+  rtcId?: string;
+  flowId?: string;
+  layer?: string;
+  target?: string;
+  testType?: string;
+  evidence?: string;
+  notes?: string;
+  automation?: string;
+  environment?: string;
+  moduleCategory?: string;
+  featureCategory?: string;
   createdBy: {
     id: string;
     name: string;
@@ -76,4 +90,18 @@ export interface TestCaseFormData {
   postconditions: string;
   suiteId: string | null;
   moduleId: string | null;
+  // Additional fields
+  domain: string;
+  function: string;
+  rtcId: string;
+  flowId: string;
+  layer: string;
+  target: string;
+  testType: string;
+  evidence: string;
+  notes: string;
+  automation: string;
+  environment: string;
+  moduleCategory: string;
+  featureCategory: string;
 }

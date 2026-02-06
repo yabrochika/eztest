@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
 import { TestCase, Module } from '../types';
@@ -35,6 +35,15 @@ export function CreateTestCaseDialog({
   // Fetch dynamic dropdown options
   const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
+  const { options: domainOptions } = useDropdownOptions('TestCase', 'domain');
+  const { options: functionOptions } = useDropdownOptions('TestCase', 'function');
+  const { options: layerOptions } = useDropdownOptions('TestCase', 'layer');
+  const { options: testTypeOptions } = useDropdownOptions('TestCase', 'testType');
+  const { options: targetOptions } = useDropdownOptions('TestCase', 'target');
+  const { options: automationOptions } = useDropdownOptions('TestCase', 'automation');
+  const { options: environmentOptions } = useDropdownOptions('TestCase', 'environment');
+  const { options: moduleCategoryOptions } = useDropdownOptions('TestCase', 'moduleCategory');
+  const { options: featureCategoryOptions } = useDropdownOptions('TestCase', 'featureCategory');
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -116,6 +125,134 @@ export function CreateTestCaseDialog({
       label: 'Estimated Time (minutes)',
       type: 'number',
       placeholder: 'Enter estimated time',
+      cols: 1,
+    },
+    {
+      name: 'domain',
+      label: 'Domain',
+      type: 'select',
+      placeholder: 'Select domain',
+      options: [
+        { value: 'none', label: 'None' },
+        ...domainOptions.map(opt => ({ value: opt.value, label: opt.label })),
+      ],
+      cols: 1,
+    },
+    {
+      name: 'function',
+      label: 'Function',
+      type: 'select',
+      placeholder: 'Select function',
+      options: [
+        { value: 'none', label: 'None' },
+        ...functionOptions.map(opt => ({ value: opt.value, label: opt.label })),
+      ],
+      cols: 1,
+    },
+    {
+      name: 'rtcId',
+      label: 'RTC-ID',
+      type: 'text',
+      placeholder: 'Enter RTC-ID',
+      cols: 1,
+    },
+    {
+      name: 'flowId',
+      label: 'Flow-ID',
+      type: 'text',
+      placeholder: 'Enter Flow-ID',
+      cols: 1,
+    },
+    {
+      name: 'layer',
+      label: 'Layer',
+      type: 'select',
+      placeholder: 'Select layer',
+      options: [
+        { value: 'none', label: 'None' },
+        ...layerOptions.map(opt => ({ value: opt.value, label: opt.label })),
+      ],
+      cols: 1,
+    },
+    {
+      name: 'target',
+      label: 'Target (API/Screen)',
+      type: 'select',
+      placeholder: 'Select target',
+      options: [
+        { value: 'none', label: 'None' },
+        ...targetOptions.map(opt => ({ value: opt.value, label: opt.label })),
+      ],
+      cols: 1,
+    },
+    {
+      name: 'testType',
+      label: 'Test Type',
+      type: 'select',
+      placeholder: 'Select test type',
+      options: [
+        { value: 'none', label: 'None' },
+        ...testTypeOptions.map(opt => ({ value: opt.value, label: opt.label })),
+      ],
+      cols: 1,
+    },
+    {
+      name: 'automation',
+      label: 'Automation',
+      type: 'select',
+      placeholder: 'Select automation status',
+      options: [
+        { value: 'none', label: 'None' },
+        ...automationOptions.map(opt => ({ value: opt.value, label: opt.label })),
+      ],
+      cols: 1,
+    },
+    {
+      name: 'environment',
+      label: 'Environment',
+      type: 'select',
+      placeholder: 'Select environment',
+      options: [
+        { value: 'none', label: 'None' },
+        ...environmentOptions.map(opt => ({ value: opt.value, label: opt.label })),
+      ],
+      cols: 1,
+    },
+    {
+      name: 'moduleCategory',
+      label: 'Module',
+      type: 'select',
+      placeholder: 'Select module',
+      options: [
+        { value: 'none', label: 'None' },
+        ...moduleCategoryOptions.map(opt => ({ value: opt.value, label: opt.label })),
+      ],
+      cols: 1,
+    },
+    {
+      name: 'featureCategory',
+      label: 'Feature',
+      type: 'select',
+      placeholder: 'Select feature',
+      options: [
+        { value: 'none', label: 'None' },
+        ...featureCategoryOptions.map(opt => ({ value: opt.value, label: opt.label })),
+      ],
+      cols: 1,
+    },
+    {
+      name: 'evidence',
+      label: 'Evidence (Document)',
+      type: 'text',
+      placeholder: 'Enter evidence/document reference',
+      cols: 1,
+    },
+    {
+      name: 'notes',
+      label: 'Notes',
+      type: 'textarea',
+      placeholder: 'Enter notes',
+      rows: 2,
       cols: 1,
     },
     {
@@ -247,6 +384,19 @@ export function CreateTestCaseDialog({
         preconditions: formData.preconditions || undefined,
         postconditions: formData.postconditions || undefined,
         moduleId: formData.moduleId !== 'none' ? formData.moduleId : undefined,
+        domain: formData.domain && formData.domain !== 'none' ? formData.domain : undefined,
+        function: formData.function && formData.function !== 'none' ? formData.function : undefined,
+        rtcId: formData.rtcId || undefined,
+        flowId: formData.flowId || undefined,
+        layer: formData.layer && formData.layer !== 'none' ? formData.layer : undefined,
+        target: formData.target && formData.target !== 'none' ? formData.target : undefined,
+        testType: formData.testType && formData.testType !== 'none' ? formData.testType : undefined,
+        automation: formData.automation && formData.automation !== 'none' ? formData.automation : undefined,
+        environment: formData.environment && formData.environment !== 'none' ? formData.environment : undefined,
+        moduleCategory: formData.moduleCategory && formData.moduleCategory !== 'none' ? formData.moduleCategory : undefined,
+        featureCategory: formData.featureCategory && formData.featureCategory !== 'none' ? formData.featureCategory : undefined,
+        evidence: formData.evidence || undefined,
+        notes: formData.notes || undefined,
       }),
     });
 

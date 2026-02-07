@@ -43,11 +43,12 @@ export class ImportService {
       'testcase title': 'title',
       'title': 'title',
       'テストケースタイトル': 'title',
-      'module / feature': 'module',
-      'module/feature': 'module',
+      'module / feature': 'moduleFeature',
+      'module/feature': 'moduleFeature',
       'module': 'module',
       'feature': 'module',
-      'モジュール/機能': 'module',
+      'モジュール/機能': 'moduleFeature',
+      'モジュール': 'module',
       'domain': 'domain',
       'ドメイン': 'domain',
       'function': 'function',
@@ -268,7 +269,13 @@ export class ImportService {
         const preconditions = this.getRowValue(row, 'preconditions');
         const postconditions = this.getRowValue(row, 'postconditions');
         const moduleValue = this.getRowValue(row, 'module');
+        const moduleFeature = this.getRowValue(row, 'moduleFeature');
         const testsuite = this.getRowValue(row, 'testsuite');
+        
+        // Debug log for Test Suite
+        console.log(`Row ${rowNumber}: title="${title}"`);
+        console.log(`  moduleValue="${moduleValue}", moduleFeature="${moduleFeature}", testsuite="${testsuite}"`);
+        console.log(`  Row keys: ${Object.keys(row).join(', ')}`);
         const testSteps = this.getRowValue(row, 'testSteps');
         const testData = this.getRowValue(row, 'testData');
         const defectId = this.getRowValue(row, 'defectId');
@@ -323,31 +330,12 @@ export class ImportService {
           }
         }
 
-        // Check if test case with same title already exists
-        const existingTestCase = await prisma.testCase.findFirst({
-          where: {
-            projectId,
-            title: {
-              equals: testCaseTitle,
-              mode: 'insensitive',
-            },
-          },
-        });
-
-        if (existingTestCase) {
-          result.skipped++;
-          result.skippedItems.push({
-            row: rowNumber,
-            title: testCaseTitle,
-            reason: `Already exists (${existingTestCase.tcId})`,
-          });
-          continue; // Skip this row
-        }
-
-        // Find or create module
+        // Find or create module first
+        // Use moduleFeature (Module / Feature column) or moduleValue (Module column)
         let moduleId: string | undefined;
-        if (moduleValue && typeof moduleValue === 'string' && moduleValue.toString().trim()) {
-          const moduleName = moduleValue.toString().trim();
+        const moduleNameToUse = moduleFeature || moduleValue;
+        if (moduleNameToUse && typeof moduleNameToUse === 'string' && moduleNameToUse.toString().trim()) {
+          const moduleName = moduleNameToUse.toString().trim();
           let foundModule = project.modules.find(
             (m) => m.name.toLowerCase() === moduleName.toLowerCase()
           );
@@ -366,10 +354,13 @@ export class ImportService {
           moduleId = foundModule.id;
         }
 
-        // Find or create suite
+        // Find or create suite (needed for duplicate check)
+        // Use testsuite (Test Suites column) for Test Suite
         let suiteId: string | undefined;
+        console.log(`  -> Checking testsuite: "${testsuite}" (type: ${typeof testsuite})`);
         if (testsuite && typeof testsuite === 'string' && testsuite.toString().trim()) {
           const suiteName = testsuite.toString().trim();
+          console.log(`  -> Creating/finding suite: "${suiteName}"`);
           let foundSuite = project.testSuites.find(
             (s) => s.name.toLowerCase() === suiteName.toLowerCase()
           );
@@ -384,26 +375,84 @@ export class ImportService {
             });
             // Add to project test suites array to avoid duplicate creation
             project.testSuites.push(foundSuite);
+            console.log(`  -> Created new suite: "${suiteName}" with ID: ${foundSuite.id}`);
+          } else {
+            console.log(`  -> Found existing suite: "${suiteName}" with ID: ${foundSuite.id}`);
           }
           suiteId = foundSuite.id;
+        } else {
+          console.log(`  -> No testsuite value found for this row`);
         }
 
-        // Validate priority
-        const priorityValue = priority
+        // Check if test case with same title AND same test suite already exists
+        // This allows same title in different test suites
+        let existingTestCase = null;
+        if (suiteId) {
+          // If suite is specified, check for title + suite combination
+          existingTestCase = await prisma.testCase.findFirst({
+            where: {
+              projectId,
+              title: {
+                equals: testCaseTitle,
+                mode: 'insensitive',
+              },
+              testCaseSuites: {
+                some: {
+                  testSuiteId: suiteId,
+                },
+              },
+            },
+          });
+        } else {
+          // If no suite specified, check for title without any suite
+          existingTestCase = await prisma.testCase.findFirst({
+            where: {
+              projectId,
+              title: {
+                equals: testCaseTitle,
+                mode: 'insensitive',
+              },
+              testCaseSuites: {
+                none: {},
+              },
+            },
+          });
+        }
+
+        // Flag to track if this is an update or create
+        const isUpdate = !!existingTestCase;
+
+        // Validate priority - use default if invalid
+        let priorityValue = priority
           ? priority.toString().toUpperCase()
           : 'MEDIUM';
         if (!validPriorities.has(priorityValue)) {
-          throw new Error(
-            `Invalid priority: ${priority}. Valid values are: ${Array.from(validPriorities).join(', ')}`
-          );
+          // Try to extract valid priority from value (e.g., "High" -> "HIGH")
+          const upperPriority = priorityValue.toUpperCase();
+          if (validPriorities.has(upperPriority)) {
+            priorityValue = upperPriority;
+          } else {
+            // Use default if invalid
+            priorityValue = 'MEDIUM';
+          }
         }
 
-        // Validate status
-        const statusValue = status ? status.toString().toUpperCase() : 'ACTIVE';
+        // Validate status - use default if invalid
+        let statusValue = status ? status.toString().toUpperCase() : 'ACTIVE';
         if (!validStatuses.has(statusValue)) {
-          throw new Error(
-            `Invalid status: ${status}. Valid values are: ${Array.from(validStatuses).join(', ')}`
-          );
+          // Try to extract valid status from value (e.g., "ACTIVE_iOS" -> check if starts with valid status)
+          let foundStatus = false;
+          for (const validStatus of validStatuses) {
+            if (statusValue.startsWith(validStatus)) {
+              statusValue = validStatus;
+              foundStatus = true;
+              break;
+            }
+          }
+          if (!foundStatus) {
+            // Use default if invalid
+            statusValue = 'ACTIVE';
+          }
         }
 
         // Parse estimated time
@@ -422,34 +471,53 @@ export class ImportService {
         if (expectedResult && typeof expectedResult === 'string' && expectedResult.toString().trim()) {
           const expectedResultText = expectedResult.toString().trim();
           
-          // Check if it contains numbered points (1., 2., etc.) or newlines
-          const hasNumberedPoints = /\d+\./.test(expectedResultText);
-          const hasNewlines = expectedResultText.includes('\n');
-          const numberedPointsMatches = expectedResultText.match(/\d+\./g);
+          // Check if it contains numbered points at the start of lines
+          // Pattern: line starting with number followed by dot or space (e.g., "1.", "2.", "1 ", "2 ")
+          const numberedPointPattern = /(?:^|\n)\s*(\d+)[.\s]+/g;
+          const numberedPointsMatches = expectedResultText.match(numberedPointPattern);
           const numberedPointsCount = numberedPointsMatches ? numberedPointsMatches.length : 0;
           
-          if (hasNewlines || (hasNumberedPoints && numberedPointsCount > 1)) {
-            // Multi-item format - split by newlines first, then check for numbered points
-            let items: string[] = [];
+          if (numberedPointsCount > 1) {
+            // Multiple numbered points - split by numbered points while preserving content between them
+            // This keeps all content (including newlines, bullet points) between numbered points together
+            const items: string[] = [];
             
-            if (hasNewlines) {
-              // Split by newlines first
-              items = expectedResultText.split('\n').map(l => l.trim()).filter(l => l);
-            } else {
-              // No newlines but has multiple numbered points - split by numbered points
-              // Match pattern: number followed by dot and optional space
-              items = expectedResultText.split(/(?=\d+\.\s*)/).map(l => l.trim()).filter(l => l);
+            // Find all numbered point positions
+            const positions: { index: number; number: number; matchLength: number }[] = [];
+            const regex = /(?:^|\n)\s*(\d+)[.\s]+/g;
+            let match;
+            while ((match = regex.exec(expectedResultText)) !== null) {
+              positions.push({
+                index: match.index,
+                number: parseInt(match[1]),
+                matchLength: match[0].length
+              });
             }
             
-            // Process each item - remove leading number and dot if present
-            expectedResultsList = items.map(item => {
-              return item.replace(/^\d+\.\s*/, '').trim();
-            }).filter(item => item.length > 0);
-          } else if (hasNumberedPoints) {
-            // Single line with number prefix - treat as single result
-            singleExpectedResult = expectedResultText.replace(/^\d+\.\s*/, '').trim();
+            // Extract content between numbered points
+            for (let i = 0; i < positions.length; i++) {
+              const current = positions[i];
+              const nextIndex = i + 1 < positions.length ? positions[i + 1].index : expectedResultText.length;
+              
+              // Get content from after the number prefix to the next number (or end)
+              const startIndex = current.index + current.matchLength;
+              // Adjust for newline at the start of match (if not the first match)
+              const adjustedStart = current.index > 0 && expectedResultText[current.index] === '\n' 
+                ? startIndex 
+                : startIndex;
+              const content = expectedResultText.substring(adjustedStart, nextIndex).trim();
+              
+              if (content) {
+                items.push(content);
+              }
+            }
+            
+            expectedResultsList = items;
+          } else if (numberedPointsCount === 1) {
+            // Single numbered point - treat as single result, remove the number prefix
+            singleExpectedResult = expectedResultText.replace(/^\s*\d+[.\s]+/, '').trim();
           } else {
-            // Single expected result - will apply to all steps
+            // No numbered points - single expected result
             singleExpectedResult = expectedResultText;
           }
         }
@@ -526,90 +594,87 @@ export class ImportService {
                     });
                 }
               } catch {
-                // If not JSON, try to parse as numbered list, newline-separated, or other formats
+                // If not JSON, try to parse as numbered list
                 const stepsText = testSteps.trim();
-                let stepLines: string[] = [];
                 
-                // Check if it contains numbered points (1., 2., etc.) or newlines
-                const hasNumberedPoints = /\d+\./.test(stepsText);
-                const hasNewlines = stepsText.includes('\n');
-                const numberedPointsCount = stepsText.match(/\d+\./g)?.length || 0;
+                // Parse test steps using the same method as expected results
+                // Check for numbered points (1., 2., or 1 , 2 )
+                const numberedPointPattern = /(?:^|\n)\s*(\d+)[.\s]+/g;
+                const numberedPointsMatches = stepsText.match(numberedPointPattern);
+                const numberedPointsCount = numberedPointsMatches ? numberedPointsMatches.length : 0;
                 
-                if (hasNewlines || (hasNumberedPoints && numberedPointsCount > 1)) {
-                  // Multi-step format - split by newlines first, then check for numbered points
-                  if (hasNewlines) {
-                    // Split by newlines first - each line is a separate step
-                    stepLines = stepsText.split('\n').map(s => s.trim()).filter(s => s);
-                  } else {
-                    // No newlines but has multiple numbered points - split by numbered points
-                    // Match pattern: number followed by dot and optional space
-                    stepLines = stepsText.split(/(?=\d+\.\s*)/).map(s => s.trim()).filter(s => s);
+                if (numberedPointsCount > 1) {
+                  // Multiple numbered points - split by numbered points
+                  const stepItems: string[] = [];
+                  const stepNumbers: number[] = [];
+                  
+                  // Find all numbered point positions
+                  const positions: { index: number; number: number; matchLength: number }[] = [];
+                  const regex = /(?:^|\n)\s*(\d+)[.\s]+/g;
+                  let match;
+                  while ((match = regex.exec(stepsText)) !== null) {
+                    positions.push({
+                      index: match.index,
+                      number: parseInt(match[1]),
+                      matchLength: match[0].length
+                    });
                   }
                   
-                  testStepsData = stepLines.map((line, index) => {
-                    // Check if line has numbered prefix (e.g., "1. Enter password")
-                    const isNumbered = /^\d+\./.test(line);
+                  // Extract content between numbered points
+                  for (let j = 0; j < positions.length; j++) {
+                    const current = positions[j];
+                    const nextIndex = j + 1 < positions.length ? positions[j + 1].index : stepsText.length;
                     
-                    // Remove leading number and dot if present
-                    let action = isNumbered ? line.replace(/^\d+\.\s*/, '').trim() : line;
+                    const startIndex = current.index + current.matchLength;
+                    const content = stepsText.substring(startIndex, nextIndex).trim();
                     
-                    // Remove expected result from action if it's separated by semicolon or colon
-                    // We only want the action, expected result comes from Expected Result column
-                    const parts = action.split(/[;:]/).map(p => p.trim()).filter(p => p);
-                    action = parts[0] || action; // Take only the action part (before semicolon/colon)
-                    
-                    // Get expected result from Expected Result column by index
-                    // If multiple expected results exist, match by index; if single value, apply to all steps
+                    if (content) {
+                      stepItems.push(content);
+                      stepNumbers.push(current.number);
+                    }
+                  }
+                  
+                  testStepsData = stepItems.map((action, index) => {
+                    const stepNumber = stepNumbers[index];
+                    // Get expected result matching by step number (1-based index in expectedResultsList)
                     const expectedResultValue = expectedResultsList[index] || singleExpectedResult || '';
                     
-                    // If action is empty but expected result exists, use expected result as the content
-                    // If expected result is empty but action exists, use action only
-                    const finalAction = action || '';
-                    const finalExpectedResult = expectedResultValue || '';
-                    
                     return {
-                      stepNumber: index + 1,
-                      action: finalAction,
-                      expectedResult: finalExpectedResult,
+                      stepNumber: stepNumber,
+                      action: action,
+                      expectedResult: expectedResultValue,
                     };
                   });
+                } else if (numberedPointsCount === 1) {
+                  // Single numbered step
+                  const action = stepsText.replace(/^\s*\d+[.\s]+/, '').trim();
+                  const expectedResultValue = expectedResultsList[0] || singleExpectedResult || '';
+                  
+                  testStepsData = [{
+                    stepNumber: 1,
+                    action: action,
+                    expectedResult: expectedResultValue,
+                  }];
                 } else {
-                  // Single line - check if it's numbered or has pipe separator
-                  // Try pipe-separated format first: "Step 1; Expected 1|Step 2; Expected 2"
-                  if (stepsText.includes('|')) {
+                  // No numbered points - check for newlines or pipe separator
+                  let stepLines: string[] = [];
+                  
+                  if (stepsText.includes('\n')) {
+                    stepLines = stepsText.split('\n').map(s => s.trim()).filter(s => s);
+                  } else if (stepsText.includes('|')) {
                     stepLines = stepsText.split('|').map(s => s.trim()).filter(s => s);
                   } else {
-                    // Single step
                     stepLines = [stepsText];
                   }
                   
-                  if (stepLines.length > 0) {
-                    testStepsData = stepLines.map((line, index) => {
-                      // Check if line has numbered prefix
-                      const isNumbered = /^\d+\./.test(line);
-                      let cleanLine = isNumbered ? line.replace(/^\d+\.\s*/, '').trim() : line;
-                      
-                      // Remove expected result from action if it's separated by semicolon or colon
-                      // We only want the action, expected result comes from Expected Result column
-                      const parts = cleanLine.split(/[;:]/).map(p => p.trim()).filter(p => p);
-                      cleanLine = parts[0] || cleanLine; // Take only the action part (before semicolon/colon)
-                      
-                      // Get expected result from Expected Result column by index
-                      // If multiple expected results exist, match by index; if single value, apply to all steps
-                      const expectedResultValue = expectedResultsList[index] || singleExpectedResult || '';
-                      
-                      // If action is empty but expected result exists, use expected result as the content
-                      // If expected result is empty but action exists, use action only
-                      const finalAction = cleanLine || '';
-                      const finalExpectedResult = expectedResultValue || '';
-                      
-                      return {
-                        stepNumber: index + 1,
-                        action: finalAction,
-                        expectedResult: finalExpectedResult,
-                      };
-                    });
-                  }
+                  testStepsData = stepLines.map((line, index) => {
+                    const expectedResultValue = expectedResultsList[index] || singleExpectedResult || '';
+                    return {
+                      stepNumber: index + 1,
+                      action: line,
+                      expectedResult: expectedResultValue,
+                    };
+                  });
                 }
               }
             }
@@ -649,95 +714,160 @@ export class ImportService {
           }
         }
 
-        // Always auto-generate tcId (Test Case ID column removed from import)
-        // Auto-generate tcId in TC-XXX format without padding (TC-1, TC-2, etc.)
-        let tcId = `TC-${nextTcIdNumber}`;
-        while (existingTcIds.has(tcId)) {
-          nextTcIdNumber++;
-          tcId = `TC-${nextTcIdNumber}`;
-        }
-        nextTcIdNumber++;
-        existingTcIds.add(tcId);
+        // Prepare update/create data
+        const testCaseData = {
+          title: testCaseTitle,
+          description: description
+            ? description.toString().trim()
+            : null,
+          expectedResult: finalExpectedResult,
+          priority: priorityValue,
+          status: statusValue,
+          domain: domain
+            ? domain.toString().trim()
+            : null,
+          function: functionValue
+            ? functionValue.toString().trim()
+            : null,
+          estimatedTime: estimatedTimeValue,
+          preconditions: preconditions
+            ? preconditions.toString().trim()
+            : null,
+          postconditions: postconditions
+            ? postconditions.toString().trim()
+            : null,
+          testData: testDataValue,
+          pendingDefectIds: pendingDefectIds.length > 0 ? pendingDefectIds.join(', ') : null,
+          moduleId,
+          suiteId,
+          // Additional fields
+          rtcId: rtcId ? rtcId.toString().trim() : null,
+          flowId: flowId ? flowId.toString().trim() : null,
+          layer: layer ? layer.toString().trim() : null,
+          target: target ? target.toString().trim() : null,
+          testType: testType ? testType.toString().trim() : null,
+          evidence: evidence ? evidence.toString().trim() : null,
+          notes: notes ? notes.toString().trim() : null,
+          automation: automation ? automation.toString().trim() : null,
+          environment: environment ? environment.toString().trim() : null,
+          moduleCategory: moduleCategory ? moduleCategory.toString().trim() : null,
+          featureCategory: featureCategory ? featureCategory.toString().trim() : null,
+        };
 
-        // Create test case
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const testCase = await (prisma.testCase.create as any)({
-          data: {
-            tcId,
-            projectId,
-            title: testCaseTitle,
-            description: description
-              ? description.toString().trim()
-              : null,
-            expectedResult: finalExpectedResult,
-            priority: priorityValue,
-            status: statusValue,
-            domain: domain
-              ? domain.toString().trim()
-              : null,
-            function: functionValue
-              ? functionValue.toString().trim()
-              : null,
-            estimatedTime: estimatedTimeValue,
-            preconditions: preconditions
-              ? preconditions.toString().trim()
-              : null,
-            postconditions: postconditions
-              ? postconditions.toString().trim()
-              : null,
-            testData: testDataValue,
-            pendingDefectIds: pendingDefectIds.length > 0 ? pendingDefectIds.join(', ') : null,
-            moduleId,
-            suiteId,
-            createdById: userId,
-            // Additional fields
-            rtcId: rtcId ? rtcId.toString().trim() : null,
-            flowId: flowId ? flowId.toString().trim() : null,
-            layer: layer ? layer.toString().trim() : null,
-            target: target ? target.toString().trim() : null,
-            testType: testType ? testType.toString().trim() : null,
-            evidence: evidence ? evidence.toString().trim() : null,
-            notes: notes ? notes.toString().trim() : null,
-            automation: automation ? automation.toString().trim() : null,
-            environment: environment ? environment.toString().trim() : null,
-            moduleCategory: moduleCategory ? moduleCategory.toString().trim() : null,
-            featureCategory: featureCategory ? featureCategory.toString().trim() : null,
-            steps: testStepsData && testStepsData.length > 0
-              ? {
-                  create: testStepsData
-                    .filter((step) => (step.action && step.action.trim()) || (step.expectedResult && step.expectedResult.trim())) // Include steps with either action or expected result
-                    .map((step) => ({
-                      stepNumber: step.stepNumber,
-                      action: step.action && step.action.trim() ? step.action.trim() : '', // Allow empty action
-                      expectedResult: step.expectedResult && step.expectedResult.trim() 
-                        ? step.expectedResult.trim() 
-                        : '', // expectedResult is optional, allow empty string
-                    })),
-                }
-              : undefined,
-          },
-        });
+        let testCase;
+        
+        console.log(`  -> Creating/updating test case: isUpdate=${isUpdate}, existingTestCase=${!!existingTestCase}, moduleId=${moduleId}, suiteId=${suiteId}`);
+        
+        if (isUpdate && existingTestCase) {
+          // Update existing test case
+          // First, delete existing steps
+          await prisma.testStep.deleteMany({
+            where: { testCaseId: existingTestCase.id },
+          });
 
-        // Link to test suite via junction table if suite exists
-        if (suiteId) {
-          await prisma.testCaseSuite.create({
+          // Update the test case
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          testCase = await (prisma.testCase.update as any)({
+            where: { id: existingTestCase.id },
             data: {
-              testCaseId: testCase.id,
-              testSuiteId: suiteId,
+              ...testCaseData,
+              steps: testStepsData && testStepsData.length > 0
+                ? {
+                    create: testStepsData
+                      .filter((step) => (step.action && step.action.trim()) || (step.expectedResult && step.expectedResult.trim()))
+                      .map((step) => ({
+                        stepNumber: step.stepNumber,
+                        action: step.action && step.action.trim() ? step.action.trim() : '',
+                        expectedResult: step.expectedResult && step.expectedResult.trim() 
+                          ? step.expectedResult.trim() 
+                          : '',
+                      })),
+                  }
+                : undefined,
             },
           });
+
+          // Update test suite link if suite changed
+          if (suiteId) {
+            // Remove existing suite links
+            await prisma.testCaseSuite.deleteMany({
+              where: { testCaseId: testCase.id },
+            });
+            // Create new suite link
+            await prisma.testCaseSuite.create({
+              data: {
+                testCaseId: testCase.id,
+                testSuiteId: suiteId,
+              },
+            });
+          }
+        } else {
+          // Create new test case
+          // Auto-generate tcId in TC-XXX format without padding (TC-1, TC-2, etc.)
+          let tcId = `TC-${nextTcIdNumber}`;
+          while (existingTcIds.has(tcId)) {
+            nextTcIdNumber++;
+            tcId = `TC-${nextTcIdNumber}`;
+          }
+          nextTcIdNumber++;
+          existingTcIds.add(tcId);
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          testCase = await (prisma.testCase.create as any)({
+            data: {
+              tcId,
+              projectId,
+              ...testCaseData,
+              createdById: userId,
+              steps: testStepsData && testStepsData.length > 0
+                ? {
+                    create: testStepsData
+                      .filter((step) => (step.action && step.action.trim()) || (step.expectedResult && step.expectedResult.trim()))
+                      .map((step) => ({
+                        stepNumber: step.stepNumber,
+                        action: step.action && step.action.trim() ? step.action.trim() : '',
+                        expectedResult: step.expectedResult && step.expectedResult.trim() 
+                          ? step.expectedResult.trim() 
+                          : '',
+                      })),
+                  }
+                : undefined,
+            },
+          });
+
+          // Link to test suite via junction table if suite exists
+          if (suiteId) {
+            await prisma.testCaseSuite.create({
+              data: {
+                testCaseId: testCase.id,
+                testSuiteId: suiteId,
+              },
+            });
+          }
+          console.log(`  -> Created new test case: id=${testCase.id}, tcId=${testCase.tcId}`);
         }
+
+        console.log(`  -> Test case processed successfully: moduleId=${testCase.moduleId}`);
 
         // Link to defects if defect IDs were provided and found
         if (defectsToLink.length > 0) {
           for (const defect of defectsToLink) {
             try {
-              await prisma.testCaseDefect.create({
-                data: {
+              // Check if link already exists
+              const existingLink = await prisma.testCaseDefect.findFirst({
+                where: {
                   testCaseId: testCase.id,
                   defectId: defect.id,
                 },
               });
+              if (!existingLink) {
+                await prisma.testCaseDefect.create({
+                  data: {
+                    testCaseId: testCase.id,
+                    defectId: defect.id,
+                  },
+                });
+              }
             } catch {
               // If link already exists, that's okay - just log it
               console.warn(`Defect ${defect.defectId} (${defect.id}) already linked to test case ${testCase.id}`);
@@ -748,7 +878,7 @@ export class ImportService {
         result.success++;
         result.imported.push({
           tcId: testCase.tcId,
-          title: testCase.title,
+          title: testCase.title + (isUpdate ? ' (更新)' : ''),
         });
       } catch (error) {
         result.failed++;

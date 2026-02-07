@@ -213,7 +213,7 @@ model TestCase {
   layer         String?  // Dynamic dropdown value (Smoke, Core, Extended)
   target        String?  // 対象(API/画面)
   testType      String?  // Dynamic dropdown value (テスト種別: 正常系, 異常系, etc.)
-  evidence      String?  // 根拠(ドキュメント)
+  evidence      String?  // 根拠コード
   notes         String?  // 備考
   automation    String?  // 自動化
   environment   String?  // Dynamic dropdown value (環境: iOS, Android, Web)

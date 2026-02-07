@@ -32,8 +32,8 @@ export function TestCaseFilters({
   // Fetch dynamic dropdown options
   const { options: priorityOptionsData, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptionsData, loading: loadingStatus } = useDropdownOptions('TestCase', 'status');
-  const { options: domainOptionsData, loading: loadingDomain } = useDropdownOptions('TestCase', 'domain');
-  const { options: functionOptionsData, loading: loadingFunction } = useDropdownOptions('TestCase', 'function');
+  const { options: domainOptionsData, loading: loadingDomain } = useDropdownOptions('TestCase', 'moduleCategory');
+  const { options: functionOptionsData, loading: loadingFunction } = useDropdownOptions('TestCase', 'featureCategory');
 
   // Map to FilterOption format with "All" option
   const priorityOptions: FilterOption[] = [
@@ -47,12 +47,12 @@ export function TestCaseFilters({
   ];
 
   const domainOptions: FilterOption[] = [
-    { value: 'all', label: 'All Domains' },
+    { value: 'all', label: 'すべてのドメイン' },
     ...domainOptionsData.map(opt => ({ value: opt.value, label: opt.label })),
   ];
 
   const functionOptions: FilterOption[] = [
-    { value: 'all', label: 'All Functions' },
+    { value: 'all', label: 'すべての機能' },
     ...functionOptionsData.map(opt => ({ value: opt.value, label: opt.label })),
   ];
   return (

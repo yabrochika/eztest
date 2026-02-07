@@ -57,6 +57,28 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Filter change handlers that reset page to 1
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+  const handlePriorityChange = (value: string) => {
+    setPriorityFilter(value);
+    setCurrentPage(1);
+  };
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+  const handleDomainChange = (value: string) => {
+    setDomainFilter(value);
+    setCurrentPage(1);
+  };
+  const handleFunctionChange = (value: string) => {
+    setFunctionFilter(value);
+    setCurrentPage(1);
+  };
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPagesCount, setTotalPagesCount] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -120,6 +142,9 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (domainFilter !== 'all') params.append('domain', domainFilter);
       if (functionFilter !== 'all') params.append('function', functionFilter);
+      
+      console.log('Fetching test cases with params:', params.toString());
+      console.log('Filters:', { searchQuery, priorityFilter, statusFilter, domainFilter, functionFilter });
       
       const response = await fetch(`/api/projects/${projectId}/testcases?${params}`);
       const data = await response.json();
@@ -362,11 +387,11 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
                 statusFilter={statusFilter}
                 domainFilter={domainFilter}
                 functionFilter={functionFilter}
-                onSearchChange={setSearchQuery}
-                onPriorityChange={setPriorityFilter}
-                onStatusChange={setStatusFilter}
-                onDomainChange={setDomainFilter}
-                onFunctionChange={setFunctionFilter}
+                onSearchChange={handleSearchChange}
+                onPriorityChange={handlePriorityChange}
+                onStatusChange={handleStatusChange}
+                onDomainChange={handleDomainChange}
+                onFunctionChange={handleFunctionChange}
               />
             ) : null
           }
@@ -388,7 +413,10 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
           <>
             <TestCaseTable
               testCases={testCases}
-              groupedByModule={true}
+              groupedByModule={
+                // フィルターが適用されている場合はグループ化しない
+                !(searchQuery || priorityFilter !== 'all' || statusFilter !== 'all' || domainFilter !== 'all' || functionFilter !== 'all')
+              }
               modules={modulesForTable}
               onDelete={handleDeleteClick}
               onClick={handleCardClick}

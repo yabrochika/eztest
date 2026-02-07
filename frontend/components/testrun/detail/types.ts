@@ -23,6 +23,16 @@ export interface TestCase {
   priority: Priority | string;
   status: string;
   suiteId?: string | null;
+  module?: {
+    id: string;
+    name: string;
+  } | null;
+  testCaseSuites?: Array<{
+    testSuite: {
+      id: string;
+      name: string;
+    };
+  }>;
 }
 
 export interface TestRun {

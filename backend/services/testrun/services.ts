@@ -414,6 +414,22 @@ export class TestRunService {
                 description: true,
                 priority: true,
                 status: true,
+                module: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                testCaseSuites: {
+                  select: {
+                    testSuite: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
               },
             },
             executedBy: {

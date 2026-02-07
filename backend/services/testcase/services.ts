@@ -146,11 +146,11 @@ export class TestCaseService {
     }
 
     if (filters?.domain) {
-      where.domain = filters.domain;
+      where.moduleCategory = filters.domain;
     }
 
     if (filters?.function) {
-      where.function = filters.function;
+      where.featureCategory = filters.function;
     }
 
     if (filters?.search) {
@@ -227,11 +227,11 @@ export class TestCaseService {
     }
 
     if (filters?.domain) {
-      where.domain = filters.domain;
+      where.moduleCategory = filters.domain;
     }
 
     if (filters?.function) {
-      where.function = filters.function;
+      where.featureCategory = filters.function;
     }
     
     if (filters?.search) {

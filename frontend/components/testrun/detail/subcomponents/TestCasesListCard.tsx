@@ -1,10 +1,10 @@
-﻿import { Badge } from '@/frontend/reusable-elements/badges/Badge';
+import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
 import { formatDateTime } from '@/lib/date-utils';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
-import { DataTable, type ColumnDef } from '@/frontend/reusable-components/tables/DataTable';
+import { GroupedDataTable, type ColumnDef, type GroupConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
 import { AlertCircle, Plus, Bug, ListChecks, ChevronDown } from 'lucide-react';
 import { TestResult, TestCase } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
@@ -82,21 +82,21 @@ export function TestCasesListCard({
   const columns: ColumnDef<ResultRow>[] = [
     {
       key: 'tcId',
-      label: 'Test Case ID',
-      className: 'min-w-[80px]',
-      render: (_, row: ResultRow) => (
+      label: 'ID',
+      width: '70px',
+      render: (row: ResultRow) => (
         <p className="text-xs font-mono text-white/70 truncate">{row.testCase.tcId || '-'}</p>
       ),
     },
     {
       key: 'testCase',
-      label: 'Test Case',
-      className: 'min-w-0 max-w-xs whitespace-normal',
-      render: (_, row: ResultRow) => (
-        <div className="min-w-0 max-w-xs overflow-hidden">
+      label: 'テストケース',
+      className: 'min-w-0',
+      render: (row: ResultRow) => (
+        <div className="min-w-0 overflow-hidden">
           <p className="font-medium text-white/90 truncate block">{row.testCase.title}</p>
           {row.comment && (
-            <p className="text-xs text-white/60 mt-1 break-words whitespace-pre-wrap">
+            <p className="text-xs text-white/60 mt-1 truncate">
               {row.comment}
             </p>
           )}
@@ -105,8 +105,9 @@ export function TestCasesListCard({
     },
     {
       key: 'priority',
-      label: 'Priority',
-      render: (_, row: ResultRow) => {
+      label: '優先度',
+      width: '90px',
+      render: (row: ResultRow) => {
         const badgeProps = getDynamicBadgeProps(row.testCase.priority, priorityOptions);
         const priorityLabel = !loadingPriority && priorityOptions.length > 0
           ? priorityOptions.find(opt => opt.value === row.testCase.priority)?.label || row.testCase.priority
@@ -124,8 +125,9 @@ export function TestCasesListCard({
     },
     {
       key: 'status',
-      label: 'Status',
-      render: (_, row: ResultRow) => {
+      label: 'ステータス',
+      width: '120px',
+      render: (row: ResultRow) => {
         const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
         const label = !loadingStatus && statusOptions.length > 0
           ? statusOptions.find(opt => opt.value === row.status)?.label || row.status
@@ -146,17 +148,19 @@ export function TestCasesListCard({
     },
     {
       key: 'executedBy',
-      label: 'Executed By',
-      render: (_, row: ResultRow) => (
-        <span className="text-white/70 text-sm">
+      label: '実行者',
+      width: '120px',
+      render: (row: ResultRow) => (
+        <span className="text-white/70 text-sm truncate block">
           {row.executedBy?.name || '-'}
         </span>
       ),
     },
     {
       key: 'executedAt',
-      label: 'Date',
-      render: (_, row: ResultRow) => (
+      label: '日時',
+      width: '140px',
+      render: (row: ResultRow) => (
         <span className="text-white/70 text-sm">
           {row.executedAt
             ? formatDateTime(row.executedAt)
@@ -165,9 +169,11 @@ export function TestCasesListCard({
       ),
     },
     {
-      key: 'id',
-      label: 'Actions',
-      render: (_, row: ResultRow) => (
+      key: 'actions',
+      label: 'アクション',
+      width: '140px',
+      align: 'right',
+      render: (row: ResultRow) => (
         <div className="flex items-center gap-2 justify-end">
           {(testRunStatus === 'IN_PROGRESS' || forceShowDefectActions) && (
             <>
@@ -175,11 +181,14 @@ export function TestCasesListCard({
                 <Button
                   variant="glass"
                   size="sm"
-                  onClick={() => onExecuteTestCase(row.testCase)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onExecuteTestCase(row.testCase);
+                  }}
                   className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
                   buttonName={`Test Cases List Card - ${row.status && row.status !== 'SKIPPED' ? 'Update' : 'Execute'} (${row.testCase.title || row.testCase.id})`}
                 >
-                  {row.status && row.status !== 'SKIPPED' ? 'Update' : 'Execute'}
+                  {row.status && row.status !== 'SKIPPED' ? '更新' : '実行'}
                 </Button>
               )}
               {row.status === 'FAILED' && canCreateDefect && (
@@ -187,7 +196,6 @@ export function TestCasesListCard({
                   <DropdownMenuTrigger
                     asChild
                     onClick={(e) => {
-                      // Prevent row click (which navigates to test case detail)
                       e.stopPropagation();
                     }}
                   >
@@ -196,7 +204,7 @@ export function TestCasesListCard({
                       className="flex items-center gap-2"
                       buttonName={`Test Cases List Card - Defect Actions (${row.testCase.title || row.testCase.id})`}
                     >
-                      Defect
+                      欠陥
                       <ChevronDown className="w-3 h-3" />
                     </ButtonSecondary>
                   </DropdownMenuTrigger>
@@ -209,7 +217,7 @@ export function TestCasesListCard({
                         }}
                       >
                         <Bug className="w-4 h-4 mr-2" />
-                        Create Defect
+                        欠陥を作成
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem
@@ -219,7 +227,7 @@ export function TestCasesListCard({
                       }}
                     >
                       <ListChecks className="w-4 h-4 mr-2" />
-                      Choose Defect
+                      欠陥を選択
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -228,9 +236,21 @@ export function TestCasesListCard({
           )}
         </div>
       ),
-      align: 'right',
     },
   ];
+
+  // Group by Module
+  const groupConfig: GroupConfig<ResultRow> = {
+    getGroupId: (row) => row.testCase.module?.id || 'no-module',
+    getGroupName: (groupId) => {
+      if (groupId === 'no-module') return 'モジュールなし';
+      const result = tableData.find(r => r.testCase.module?.id === groupId);
+      return result?.testCase.module?.name || 'モジュールなし';
+    },
+    getGroupCount: (groupId) => {
+      return tableData.filter(r => (r.testCase.module?.id || 'no-module') === groupId).length;
+    },
+  };
 
   const tableData: ResultRow[] = (results || [])
     .filter((result) => result.testCase)
@@ -299,12 +319,14 @@ export function TestCasesListCard({
           )}
         </div>
       ) : (
-        <DataTable
-          columns={columns}
+        <GroupedDataTable
           data={tableData}
-          rowClassName="cursor-pointer hover:bg-accent/20"
+          columns={columns}
+          grouped={true}
+          groupConfig={groupConfig}
           onRowClick={(row) => router.push(`/projects/${projectId}/testcases/${row.testCase.id}`)}
-          emptyMessage="No test cases in this run"
+          gridTemplateColumns="70px 1fr 90px 120px 120px 140px 140px"
+          emptyMessage="テストケースがありません"
         />
       )}
     </DetailCard>

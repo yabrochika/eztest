@@ -1,4 +1,7 @@
-# 変更をコミットしてプッシュする（プロジェクトルートで実行: .\scripts\commit-and-push.ps1）
+# 変更をコミットしてプッシュする
+# 使い方: プロジェクトルートで .\scripts\commit-and-push.ps1
+# 注: プッシュで SSH エラーが出る場合は、WSL や Git Bash など SSH が通る環境で
+#     git push origin feature/testcase-domain-function-fields を実行してください。
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot + "\.."
 Push-Location $root

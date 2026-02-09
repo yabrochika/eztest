@@ -4,6 +4,7 @@ export interface TestResult {
   testCaseId: string;
   testCase: TestCase;
   comment?: string;
+  duration?: number;
   executedAt?: string;
   executedBy?: {
     name: string;
@@ -22,12 +23,23 @@ export interface TestCase {
   priority: Priority | string;
   status: string;
   suiteId?: string | null;
+  module?: {
+    id: string;
+    name: string;
+  } | null;
+  testCaseSuites?: Array<{
+    testSuite: {
+      id: string;
+      name: string;
+    };
+  }>;
 }
 
 export interface TestRun {
   id: string;
   name: string;
   description?: string;
+  executionType?: 'MANUAL' | 'AUTOMATION' | string;
   status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   environment?: string;
   project: {

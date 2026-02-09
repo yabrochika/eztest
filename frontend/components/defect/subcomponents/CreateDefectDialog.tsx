@@ -300,7 +300,7 @@ export function CreateDefectDialog({
       // Link uploaded attachments to the defect
       if (uploadedAttachments.length > 0) {
         try {
-          await fetch(`/api/defects/${createdDefect.id}/attachments`, {
+          await fetch(`/api/projects/${projectId}/defects/${createdDefect.id}/attachments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ attachments: uploadedAttachments }),

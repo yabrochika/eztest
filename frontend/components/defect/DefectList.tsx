@@ -1,12 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
-import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
 import { Plus, Trash2, Import, Upload } from 'lucide-react';
-import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
+import { Navbar } from '@/frontend/reusable-components/layout/Navbar';
+import { Breadcrumbs } from '@/frontend/reusable-components/layout/Breadcrumbs';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
 import { Pagination } from '@/frontend/reusable-elements/pagination/Pagination';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
@@ -69,6 +69,56 @@ export default function DefectList({ projectId }: DefectListProps) {
 
   // Alert state
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
+
+  // Check permissions early
+  const canCreateDefect = hasPermissionCheck('defects:create');
+  const canDeleteDefect = hasPermissionCheck('defects:delete');
+  const canImport = ['ADMIN', 'PROJECT_MANAGER', 'TESTER'].includes(role);
+
+  // Navbar actions config
+  const navbarActions = useMemo(() => {
+    const actions = [];
+    
+    // Migration Dropdown
+    if (canImport) {
+      actions.push({
+        type: 'dropdown' as const,
+        label: 'Migration',
+        items: [
+          {
+            label: 'Import Defects',
+            icon: Import,
+            onClick: () => setImportDialogOpen(true),
+          },
+          {
+            label: 'Export Defects',
+            icon: Upload,
+            onClick: () => setExportDialogOpen(true),
+          },
+        ],
+      });
+    }
+
+    // Create Defect Button
+    if (canCreateDefect) {
+      actions.push({
+        type: 'action' as const,
+        label: 'New Defect',
+        icon: Plus,
+        onClick: () => setCreateDialogOpen(true),
+        variant: 'primary' as const,
+        buttonName: 'Defect List - New Defect',
+      });
+    }
+
+    // Sign Out Button
+    actions.push({
+      type: 'signout' as const,
+      showConfirmation: true,
+    });
+
+    return actions;
+  }, [canImport, canCreateDefect]);
 
   useEffect(() => {
     setMounted(true);
@@ -337,7 +387,7 @@ export default function DefectList({ projectId }: DefectListProps) {
   const handleConfirmBulkDelete = async () => {
     try {
       const deletePromises = Array.from(selectedDefects).map((id) =>
-        fetch(`/api/defects/${id}`, { method: 'DELETE' })
+        fetch(`/api/projects/${projectId}/defects/${id}`, { method: 'DELETE' })
       );
 
       await Promise.all(deletePromises);
@@ -365,7 +415,7 @@ export default function DefectList({ projectId }: DefectListProps) {
     if (!defectToDelete) return;
 
     try {
-      const response = await fetch(`/api/defects/${defectToDelete.id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/projects/${projectId}/defects/${defectToDelete.id}`, { method: 'DELETE' });
       
       if (response.ok) {
         setAlert({
@@ -417,59 +467,27 @@ export default function DefectList({ projectId }: DefectListProps) {
     return <Loader fullScreen text="Loading defects..." />;
   }
 
-  const canCreateDefect = hasPermissionCheck('defects:create');
-  const canDeleteDefect = hasPermissionCheck('defects:delete');
-  const canImport = ['ADMIN', 'PROJECT_MANAGER', 'TESTER'].includes(role);
-
   return (
     <>
       {/* Alert Messages */}
       <FloatingAlert alert={alert} onClose={() => setAlert(null)} />
 
-      <TopBar 
-        breadcrumbs={[
-          { label: 'Projects', href: '/projects' },
-          { label: project?.name || 'Loading...', href: `/projects/${projectId}` },
-          { label: 'Defects' }
-        ]}
-        actions={
-          canCreateDefect ? (
-            <div className="flex gap-2 flex-wrap items-center">
-              {canImport && (
-                <>
-                  <ButtonSecondary 
-                    onClick={() => setImportDialogOpen(true)} 
-                    className="cursor-pointer flex-shrink-0"
-                    buttonName="Defect List - Import"
-                  >
-                    <Import className="w-4 h-4 mr-2" />
-                    Import
-                  </ButtonSecondary>
-                  <ButtonSecondary 
-                    onClick={() => setExportDialogOpen(true)} 
-                    className="cursor-pointer flex-shrink-0"
-                    title="Export defects"
-                    buttonName="Defect List - Export"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Export
-                  </ButtonSecondary>
-                </>
-              )}
-              <ButtonPrimary 
-                onClick={() => setCreateDialogOpen(true)} 
-                className="cursor-pointer flex-shrink-0"
-                buttonName="Defect List - New Defect"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Defect
-              </ButtonPrimary>
-            </div>
-          ) : undefined
+      <Navbar 
+        brandLabel={null}
+        items={[]}
+        breadcrumbs={
+          <Breadcrumbs 
+            items={[
+              { label: 'Projects', href: '/projects' },
+              { label: project?.name || 'Loading...', href: `/projects/${projectId}` },
+              { label: 'Defects', href: `/projects/${projectId}/defects` }
+            ]}
+          />
         }
+        actions={navbarActions}
       />
       
-      <div className="px-4 sm:px-6 lg:px-8 pt-4 w-full min-w-0 overflow-hidden">
+      <div className="px-4 sm:px-6 lg:px-8 pt-8 w-full min-w-0 overflow-hidden">
         {/* Header Section */}
         <div className="flex flex-col gap-4 mb-6 w-full min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full min-w-0">

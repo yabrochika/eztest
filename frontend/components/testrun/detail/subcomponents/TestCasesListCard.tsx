@@ -62,6 +62,7 @@ export function TestCasesListCard({
   // Check if user can create defects
   const canCreateDefect = hasPermissionCheck('defects:create');
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PASSED':

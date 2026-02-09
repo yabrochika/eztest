@@ -19,8 +19,6 @@ export class TestCaseController {
       suiteId: searchParams.get('suiteId') || undefined,
       priority: searchParams.get('priority') || undefined,
       status: searchParams.get('status') || undefined,
-      domain: searchParams.get('domain') || undefined,
-      function: searchParams.get('function') || undefined,
       search: searchParams.get('search') || undefined,
     };
 
@@ -63,8 +61,6 @@ export class TestCaseController {
       suiteId: searchParams.get('suiteId') || undefined,
       priority: searchParams.get('priority') || undefined,
       status: searchParams.get('status') || undefined,
-      domain: searchParams.get('domain') || undefined,
-      function: searchParams.get('function') || undefined,
       search: searchParams.get('search') || undefined,
       moduleId: searchParams.get('moduleId') || undefined,
     };
@@ -135,25 +131,21 @@ export class TestCaseController {
       testData: validatedData.testData,
       priority: validatedData.priority,
       status: validatedData.status,
-      domain: validatedData.domain ?? undefined,
-      function: validatedData.function ?? undefined,
       estimatedTime: validatedData.estimatedTime,
       preconditions: validatedData.preconditions,
       postconditions: validatedData.postconditions,
       createdById: req.userInfo.id,
       steps: validatedData.steps,
-      // Additional fields
+      // New fields for enhanced test case management
+      assertionId: validatedData.assertionId ?? undefined,
       rtcId: validatedData.rtcId ?? undefined,
       flowId: validatedData.flowId ?? undefined,
       layer: validatedData.layer ?? undefined,
-      target: validatedData.target ?? undefined,
-      testType: validatedData.testType ?? undefined,
+      targetType: validatedData.targetType ?? undefined,
       evidence: validatedData.evidence ?? undefined,
       notes: validatedData.notes ?? undefined,
-      automation: validatedData.automation ?? undefined,
-      environment: validatedData.environment ?? undefined,
-      moduleCategory: validatedData.moduleCategory ?? undefined,
-      featureCategory: validatedData.featureCategory ?? undefined,
+      isAutomated: validatedData.isAutomated ?? undefined,
+      platforms: validatedData.platforms ?? undefined,
     });
 
     return { data: testCase, statusCode: 201 };
@@ -215,25 +207,21 @@ export class TestCaseController {
           testData: validatedData.testData,
           priority: validatedData.priority,
           status: validatedData.status,
-          domain: validatedData.domain,
-          function: validatedData.function,
           estimatedTime: validatedData.estimatedTime,
           preconditions: validatedData.preconditions,
           postconditions: validatedData.postconditions,
           suiteId: validatedData.suiteId,
           moduleId: validatedData.moduleId,
-          // Additional fields
+          // New fields for enhanced test case management
+          assertionId: validatedData.assertionId,
           rtcId: validatedData.rtcId,
           flowId: validatedData.flowId,
           layer: validatedData.layer,
-          target: validatedData.target,
-          testType: validatedData.testType,
+          targetType: validatedData.targetType,
           evidence: validatedData.evidence,
           notes: validatedData.notes,
-          automation: validatedData.automation,
-          environment: validatedData.environment,
-          moduleCategory: validatedData.moduleCategory,
-          featureCategory: validatedData.featureCategory,
+          isAutomated: validatedData.isAutomated,
+          platforms: validatedData.platforms,
         }
       );
 

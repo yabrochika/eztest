@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
@@ -52,7 +52,7 @@ export function TestStepsCard({
 }: TestStepsCardProps) {
   return (
     <DetailCard
-      title="テストステップ"
+      title="Test Steps"
       contentClassName="space-y-3"
       headerAction={
         isEditing ? (
@@ -63,7 +63,7 @@ export function TestStepsCard({
             disabled={addingStep}
           >
             <Plus className="w-4 h-4 mr-2" />
-            ステップ追加
+            Add Step
           </Button>
         ) : undefined
       }
@@ -71,7 +71,7 @@ export function TestStepsCard({
       <div className="space-y-3">
         {steps.length === 0 ? (
           <p className="text-white/60 text-center py-8">
-            テストステップはまだ定義されていません
+            No test steps defined yet
           </p>
         ) : (
           steps.map((step) => (
@@ -92,7 +92,7 @@ export function TestStepsCard({
                   <div className="flex-1 space-y-1">
                     <div>
                       <h5 className="text-xs font-medium text-white/60 mb-1">
-                        アクション
+                        Action
                       </h5>
                       {isEditing ? (
                         <TextareaWithAttachments
@@ -106,7 +106,7 @@ export function TestStepsCard({
                             );
                             onStepsChange(updated);
                           }}
-                          placeholder="アクションを入力"
+                          placeholder="Enter action"
                           fieldName="action"
                           attachments={step.id && stepAttachments && stepAttachments[step.id] ? (stepAttachments[step.id].action || []) : []}
                           onAttachmentsChange={(attachments) => {
@@ -134,7 +134,7 @@ export function TestStepsCard({
                     </div>
                     <div>
                       <h5 className="text-xs font-medium text-white/60 mb-1">
-                        期待結果
+                        Expected Result
                       </h5>
                       {isEditing ? (
                         <TextareaWithAttachments
@@ -148,7 +148,7 @@ export function TestStepsCard({
                             );
                             onStepsChange(updated);
                           }}
-                          placeholder="期待結果を入力"
+                          placeholder="Enter expected result"
                           fieldName="expectedResult"
                           attachments={step.id && stepAttachments && stepAttachments[step.id] ? (stepAttachments[step.id].expectedResult || []) : []}
                           onAttachmentsChange={(attachments) => {
@@ -194,14 +194,14 @@ export function TestStepsCard({
           {addingStep && (
             <div className="border border-blue-500/50 rounded-lg p-4 space-y-3 bg-blue-500/5">
               <div className="space-y-2">
-                <Label>アクション</Label>
+                <Label>Action</Label>
                 <TextareaWithAttachments
                   variant="glass"
                   value={newStep.action}
                   onChange={(value) =>
                     onNewStepChange({ ...newStep, action: value })
                   }
-                  placeholder="アクションを入力"
+                  placeholder="Enter action"
                   fieldName="action"
                   attachments={newStepActionAttachments}
                   onAttachmentsChange={onNewStepActionAttachmentsChange || (() => {})}
@@ -213,14 +213,14 @@ export function TestStepsCard({
                 />
               </div>
               <div className="space-y-2">
-                <Label>期待結果</Label>
+                <Label>Expected Result</Label>
                 <TextareaWithAttachments
                   variant="glass"
                   value={newStep.expectedResult}
                   onChange={(value) =>
                     onNewStepChange({ ...newStep, expectedResult: value })
                   }
-                  placeholder="期待結果を入力"
+                  placeholder="Enter expected result"
                   fieldName="expectedResult"
                   attachments={newStepExpectedResultAttachments}
                   onAttachmentsChange={onNewStepExpectedResultAttachmentsChange || (() => {})}
@@ -233,7 +233,7 @@ export function TestStepsCard({
               </div>
               <div className="flex gap-2">
                 <ButtonPrimary size="sm" onClick={onAddStep} className="cursor-pointer">
-                  追加
+                  Add
                 </ButtonPrimary>
                 <Button
                   size="sm"
@@ -249,7 +249,7 @@ export function TestStepsCard({
                     }
                   }}
                 >
-                  キャンセル
+                  Cancel
                 </Button>
               </div>
             </div>

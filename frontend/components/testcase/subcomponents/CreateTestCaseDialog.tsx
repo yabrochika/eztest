@@ -1,12 +1,13 @@
 'use client';
 
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
-import { TestCase, Module } from '../types';
-import { useEffect, useState } from 'react';
+import { TestCase, Module, Platform } from '../types';
+import React, { useEffect, useState } from 'react';
 import { attachmentStorage } from '@/lib/attachment-storage';
 import type { Attachment } from '@/lib/s3';
 import { uploadFileToS3 } from '@/lib/s3';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { PlatformsCheckboxGroup } from './PlatformsCheckboxGroup';
 
 interface CreateTestCaseDialogProps {
   projectId: string;
@@ -35,15 +36,6 @@ export function CreateTestCaseDialog({
   // Fetch dynamic dropdown options
   const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
-  const { options: domainOptions } = useDropdownOptions('TestCase', 'domain');
-  const { options: functionOptions } = useDropdownOptions('TestCase', 'function');
-  const { options: layerOptions } = useDropdownOptions('TestCase', 'layer');
-  const { options: testTypeOptions } = useDropdownOptions('TestCase', 'testType');
-  const { options: targetOptions } = useDropdownOptions('TestCase', 'target');
-  const { options: automationOptions } = useDropdownOptions('TestCase', 'automation');
-  const { options: environmentOptions } = useDropdownOptions('TestCase', 'environment');
-  const { options: moduleCategoryOptions } = useDropdownOptions('TestCase', 'moduleCategory');
-  const { options: featureCategoryOptions } = useDropdownOptions('TestCase', 'featureCategory');
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -84,8 +76,8 @@ export function CreateTestCaseDialog({
   const fields: BaseDialogField[] = [
     {
       name: 'title',
-      label: 'タイトル',
-      placeholder: 'テストケースタイトルを入力',
+      label: 'Title',
+      placeholder: 'Enter test case title',
       type: 'text',
       required: true,
       minLength: 3,
@@ -94,7 +86,7 @@ export function CreateTestCaseDialog({
     },
     {
       name: 'priority',
-      label: '優先度',
+      label: 'Priority',
       type: 'select',
       defaultValue: 'MEDIUM',
       options: priorityOptions.map(opt => ({ value: opt.value, label: opt.label })),
@@ -102,7 +94,7 @@ export function CreateTestCaseDialog({
     },
     {
       name: 'status',
-      label: 'ステータス',
+      label: 'Status',
       type: 'select',
       defaultValue: 'DRAFT',
       options: statusOptions.map(opt => ({ value: opt.value, label: opt.label })),
@@ -110,78 +102,71 @@ export function CreateTestCaseDialog({
     },
     {
       name: 'moduleId',
-      label: 'モジュール',
+      label: 'Module',
       type: 'select',
-      placeholder: 'モジュールを選択',
+      placeholder: 'Select a module',
       defaultValue: defaultModuleId || 'none',
       options: [
-        { value: 'none', label: 'なし（モジュールなし）' },
+        { value: 'none', label: 'None (No Module)' },
         ...moduleOptions,
       ],
       cols: 1,
     },
     {
       name: 'estimatedTime',
-      label: '見積時間（分）',
+      label: 'Estimated Time (minutes)',
       type: 'number',
-      placeholder: '見積時間を入力',
+      placeholder: 'Enter estimated time',
       cols: 1,
     },
     {
-      name: 'domain',
-      label: 'ドメイン',
-      type: 'select',
-      placeholder: 'ドメインを選択',
-      options: [
-        { value: 'none', label: 'なし' },
-        ...domainOptions.map(opt => ({ value: opt.value, label: opt.label })),
-      ],
-      cols: 1,
-    },
-    {
-      name: 'function',
-      label: '機能',
-      type: 'select',
-      placeholder: '機能を選択',
-      options: [
-        { value: 'none', label: 'なし' },
-        ...functionOptions.map(opt => ({ value: opt.value, label: opt.label })),
-      ],
+      name: 'assertionId',
+      label: 'Assertion-ID',
+      type: 'text',
+      placeholder: 'Enter assertion ID',
       cols: 1,
     },
     {
       name: 'rtcId',
       label: 'RTC-ID',
       type: 'text',
-      placeholder: 'RTC-IDを入力',
+      placeholder: 'Enter RTC ID',
       cols: 1,
     },
     {
       name: 'flowId',
       label: 'Flow-ID',
       type: 'text',
-      placeholder: 'Flow-IDを入力',
+      placeholder: 'Enter flow ID',
       cols: 1,
     },
     {
       name: 'layer',
-      label: 'レイヤー',
+      label: 'Layer',
       type: 'select',
-      placeholder: 'レイヤーを選択',
+      placeholder: 'Select layer',
       options: [
-        { value: 'none', label: 'なし' },
-        ...layerOptions.map(opt => ({ value: opt.value, label: opt.label })),
+        { value: 'SMOKE', label: 'Smoke' },
+        { value: 'CORE', label: 'Core' },
+        { value: 'EXTENDED', label: 'Extended' },
+        { value: 'UNKNOWN', label: 'Unknown' },
       ],
       cols: 1,
     },
     {
-      name: 'target',
-      label: '対象（API/画面）',
+      name: 'targetType',
+      label: '対象',
       type: 'select',
-      placeholder: '対象を選択',
+      placeholder: 'Select target type',
       options: [
-        { value: 'none', label: 'なし' },
-        ...targetOptions.map(opt => ({ value: opt.value, label: opt.label })),
+        { value: 'API', label: 'API' },
+        { value: 'SCREEN', label: '画面' },
+        { value: 'FUNCTIONAL', label: 'Functional' },
+        { value: 'NON_FUNCTIONAL', label: 'Non-Functional' },
+        { value: 'PERFORMANCE', label: 'Performance' },
+        { value: 'SECURITY', label: 'Security' },
+        { value: 'USABILITY', label: 'Usability' },
+        { value: 'COMPATIBILITY', label: 'Compatibility' },
       ],
       cols: 1,
     },
@@ -191,75 +176,65 @@ export function CreateTestCaseDialog({
       type: 'select',
       placeholder: 'テスト種別を選択',
       options: [
-        { value: 'none', label: 'なし' },
-        ...testTypeOptions.map(opt => ({ value: opt.value, label: opt.label })),
+        { value: 'NORMAL', label: '正常系' },
+        { value: 'ABNORMAL', label: '異常系' },
+        { value: 'NON_FUNCTIONAL', label: '非機能' },
+        { value: 'REGRESSION', label: '回帰' },
+        { value: 'DATA_INTEGRITY', label: 'データ整合性確認' },
+        { value: 'STATE_TRANSITION', label: '状態遷移確認' },
+        { value: 'OPERATIONAL', label: '運用確認' },
+        { value: 'FAILURE', label: '障害時確認' },
       ],
       cols: 1,
     },
     {
-      name: 'automation',
+      name: 'isAutomated',
       label: '自動化',
-      type: 'select',
-      placeholder: '自動化ステータスを選択',
-      options: [
-        { value: 'none', label: 'なし' },
-        ...automationOptions.map(opt => ({ value: opt.value, label: opt.label })),
-      ],
+      type: 'custom',
+      customRender: (value: string, onChange: (value: string) => void) => (
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="isAutomated"
+            checked={value === 'true'}
+            onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
+            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          />
+          <label htmlFor="isAutomated" className="text-sm font-medium text-gray-700">
+            自動化テスト
+          </label>
+        </div>
+      ),
       cols: 1,
     },
     {
-      name: 'environment',
+      name: 'platforms',
       label: '環境',
-      type: 'select',
-      placeholder: '環境を選択',
-      options: [
-        { value: 'none', label: 'なし' },
-        ...environmentOptions.map(opt => ({ value: opt.value, label: opt.label })),
-      ],
-      cols: 1,
-    },
-    {
-      name: 'moduleCategory',
-      label: 'ドメイン',
-      type: 'select',
-      placeholder: 'ドメインを選択',
-      options: [
-        { value: 'none', label: 'なし' },
-        ...moduleCategoryOptions.map(opt => ({ value: opt.value, label: opt.label })),
-      ],
-      cols: 1,
-    },
-    {
-      name: 'featureCategory',
-      label: '機能',
-      type: 'select',
-      placeholder: '機能を選択',
-      options: [
-        { value: 'none', label: 'なし' },
-        ...featureCategoryOptions.map(opt => ({ value: opt.value, label: opt.label })),
-      ],
-      cols: 1,
-    },
-    {
-      name: 'evidence',
-      label: '根拠コード',
-      type: 'text',
-      placeholder: '根拠コードを入力',
-      cols: 1,
-    },
-    {
-      name: 'notes',
-      label: '備考',
-      type: 'textarea',
-      placeholder: '備考を入力',
-      rows: 2,
+      type: 'custom',
+      customRender: (value: string, onChange: (value: string) => void) => {
+        let platforms: Platform[] = [];
+        if (value) {
+          try {
+            platforms = JSON.parse(value);
+          } catch {
+            // If not JSON, treat as empty array
+            platforms = [];
+          }
+        }
+        return (
+          <PlatformsCheckboxGroup
+            values={platforms}
+            onChange={(vals) => onChange(JSON.stringify(vals))}
+          />
+        );
+      },
       cols: 1,
     },
     {
       name: 'description',
-      label: '説明',
+      label: 'Description',
       type: 'textarea-with-attachments',
-      placeholder: 'テストケースの説明を入力',
+      placeholder: 'Enter test case description',
       rows: 3,
       cols: 1,
       attachments: descriptionAttachments,
@@ -268,19 +243,27 @@ export function CreateTestCaseDialog({
     // TODO: Uncomment for future use - Expected Result field at test case level
     // {
     //   name: 'expectedResult',
-    //   label: '期待結果',
+    //   label: 'Expected Result',
     //   type: 'textarea-with-attachments',
-    //   placeholder: '期待結果を入力',
+    //   placeholder: 'Enter the expected result',
     //   rows: 3,
     //   cols: 1,
     //   attachments: expectedResultAttachments,
     //   onAttachmentsChange: setExpectedResultAttachments,
     // },
     {
+      name: 'evidence',
+      label: '根拠',
+      type: 'textarea',
+      placeholder: 'Enter evidence',
+      rows: 3,
+      cols: 1,
+    },
+    {
       name: 'preconditions',
-      label: '事前条件',
+      label: 'Preconditions',
       type: 'textarea-with-attachments',
-      placeholder: '事前条件を入力',
+      placeholder: 'Enter preconditions',
       rows: 3,
       cols: 1,
       attachments: preconditionsAttachments,
@@ -288,9 +271,9 @@ export function CreateTestCaseDialog({
     },
     {
       name: 'postconditions',
-      label: '事後条件',
+      label: 'Postconditions',
       type: 'textarea-with-attachments',
-      placeholder: '事後条件を入力',
+      placeholder: 'Enter postconditions',
       rows: 3,
       cols: 1,
       attachments: postconditionsAttachments,
@@ -298,9 +281,17 @@ export function CreateTestCaseDialog({
     },
     {
       name: 'testData',
-      label: 'テストデータ',
+      label: 'Test Data',
       type: 'textarea',
-      placeholder: 'テストデータまたは入力値を入力',
+      placeholder: 'Enter test data or input values',
+      rows: 3,
+      cols: 1,
+    },
+    {
+      name: 'notes',
+      label: '備考',
+      type: 'textarea',
+      placeholder: 'Enter notes',
       rows: 3,
       cols: 1,
     },
@@ -366,6 +357,22 @@ export function CreateTestCaseDialog({
     const uploadedAttachments = await uploadPendingAttachments();
 
     const estimatedTime = formData.estimatedTime ? parseInt(formData.estimatedTime) : undefined;
+    const isAutomated = formData.isAutomated === 'true';
+    // Parse platforms from JSON string or use array directly
+    let platforms: Platform[] = [];
+    if (formData.platforms) {
+      if (typeof formData.platforms === 'string') {
+        try {
+          // Try parsing as JSON first
+          platforms = JSON.parse(formData.platforms);
+        } catch {
+          // If not JSON, treat as comma-separated string (fallback)
+          platforms = formData.platforms.split(',').map(p => p.trim()).filter(p => p.length > 0) as Platform[];
+        }
+      } else if (Array.isArray(formData.platforms)) {
+        platforms = formData.platforms as Platform[];
+      }
+    }
 
     const response = await fetch(`/api/projects/${projectId}/testcases`, {
       method: 'POST',
@@ -384,19 +391,17 @@ export function CreateTestCaseDialog({
         preconditions: formData.preconditions || undefined,
         postconditions: formData.postconditions || undefined,
         moduleId: formData.moduleId !== 'none' ? formData.moduleId : undefined,
-        domain: formData.domain && formData.domain !== 'none' ? formData.domain : undefined,
-        function: formData.function && formData.function !== 'none' ? formData.function : undefined,
+        // New fields
+        assertionId: formData.assertionId || undefined,
         rtcId: formData.rtcId || undefined,
         flowId: formData.flowId || undefined,
-        layer: formData.layer && formData.layer !== 'none' ? formData.layer : undefined,
-        target: formData.target && formData.target !== 'none' ? formData.target : undefined,
-        testType: formData.testType && formData.testType !== 'none' ? formData.testType : undefined,
-        automation: formData.automation && formData.automation !== 'none' ? formData.automation : undefined,
-        environment: formData.environment && formData.environment !== 'none' ? formData.environment : undefined,
-        moduleCategory: formData.moduleCategory && formData.moduleCategory !== 'none' ? formData.moduleCategory : undefined,
-        featureCategory: formData.featureCategory && formData.featureCategory !== 'none' ? formData.featureCategory : undefined,
+        layer: formData.layer || undefined,
+        targetType: formData.targetType || undefined,
+        testType: formData.testType || undefined,
         evidence: formData.evidence || undefined,
         notes: formData.notes || undefined,
+        isAutomated,
+        platforms: platforms.length > 0 ? platforms : undefined,
       }),
     });
 
@@ -411,7 +416,7 @@ export function CreateTestCaseDialog({
     // Associate uploaded attachments with the test case
     if (uploadedAttachments.length > 0) {
       try {
-        const attachmentResponse = await fetch(`/api/projects/${projectId}/testcases/${createdTestCase.id}/attachments`, {
+        const attachmentResponse = await fetch(`/api/testcases/${createdTestCase.id}/attachments`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ attachments: uploadedAttachments }),

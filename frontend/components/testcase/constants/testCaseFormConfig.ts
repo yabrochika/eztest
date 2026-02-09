@@ -16,25 +16,6 @@ export const STATUS_OPTIONS = [
   { label: 'Deprecated', value: 'DEPRECATED' },
 ];
 
-export const DOMAIN_OPTIONS = [
-  { label: 'User Management', value: 'USER_MANAGEMENT' },
-  { label: 'Authentication', value: 'AUTH' },
-  { label: 'Payment', value: 'PAYMENT' },
-  { label: 'Report', value: 'REPORT' },
-  { label: 'Settings', value: 'SETTINGS' },
-];
-
-export const FUNCTION_OPTIONS = [
-  { label: 'Login', value: 'LOGIN' },
-  { label: 'Register', value: 'REGISTER' },
-  { label: 'Search', value: 'SEARCH' },
-  { label: 'List', value: 'LIST' },
-  { label: 'Detail', value: 'DETAIL' },
-  { label: 'Create', value: 'CREATE' },
-  { label: 'Edit', value: 'EDIT' },
-  { label: 'Delete', value: 'DELETE' },
-];
-
 export function getTestCaseFormFields(modules: Module[] = []): FormFieldConfig[] {
   const moduleOptions = modules.map((module) => ({
     label: module.name,
@@ -71,26 +52,6 @@ export function getTestCaseFormFields(modules: Module[] = []): FormFieldConfig[]
       label: 'Status',
       type: 'select',
       options: STATUS_OPTIONS,
-    },
-    {
-      name: 'domain',
-      label: 'Domain',
-      type: 'select',
-      placeholder: 'Select a domain',
-      options: [
-        { label: 'None', value: 'none' },
-        ...DOMAIN_OPTIONS,
-      ],
-    },
-    {
-      name: 'function',
-      label: 'Function',
-      type: 'select',
-      placeholder: 'Select a function',
-      options: [
-        { label: 'None', value: 'none' },
-        ...FUNCTION_OPTIONS,
-      ],
     },
     {
       name: 'estimatedTime',

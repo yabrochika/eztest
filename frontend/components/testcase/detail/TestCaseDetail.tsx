@@ -1,9 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
-import { Navbar } from '@/frontend/reusable-components/layout/Navbar';
-import { Breadcrumbs } from '@/frontend/reusable-components/layout/Breadcrumbs';
+import { useEffect, useState } from 'react';
+import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
@@ -47,20 +46,6 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
     postconditions: '',
     suiteId: null,
     moduleId: null,
-    // Additional fields
-    domain: '',
-    function: '',
-    rtcId: '',
-    flowId: '',
-    layer: '',
-    target: '',
-    testType: '',
-    evidence: '',
-    notes: '',
-    automation: '',
-    environment: '',
-    moduleCategory: '',
-    featureCategory: '',
   });
 
   const [steps, setSteps] = useState<TestStep[]>([]);
@@ -75,15 +60,6 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
   const [newStepActionAttachments, setNewStepActionAttachments] = useState<Attachment[]>([]);
   const [newStepExpectedResultAttachments, setNewStepExpectedResultAttachments] = useState<Attachment[]>([]);
   const [saving, setSaving] = useState(false);
-
-  const navbarActions = useMemo(() => {
-    return [
-      {
-        type: 'signout' as const,
-        showConfirmation: true,
-      },
-    ];
-  }, []);
 
   useEffect(() => {
     fetchTestCase();
@@ -142,21 +118,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
   const fetchTestCase = async () => {
     try {
       setLoading(true);
-      // Get projectId from testCase data when available, otherwise extract from URL
-      let projectId = testCase?.project?.id;
-      if (!projectId && typeof window !== 'undefined') {
-        // Extract projectId from URL path: /projects/[id]/testcases/[testcaseId]
-        const pathSegments = window.location.pathname.split('/');
-        const projectIndex = pathSegments.indexOf('projects');
-        if (projectIndex !== -1 && projectIndex + 1 < pathSegments.length) {
-          projectId = pathSegments[projectIndex + 1];
-        }
-      }
-      if (!projectId) {
-        throw new Error('Project ID not available');
-      }
-      const url = `/api/projects/${projectId}/testcases/${testCaseId}`;
-      const response = await fetch(url);
+      const response = await fetch(`/api/testcases/${testCaseId}`);
       const data = await response.json();
 
       if (data.data) {
@@ -173,20 +135,6 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
           postconditions: data.data.postconditions || '',
           suiteId: data.data.suiteId || null,
           moduleId: data.data.moduleId || null,
-          // Additional fields
-          domain: data.data.domain || '',
-          function: data.data.function || '',
-          rtcId: data.data.rtcId || '',
-          flowId: data.data.flowId || '',
-          layer: data.data.layer || '',
-          target: data.data.target || '',
-          testType: data.data.testType || '',
-          evidence: data.data.evidence || '',
-          notes: data.data.notes || '',
-          automation: data.data.automation || '',
-          environment: data.data.environment || '',
-          moduleCategory: data.data.moduleCategory || '',
-          featureCategory: data.data.featureCategory || '',
         });
 
         // Initialize steps and ensure the test case level expected result is
@@ -225,7 +173,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
         // Fetch attachments for all fields
         if (data.data.id) {
           try {
-            const attachmentsResponse = await fetch(`/api/projects/${data.data.project.id}/testcases/${data.data.id}/attachments`);
+            const attachmentsResponse = await fetch(`/api/testcases/${data.data.id}/attachments`);
             if (!attachmentsResponse.ok) {
               console.error('Failed to fetch attachments:', attachmentsResponse.status);
               return;
@@ -410,7 +358,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
       };
       setFormData(updatedFormData);
 
-      const response = await fetch(`/api/projects/${testCase?.project.id}/testcases/${testCaseId}`, {
+      const response = await fetch(`/api/testcases/${testCaseId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -425,7 +373,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
         // Associate uploaded attachments with the test case
         if (uploadedAttachments.length > 0) {
           try {
-            await fetch(`/api/projects/${testCase?.project.id}/testcases/${testCaseId}/attachments`, {
+            await fetch(`/api/testcases/${testCaseId}/attachments`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ attachments: uploadedAttachments }),
@@ -452,6 +400,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
           
           if (firstStepId && !firstStepId.startsWith('temp-')) {
             // Check if first step already has expectedResult attachments
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const firstStepHasExpectedResultAtts = updatedStepAttachmentsMap[firstStepId]?.expectedResult?.length > 0;
             
             // If first step has expectedResult text, merge test case level attachments with step-level ones
@@ -676,7 +625,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
         expectedResult: step.expectedResult,
       }));
       
-      const response = await fetch(`/api/projects/${testCase?.project.id}/testcases/${testCaseId}/steps`, {
+      const response = await fetch(`/api/testcases/${testCaseId}/steps`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ steps: cleanedSteps }),
@@ -772,7 +721,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
   };
 
   const handleDeleteTestCase = async () => {
-    const response = await fetch(`/api/projects/${testCase?.project.id}/testcases/${testCaseId}`, {
+    const response = await fetch(`/api/testcases/${testCaseId}`, {
       method: 'DELETE',
     });
 
@@ -811,30 +760,23 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
       {/* Alert Messages */}
       <FloatingAlert alert={alert} onClose={() => setAlert(null)} />
 
-      {/* Navbar */}
-      <Navbar
-        brandLabel={null}
-        items={[]}
-        breadcrumbs={
-          <Breadcrumbs 
-            items={[
-              { label: 'Projects', href: '/projects' },
-              {
-                label: testCase.project.name,
-                href: `/projects/${testCase.project.id}`,
-              },
-              {
-                label: 'Test Cases',
-                href: `/projects/${testCase.project.id}/testcases`,
-              },
-              { label: testCase.title, href: `/projects/${testCase.project.id}/testcases/${testCase.id}` },
-            ]}
-          />
-        }
-        actions={navbarActions}
+      {/* Top Bar */}
+      <TopBar
+        breadcrumbs={[
+          { label: 'Projects', href: '/projects' },
+          {
+            label: testCase.project.name,
+            href: `/projects/${testCase.project.id}`,
+          },
+          {
+            label: 'Test Cases',
+            href: `/projects/${testCase.project.id}/testcases`,
+          },
+          { label: testCase.title },
+        ]}
       />
 
-      <div className="p-4 md:p-6 lg:p-8 pt-8">
+      <div className="p-4 md:p-6 lg:p-8">
         <TestCaseHeader
           testCase={testCase}
           isEditing={isEditing}
@@ -864,7 +806,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
         <ActionButtonGroup
           buttons={[
             {
-              label: '全テストケースを表示',
+              label: 'View All Test Cases',
               icon: TestTube2,
               onClick: () => router.push(`/projects/${testCase.project.id}/testcases`),
               variant: 'secondary',
@@ -877,7 +819,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
               show: !!testCase.suite,
             },
             {
-              label: '全テストスイートを表示',
+              label: 'View All Test Suites',
               icon: Folder,
               onClick: () => router.push(`/projects/${testCase.project.id}/testsuites`),
               variant: 'secondary',
@@ -938,7 +880,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
 
             <LinkedDefectsCard testCase={testCase} onRefresh={fetchTestCase} />
 
-            <TestCaseHistoryCard projectId={testCase.project.id} testCaseId={testCaseId} />
+            <TestCaseHistoryCard testCaseId={testCaseId} />
           </div>
 
           <div className="space-y-6">

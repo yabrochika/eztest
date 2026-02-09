@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo } from 'react';
@@ -440,6 +440,7 @@ export default function DefectList({ projectId }: DefectListProps) {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleBulkStatusChange = () => {
     // This would open a dialog to select new status
     setAlert({
@@ -450,6 +451,7 @@ export default function DefectList({ projectId }: DefectListProps) {
     setTimeout(() => setAlert(null), 3000);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleBulkAssign = () => {
     // This would open a dialog to select assignee
     setAlert({

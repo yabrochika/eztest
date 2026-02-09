@@ -2,8 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -15,6 +14,30 @@ datasource db {
 // Enums - Converted to dynamic dropdown options (String fields)
 // Values are now managed through the DropdownOption table
 // ====================================
+
+enum TestLayer {
+  SMOKE
+  CORE
+  EXTENDED
+  UNKNOWN
+}
+
+enum TargetType {
+  FUNCTIONAL
+  NON_FUNCTIONAL
+  PERFORMANCE
+  SECURITY
+  USABILITY
+  COMPATIBILITY
+  API
+  SCREEN
+}
+
+enum Platform {
+  IOS
+  ANDROID
+  WEB
+}
 
 // ====================================
 // User Management
@@ -200,25 +223,22 @@ model TestCase {
   expectedResult String?  // Overall expected result for the test case
   priority      String   @default("MEDIUM") // Dynamic dropdown value
   status        String   @default("ACTIVE") // Dynamic dropdown value
-  domain        String?  // Dynamic dropdown value (e.g., "USER_MANAGEMENT", "AUTH", "PAYMENT")
-  function      String?  // Dynamic dropdown value (e.g., "LOGIN", "REGISTER", "SEARCH")
   estimatedTime Int?     // in minutes
   preconditions String?
   postconditions String?
   testData      String?  // Test data/input values for the test case
   pendingDefectIds String?  // Comma-separated defect IDs that don't exist yet (e.g., "DEF-1, DEF-2")
-  // Additional fields for enhanced test case management
+  // New fields for enhanced test case management
+  assertionId   String?  // Assertion-ID
   rtcId         String?  // RTC-ID
   flowId        String?  // Flow-ID
-  layer         String?  // Dynamic dropdown value (Smoke, Core, Extended)
-  target        String?  // 対象(API/画面)
-  testType      String?  // Dynamic dropdown value (テスト種別: 正常系, 異常系, etc.)
-  evidence      String?  // 根拠コード
+  layer         TestLayer?  // Layer
+  targetType    TargetType?  // 対象
+  testType      String?  // テスト種別（正常系、異常系、非機能、回帰、データ整合性確認、状態遷移確認、運用確認、障害時確認）
+  evidence      String?  // 根拠
   notes         String?  // 備考
-  automation    String?  // 自動化
-  environment   String?  // Dynamic dropdown value (環境: iOS, Android, Web)
-  moduleCategory String?  // Dynamic dropdown value (Module1, Module2, etc.)
-  featureCategory String?  // Dynamic dropdown value (Feature1, Feature2, etc.)
+  isAutomated   Boolean  @default(false)  // 自動化
+  platforms     Platform[] @default([])  // 環境 (複数環境を保存: IOS / ANDROID / WEB)
   createdById   String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -242,14 +262,6 @@ model TestCase {
   @@index([createdById])
   @@index([status])
   @@index([priority])
-  @@index([domain])
-  @@index([function])
-  @@index([layer])
-  @@index([testType])
-  @@index([environment])
-  @@index([target])
-  @@index([moduleCategory])
-  @@index([featureCategory])
 }
 
 // Join table for many-to-many relationship between TestCase and TestSuite
@@ -288,7 +300,6 @@ model TestRun {
   projectId   String
   name        String
   description String?
-  executionType String @default("MANUAL") // MANUAL | AUTOMATION
   status      String   @default("PLANNED") // Dynamic dropdown value
   assignedToId String?
   environment String?  // Dynamic dropdown value e.g., "Production", "Staging", "QA"
@@ -310,7 +321,6 @@ model TestRun {
   @@index([createdById])
   @@index([status])
   @@index([environment])
-  @@index([executionType])
 }
 
 model TestRunSuite {

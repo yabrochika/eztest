@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
 import { useEffect, useState } from 'react';

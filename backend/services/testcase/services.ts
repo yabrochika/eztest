@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { CustomRequest } from '@/backend/utils/interceptor';
 
 interface CreateTestCaseInput {
   projectId: string;
@@ -11,8 +10,6 @@ interface CreateTestCaseInput {
   testData?: string;
   priority?: string;
   status?: string;
-  domain?: string;
-  function?: string;
   estimatedTime?: number;
   preconditions?: string;
   postconditions?: string;
@@ -22,18 +19,17 @@ interface CreateTestCaseInput {
     action: string;
     expectedResult: string;
   }>;
-  // Additional fields
-  rtcId?: string;
-  flowId?: string;
-  layer?: string;
-  target?: string;
-  testType?: string;
-  evidence?: string;
-  notes?: string;
-  automation?: string;
-  environment?: string;
-  moduleCategory?: string;
-  featureCategory?: string;
+  // New fields
+  assertionId?: string | null;
+  rtcId?: string | null;
+  flowId?: string | null;
+  layer?: 'SMOKE' | 'CORE' | 'EXTENDED' | 'UNKNOWN' | null;
+  targetType?: 'FUNCTIONAL' | 'NON_FUNCTIONAL' | 'PERFORMANCE' | 'SECURITY' | 'USABILITY' | 'COMPATIBILITY' | 'API' | 'SCREEN' | null;
+  testType?: string | null;
+  evidence?: string | null;
+  notes?: string | null;
+  isAutomated?: boolean;
+  platforms?: ('IOS' | 'ANDROID' | 'WEB')[];
 }
 
 interface UpdateTestCaseInput {
@@ -43,33 +39,28 @@ interface UpdateTestCaseInput {
   testData?: string;
   priority?: string;
   status?: string;
-  domain?: string | null;
-  function?: string | null;
   estimatedTime?: number;
   preconditions?: string;
   postconditions?: string;
   moduleId?: string | null;
   suiteId?: string | null;
-  // Additional fields
+  // New fields
+  assertionId?: string | null;
   rtcId?: string | null;
   flowId?: string | null;
-  layer?: string | null;
-  target?: string | null;
+  layer?: 'SMOKE' | 'CORE' | 'EXTENDED' | 'UNKNOWN' | null;
+  targetType?: 'FUNCTIONAL' | 'NON_FUNCTIONAL' | 'PERFORMANCE' | 'SECURITY' | 'USABILITY' | 'COMPATIBILITY' | 'API' | 'SCREEN' | null;
   testType?: string | null;
   evidence?: string | null;
   notes?: string | null;
-  automation?: string | null;
-  environment?: string | null;
-  moduleCategory?: string | null;
-  featureCategory?: string | null;
+  isAutomated?: boolean;
+  platforms?: ('IOS' | 'ANDROID' | 'WEB')[];
 }
 
 interface TestCaseFilters {
   suiteId?: string;
   priority?: string;
   status?: string;
-  domain?: string;
-  function?: string;
   search?: string;
 }
 
@@ -145,14 +136,6 @@ export class TestCaseService {
       where.status = filters.status;
     }
 
-    if (filters?.domain) {
-      where.moduleCategory = filters.domain;
-    }
-
-    if (filters?.function) {
-      where.featureCategory = filters.function;
-    }
-
     if (filters?.search) {
       where.OR = [
         { title: { contains: filters.search, mode: 'insensitive' } },
@@ -224,14 +207,6 @@ export class TestCaseService {
     
     if (filters?.moduleId) {
       where.moduleId = filters.moduleId;
-    }
-
-    if (filters?.domain) {
-      where.moduleCategory = filters.domain;
-    }
-
-    if (filters?.function) {
-      where.featureCategory = filters.function;
     }
     
     if (filters?.search) {
@@ -600,24 +575,21 @@ export class TestCaseService {
             testData: data.testData,
             priority: data.priority || 'MEDIUM',
             status: data.status || 'DRAFT',
-            domain: data.domain,
-            function: data.function,
             estimatedTime: data.estimatedTime,
             preconditions: data.preconditions,
             postconditions: data.postconditions,
             createdById: data.createdById,
-            // Additional fields
+            // New fields
+            assertionId: data.assertionId,
             rtcId: data.rtcId,
             flowId: data.flowId,
             layer: data.layer,
-            target: data.target,
+            targetType: data.targetType,
             testType: data.testType,
             evidence: data.evidence,
             notes: data.notes,
-            automation: data.automation,
-            environment: data.environment,
-            moduleCategory: data.moduleCategory,
-            featureCategory: data.featureCategory,
+            isAutomated: data.isAutomated ?? false,
+            platforms: data.platforms || [],
             steps: data.steps
               ? {
                   create: data.steps.map((step) => ({
@@ -756,25 +728,22 @@ export class TestCaseService {
     if (data.testData !== undefined) updateData.testData = data.testData;
     if (data.priority !== undefined) updateData.priority = data.priority;
     if (data.status !== undefined) updateData.status = data.status;
-    if (data.domain !== undefined) updateData.domain = data.domain;
-    if (data.function !== undefined) updateData.function = data.function;
     if (data.estimatedTime !== undefined) updateData.estimatedTime = data.estimatedTime;
     if (data.preconditions !== undefined) updateData.preconditions = data.preconditions;
     if (data.postconditions !== undefined) updateData.postconditions = data.postconditions;
     if (data.suiteId !== undefined) updateData.suiteId = data.suiteId;
     if (data.moduleId !== undefined) updateData.moduleId = data.moduleId;
-    // Additional fields
+    // New fields
+    if (data.assertionId !== undefined) updateData.assertionId = data.assertionId;
     if (data.rtcId !== undefined) updateData.rtcId = data.rtcId;
     if (data.flowId !== undefined) updateData.flowId = data.flowId;
     if (data.layer !== undefined) updateData.layer = data.layer;
-    if (data.target !== undefined) updateData.target = data.target;
+    if (data.targetType !== undefined) updateData.targetType = data.targetType;
     if (data.testType !== undefined) updateData.testType = data.testType;
     if (data.evidence !== undefined) updateData.evidence = data.evidence;
     if (data.notes !== undefined) updateData.notes = data.notes;
-    if (data.automation !== undefined) updateData.automation = data.automation;
-    if (data.environment !== undefined) updateData.environment = data.environment;
-    if (data.moduleCategory !== undefined) updateData.moduleCategory = data.moduleCategory;
-    if (data.featureCategory !== undefined) updateData.featureCategory = data.featureCategory;
+    if (data.isAutomated !== undefined) updateData.isAutomated = data.isAutomated;
+    if (data.platforms !== undefined) updateData.platforms = data.platforms;
 
     return await prisma.testCase.update({
       where: { id: testCaseId },
@@ -924,11 +893,6 @@ export class TestCaseService {
     if (!testCase) {
       throw new Error('Test case not found or access denied');
     }
-
-    // Get existing steps
-    const existingSteps = await prisma.testStep.findMany({
-      where: { testCaseId },
-    });
 
     // Update or create steps while preserving IDs for existing steps
     if (steps.length > 0) {

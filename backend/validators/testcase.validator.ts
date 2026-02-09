@@ -39,8 +39,6 @@ export const createTestCaseSchema = z.object({
   testData: z.string().optional(),
   priority: z.string().optional(),
   status: z.string().optional(),
-  domain: z.string().optional().nullable(),
-  function: z.string().optional().nullable(),
   estimatedTime: z
     .number()
     .nonnegative('Estimated time must be a positive number')
@@ -48,18 +46,16 @@ export const createTestCaseSchema = z.object({
   preconditions: z.string().optional(),
   postconditions: z.string().optional(),
   steps: z.array(testStepSchema).optional(),
-  // Additional fields
+  // New fields for enhanced test case management
+  assertionId: z.string().optional().nullable(),
   rtcId: z.string().optional().nullable(),
   flowId: z.string().optional().nullable(),
-  layer: z.string().optional().nullable(),
-  target: z.string().optional().nullable(),
-  testType: z.string().optional().nullable(),
+  layer: z.enum(['SMOKE', 'CORE', 'EXTENDED', 'UNKNOWN']).optional().nullable(),
+  targetType: z.enum(['FUNCTIONAL', 'NON_FUNCTIONAL', 'PERFORMANCE', 'SECURITY', 'USABILITY', 'COMPATIBILITY', 'API', 'SCREEN']).optional().nullable(),
   evidence: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
-  automation: z.string().optional().nullable(),
-  environment: z.string().optional().nullable(),
-  moduleCategory: z.string().optional().nullable(),
-  featureCategory: z.string().optional().nullable(),
+  isAutomated: z.boolean().optional().default(false),
+  platforms: z.array(z.enum(['IOS', 'ANDROID', 'WEB'])).optional().default([]),
 });
 
 /**
@@ -72,8 +68,6 @@ export const updateTestCaseSchema = z.object({
   testData: z.string().optional(),
   priority: z.string().optional(),
   status: z.string().optional(),
-  domain: z.string().optional().nullable(),
-  function: z.string().optional().nullable(),
   estimatedTime: z
     .number()
     .nonnegative('Estimated time must be a positive number')
@@ -82,18 +76,16 @@ export const updateTestCaseSchema = z.object({
   postconditions: z.string().optional(),
   moduleId: z.string().optional().nullable(),
   suiteId: z.string().optional().nullable(),
-  // Additional fields
+  // New fields for enhanced test case management
+  assertionId: z.string().optional().nullable(),
   rtcId: z.string().optional().nullable(),
   flowId: z.string().optional().nullable(),
-  layer: z.string().optional().nullable(),
-  target: z.string().optional().nullable(),
-  testType: z.string().optional().nullable(),
+  layer: z.enum(['SMOKE', 'CORE', 'EXTENDED', 'UNKNOWN']).optional().nullable(),
+  targetType: z.enum(['FUNCTIONAL', 'NON_FUNCTIONAL', 'PERFORMANCE', 'SECURITY', 'USABILITY', 'COMPATIBILITY', 'API', 'SCREEN']).optional().nullable(),
   evidence: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
-  automation: z.string().optional().nullable(),
-  environment: z.string().optional().nullable(),
-  moduleCategory: z.string().optional().nullable(),
-  featureCategory: z.string().optional().nullable(),
+  isAutomated: z.boolean().optional(),
+  platforms: z.array(z.enum(['IOS', 'ANDROID', 'WEB'])).optional(),
 });
 
 /**
@@ -113,10 +105,7 @@ export const testCaseQuerySchema = z.object({
   suiteId: z.string().min(1, 'Suite ID cannot be empty').optional(),
   priority: z.string().optional(),
   status: z.string().optional(),
-  domain: z.string().optional(),
-  function: z.string().optional(),
   search: z.string().optional(),
-  moduleId: z.string().optional(),
 });
 
 /**

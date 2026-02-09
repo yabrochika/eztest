@@ -14,8 +14,6 @@ export interface ExportOptions {
     suiteId?: string;
     status?: string;
     priority?: string;
-    domain?: string;
-    function?: string;
     // Defect filters
     severity?: string;
     assignedToId?: string;
@@ -52,8 +50,6 @@ export class ExportService {
       moduleId?: string;
       status?: string;
       priority?: string;
-      domain?: string;
-      function?: string;
       testCaseSuites?: {
         some: {
           testSuiteId: string;
@@ -83,14 +79,6 @@ export class ExportService {
       where.priority = filters.priority;
     }
 
-    if (filters.domain) {
-      where.domain = filters.domain;
-    }
-
-    if (filters.function) {
-      where.function = filters.function;
-    }
-
     // Fetch test cases with related data
     const testCases = await prisma.testCase.findMany({
       where,
@@ -102,24 +90,21 @@ export class ExportService {
         expectedResult: true,
         priority: true,
         status: true,
-        domain: true,
-        function: true,
         estimatedTime: true,
         preconditions: true,
         postconditions: true,
         testData: true,
-        // Additional fields
+        // New fields for enhanced test case management
+        assertionId: true,
         rtcId: true,
         flowId: true,
         layer: true,
-        target: true,
+        targetType: true,
         testType: true,
         evidence: true,
         notes: true,
-        automation: true,
-        environment: true,
-        moduleCategory: true,
-        featureCategory: true,
+        isAutomated: true,
+        platforms: true,
         module: {
           select: {
             name: true,
@@ -181,27 +166,23 @@ export class ExportService {
         })
         .join('\n');
 
-      // Format expected results in import format
-      // Single result: plain string (no numbering)
-      // Multiple results: numbered list, newline-separated
-      const expectedResultsList: string[] = [];
-      tc.steps.forEach((step) => {
-        if (step.expectedResult && step.expectedResult.trim()) {
-          expectedResultsList.push(step.expectedResult.trim());
-        }
-      });
-      
+      // Format expected results to maintain step-to-result correspondence
+      // Always use numbered list format to preserve which step has which expected result
+      // This ensures proper round-trip import/export even when only some steps have results
       let expectedResultFormatted = '';
-      if (expectedResultsList.length > 1) {
-        // Multiple results: format as numbered list "1. Result 1\n2. Result 2\n..."
-        expectedResultFormatted = expectedResultsList
-          .map((result, index) => `${index + 1}. ${result}`)
-          .join('\n');
-      } else if (expectedResultsList.length === 1) {
-        // Single result: export as plain string (no numbering)
-        expectedResultFormatted = expectedResultsList[0];
+
+      if (tc.steps.length > 0) {
+        // Map each step to its expected result, maintaining step numbers
+        // Use step number to ensure 1-to-1 correspondence on import
+        const stepResults = tc.steps.map((step) => {
+          const result = step.expectedResult && step.expectedResult.trim()
+            ? step.expectedResult.trim()
+            : ''; // Empty string for steps without expected result
+          return `${step.stepNumber}. ${result}`;
+        });
+        expectedResultFormatted = stepResults.join('\n');
       } else if (tc.expectedResult && tc.expectedResult.trim()) {
-        // Fall back to test case level expected result if no step-level results
+        // Fall back to test case level expected result if no steps exist
         expectedResultFormatted = tc.expectedResult.trim();
       }
       // If empty, expectedResultFormatted remains empty string
@@ -213,34 +194,67 @@ export class ExportService {
       const linkedDefectIds = defectsByTestCaseId.get(tc.id) || [];
       const defectIds = linkedDefectIds.join(', ');
 
+      // Format platforms array to string (e.g., "IOS / ANDROID / WEB")
+      const platformsFormatted = tc.platforms && tc.platforms.length > 0
+        ? tc.platforms.join(' / ')
+        : '';
+
+      // Format layer to display value
+      const layerFormatted = tc.layer || '';
+
+      // Format targetType to display value (API or 画面)
+      let targetTypeFormatted = '';
+      if (tc.targetType === 'API') {
+        targetTypeFormatted = 'API';
+      } else if (tc.targetType === 'SCREEN') {
+        targetTypeFormatted = '画面';
+      } else if (tc.targetType) {
+        targetTypeFormatted = tc.targetType;
+      }
+
+      // Format testType to Japanese display value
+      const testTypeMap: Record<string, string> = {
+        'NORMAL': '正常系',
+        'ABNORMAL': '異常系',
+        'NON_FUNCTIONAL': '非機能',
+        'REGRESSION': '回帰',
+        'DATA_INTEGRITY': 'データ整合性確認',
+        'STATE_TRANSITION': '状態遷移確認',
+        'OPERATIONAL': '運用確認',
+        'FAILURE': '障害時確認',
+      };
+      const testTypeFormatted = tc.testType ? (testTypeMap[tc.testType] || tc.testType) : '';
+
+      // Format isAutomated to display value
+      const isAutomatedFormatted = tc.isAutomated ? 'true' : '';
+
       return {
-        'テストケースID': tc.tcId,
-        'テストケースタイトル': tc.title,
-        'モジュール': tc.module?.name || '',
-        'ドメイン': tc.moduleCategory || '',
-        '機能': tc.featureCategory || '',
-        '優先度': tc.priority,
-        '事前条件': tc.preconditions || '',
-        'テストステップ': testStepsFormatted,
-        'テストデータ': testData,
-        '期待結果': expectedResultFormatted,
-        'ステータス': tc.status,
-        '欠陥ID': defectIds,
-        // Older fields (for backward compatibility)
-        '説明': tc.description || '',
-        '見積時間（分）': tc.estimatedTime || '',
-        '事後条件': tc.postconditions || '',
-        'テストスイート': suites,
-        // Additional fields
+        'Test Case ID': tc.tcId,
+        'Test Case Title': tc.title,
+        'Module / Feature': tc.module?.name || '',
+        'Priority': tc.priority,
+        'Preconditions': tc.preconditions || '',
+        'Test Steps': testStepsFormatted,
+        'Test Data': testData,
+        'Expected Result': expectedResultFormatted,
+        'Status': tc.status,
+        'Defect ID': defectIds,
+        // New fields for enhanced test case management
+        'Assertion-ID': tc.assertionId || '',
         'RTC-ID': tc.rtcId || '',
         'Flow-ID': tc.flowId || '',
-        'レイヤー': tc.layer || '',
-        '対象': tc.target || '',
-        'テスト種別': tc.testType || '',
-        '根拠コード': tc.evidence || '',
+        'Layer': layerFormatted,
+        '対象（API/画面）': targetTypeFormatted,
+        'テスト種別': testTypeFormatted,
+        '根拠（ドキュメント）': tc.evidence || '',
         '備考': tc.notes || '',
-        '自動化': tc.automation || '',
-        '環境': tc.environment || '',
+        '自動化': isAutomatedFormatted,
+        '環境（iOS / Android / Web）': platformsFormatted,
+        // Older fields (for backward compatibility)
+        'Description': tc.description || '',
+        'Estimated Time (minutes)': tc.estimatedTime || '',
+        'Postconditions': tc.postconditions || '',
+        'Test Suites': suites,
       };
     });
 

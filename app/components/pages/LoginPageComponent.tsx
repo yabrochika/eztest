@@ -176,7 +176,7 @@ export default function LoginPageComponent() {
       });
       setIsLoading(false);
       setShowOtpVerification(true);
-    } catch (error) {
+    } catch {
       const errorMsg = 'An unexpected error occurred';
       setError(errorMsg);
       setAlert({

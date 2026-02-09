@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { BaseConfirmDialog, BaseConfirmDialogConfig } from '@/frontend/reusable-components/dialogs/BaseConfirmDialog';
 import { TestCase } from '../types';
@@ -19,10 +19,10 @@ export function DeleteTestCaseDialog({
   if (!testCase) return null;
 
   const config: BaseConfirmDialogConfig = {
-    title: 'テストケースを削除',
-    description: `「${testCase.title}」を削除してもよろしいですか？この操作は取り消せません。`,
-    submitLabel: '削除',
-    cancelLabel: 'キャンセル',
+    title: 'Delete Test Case',
+    description: `Are you sure you want to delete "${testCase.title}"? This action cannot be undone.`,
+    submitLabel: 'Delete',
+    cancelLabel: 'Cancel',
     triggerOpen: open,
     onOpenChange,
     onSubmit: onConfirm,

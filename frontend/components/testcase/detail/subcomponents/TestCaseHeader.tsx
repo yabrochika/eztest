@@ -36,6 +36,7 @@ export function TestCaseHeader({
   const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'CRITICAL':
@@ -51,6 +52,7 @@ export function TestCaseHeader({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ACTIVE':
@@ -95,14 +97,14 @@ export function TestCaseHeader({
       ]}
       actions={[
         { 
-          label: '編集', 
+          label: 'Edit', 
           icon: Edit, 
           onClick: onEdit, 
           show: canUpdate,
           buttonName: 'TestCase Detail - Edit',
         },
         { 
-          label: '削除', 
+          label: 'Delete', 
           icon: Trash2, 
           onClick: onDelete, 
           variant: 'destructive', 

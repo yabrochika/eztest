@@ -48,6 +48,7 @@ export function TestCaseDetailsCard({
   onFieldChange,
   projectId,
   descriptionAttachments = [],
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   expectedResultAttachments = [],
   preconditionAttachments = [],
   postconditionAttachments = [],
@@ -56,16 +57,12 @@ export function TestCaseDetailsCard({
   onPreconditionAttachmentsChange,
   onPostconditionAttachmentsChange,
 }: TestCaseDetailsCardProps) {
+  // Find module from modules array if moduleId exists
+  const selectedModule = testCase.moduleId ? modules.find(m => m.id === testCase.moduleId) : undefined;
   // Fetch dynamic dropdown options
   const { options: priorityOptions, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptions, loading: loadingStatus } = useDropdownOptions('TestCase', 'status');
-  const { options: layerOptions, loading: loadingLayer } = useDropdownOptions('TestCase', 'layer');
-  const { options: targetOptions, loading: loadingTarget } = useDropdownOptions('TestCase', 'target');
   const { options: testTypeOptions, loading: loadingTestType } = useDropdownOptions('TestCase', 'testType');
-  const { options: automationOptions, loading: loadingAutomation } = useDropdownOptions('TestCase', 'automation');
-  const { options: environmentOptions, loading: loadingEnvironment } = useDropdownOptions('TestCase', 'environment');
-  const { options: moduleCategoryOptions, loading: loadingModuleCategory } = useDropdownOptions('TestCase', 'moduleCategory');
-  const { options: featureCategoryOptions, loading: loadingFeatureCategory } = useDropdownOptions('TestCase', 'featureCategory');
 
   const handleFieldChange = onFieldChange || ((field, value) => {
     onFormChange({ ...formData, [field]: value });
@@ -73,12 +70,13 @@ export function TestCaseDetailsCard({
 
   // Create safe attachment handlers with default no-op functions
   const handleDescriptionAttachmentsChange = onDescriptionAttachmentsChange || (() => {});
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleExpectedResultAttachmentsChange = onExpectedResultAttachmentsChange || (() => {});
   const handlePreconditionAttachmentsChange = onPreconditionAttachmentsChange || (() => {});
   const handlePostconditionAttachmentsChange = onPostconditionAttachmentsChange || (() => {});
 
   return (
-    <DetailCard title="詳細" contentClassName="space-y-4">
+    <DetailCard title="Details" contentClassName="space-y-4">
       {isEditing ? (
         <div className="space-y-4">
           {/* Title */}
@@ -173,6 +171,106 @@ export function TestCaseDetailsCard({
             </Select>
           </div>
 
+          {/* Custom IDs Section */}
+          <div className="space-y-4 pt-6 mt-6 border-t border-white/10">
+            <h4 className="text-sm font-medium text-white/60">識別情報</h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="assertionId">Assertion-ID</Label>
+                <Input
+                  id="assertionId"
+                  variant="glass"
+                  value={formData.assertionId || ''}
+                  onChange={(e) => handleFieldChange('assertionId', e.target.value)}
+                  placeholder="Enter assertion ID"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rtcId">RTC-ID</Label>
+                <Input
+                  id="rtcId"
+                  variant="glass"
+                  value={formData.rtcId || ''}
+                  onChange={(e) => handleFieldChange('rtcId', e.target.value)}
+                  placeholder="Enter RTC ID"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="flowId">Flow-ID</Label>
+                <Input
+                  id="flowId"
+                  variant="glass"
+                  value={formData.flowId || ''}
+                  onChange={(e) => handleFieldChange('flowId', e.target.value)}
+                  placeholder="Enter flow ID"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="layer">Layer</Label>
+                <Select
+                  value={formData.layer || ''}
+                  onValueChange={(value) => handleFieldChange('layer', value)}
+                >
+                  <SelectTrigger variant="glass" id="layer">
+                    <SelectValue placeholder="Select layer" />
+                  </SelectTrigger>
+                  <SelectContent variant="glass">
+                    <SelectItem value="SMOKE">Smoke</SelectItem>
+                    <SelectItem value="CORE">Core</SelectItem>
+                    <SelectItem value="EXTENDED">Extended</SelectItem>
+                    <SelectItem value="UNKNOWN">Unknown</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="targetType">対象</Label>
+                <Select
+                  value={formData.targetType || ''}
+                  onValueChange={(value) => handleFieldChange('targetType', value)}
+                >
+                  <SelectTrigger variant="glass" id="targetType">
+                    <SelectValue placeholder="Select target type" />
+                  </SelectTrigger>
+                  <SelectContent variant="glass">
+                    <SelectItem value="API">API</SelectItem>
+                    <SelectItem value="SCREEN">画面</SelectItem>
+                    <SelectItem value="FUNCTIONAL">Functional</SelectItem>
+                    <SelectItem value="NON_FUNCTIONAL">Non-Functional</SelectItem>
+                    <SelectItem value="PERFORMANCE">Performance</SelectItem>
+                    <SelectItem value="SECURITY">Security</SelectItem>
+                    <SelectItem value="USABILITY">Usability</SelectItem>
+                    <SelectItem value="COMPATIBILITY">Compatibility</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="testType">テスト種別</Label>
+                <Select
+                  value={formData.testType || ''}
+                  onValueChange={(value) => handleFieldChange('testType', value)}
+                >
+                  <SelectTrigger variant="glass" id="testType">
+                    <SelectValue placeholder="テスト種別を選択" />
+                  </SelectTrigger>
+                  <SelectContent variant="glass">
+                    {loadingTestType ? (
+                      <SelectItem value="loading" disabled>Loading...</SelectItem>
+                    ) : (
+                      testTypeOptions.map((opt) => (
+                        <SelectItem key={opt.id} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
           {/* Estimated Time */}
           <div className="space-y-2 pt-6 mt-6 border-t border-white/10">
             <Label htmlFor="estimatedTime">Estimated Time (minutes)</Label>
@@ -263,252 +361,147 @@ export function TestCaseDetailsCard({
             {errors.testData && <p className="text-xs text-red-400">{errors.testData}</p>}
           </div>
 
-          {/* Additional Fields Section */}
-          <div className="border-t border-white/10 pt-6 mt-6">
-            <h4 className="text-sm font-medium text-white/60 mb-4">追加情報</h4>
-            
-            {/* RTC-ID and Flow-ID */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="space-y-2">
-                <Label htmlFor="rtcId">RTC-ID</Label>
-                <Input
-                  id="rtcId"
-                  variant="glass"
-                  value={formData.rtcId || ''}
-                  onChange={(e) => handleFieldChange('rtcId', e.target.value)}
-                  placeholder="RTC-IDを入力"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="flowId">Flow-ID</Label>
-                <Input
-                  id="flowId"
-                  variant="glass"
-                  value={formData.flowId || ''}
-                  onChange={(e) => handleFieldChange('flowId', e.target.value)}
-                  placeholder="Flow-IDを入力"
-                />
-              </div>
-            </div>
-
-            {/* Layer and Target */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="space-y-2">
-                <Label htmlFor="layer">レイヤー</Label>
-                <Select
-                  value={formData.layer || 'none'}
-                  onValueChange={(value) => handleFieldChange('layer', value === 'none' ? null : value)}
-                >
-                  <SelectTrigger variant="glass" id="layer">
-                    <SelectValue placeholder="レイヤーを選択" />
-                  </SelectTrigger>
-                  <SelectContent variant="glass">
-                    <SelectItem value="none">なし</SelectItem>
-                    {loadingLayer ? (
-                      <SelectItem value="loading" disabled>読込中...</SelectItem>
-                    ) : (
-                      layerOptions.map((opt) => (
-                        <SelectItem key={opt.id} value={opt.value}>{opt.label}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="target">対象</Label>
-                <Select
-                  value={formData.target || 'none'}
-                  onValueChange={(value) => handleFieldChange('target', value === 'none' ? null : value)}
-                >
-                  <SelectTrigger variant="glass" id="target">
-                    <SelectValue placeholder="対象を選択" />
-                  </SelectTrigger>
-                  <SelectContent variant="glass">
-                    <SelectItem value="none">なし</SelectItem>
-                    {loadingTarget ? (
-                      <SelectItem value="loading" disabled>読込中...</SelectItem>
-                    ) : (
-                      targetOptions.map((opt) => (
-                        <SelectItem key={opt.id} value={opt.value}>{opt.label}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Test Type and Automation */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="space-y-2">
-                <Label htmlFor="testType">テスト種別</Label>
-                <Select
-                  value={formData.testType || 'none'}
-                  onValueChange={(value) => handleFieldChange('testType', value === 'none' ? null : value)}
-                >
-                  <SelectTrigger variant="glass" id="testType">
-                    <SelectValue placeholder="テスト種別を選択" />
-                  </SelectTrigger>
-                  <SelectContent variant="glass">
-                    <SelectItem value="none">なし</SelectItem>
-                    {loadingTestType ? (
-                      <SelectItem value="loading" disabled>読込中...</SelectItem>
-                    ) : (
-                      testTypeOptions.map((opt) => (
-                        <SelectItem key={opt.id} value={opt.value}>{opt.label}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="automation">自動化</Label>
-                <Select
-                  value={formData.automation || 'none'}
-                  onValueChange={(value) => handleFieldChange('automation', value === 'none' ? null : value)}
-                >
-                  <SelectTrigger variant="glass" id="automation">
-                    <SelectValue placeholder="自動化を選択" />
-                  </SelectTrigger>
-                  <SelectContent variant="glass">
-                    <SelectItem value="none">なし</SelectItem>
-                    {loadingAutomation ? (
-                      <SelectItem value="loading" disabled>読込中...</SelectItem>
-                    ) : (
-                      automationOptions.map((opt) => (
-                        <SelectItem key={opt.id} value={opt.value}>{opt.label}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Environment */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="space-y-2">
-                <Label htmlFor="environment">環境</Label>
-                <Select
-                  value={formData.environment || 'none'}
-                  onValueChange={(value) => handleFieldChange('environment', value === 'none' ? null : value)}
-                >
-                  <SelectTrigger variant="glass" id="environment">
-                    <SelectValue placeholder="環境を選択" />
-                  </SelectTrigger>
-                  <SelectContent variant="glass">
-                    <SelectItem value="none">なし</SelectItem>
-                    {loadingEnvironment ? (
-                      <SelectItem value="loading" disabled>読込中...</SelectItem>
-                    ) : (
-                      environmentOptions.map((opt) => (
-                        <SelectItem key={opt.id} value={opt.value}>{opt.label}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Domain and Feature */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="space-y-2">
-                <Label htmlFor="moduleCategory">ドメイン</Label>
-                <Select
-                  value={formData.moduleCategory || 'none'}
-                  onValueChange={(value) => handleFieldChange('moduleCategory', value === 'none' ? null : value)}
-                >
-                  <SelectTrigger variant="glass" id="moduleCategory">
-                    <SelectValue placeholder="ドメインを選択" />
-                  </SelectTrigger>
-                  <SelectContent variant="glass">
-                    <SelectItem value="none">なし</SelectItem>
-                    {loadingModuleCategory ? (
-                      <SelectItem value="loading" disabled>読込中...</SelectItem>
-                    ) : (
-                      moduleCategoryOptions.map((opt) => (
-                        <SelectItem key={opt.id} value={opt.value}>{opt.label}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="featureCategory">機能</Label>
-                <Select
-                  value={formData.featureCategory || 'none'}
-                  onValueChange={(value) => handleFieldChange('featureCategory', value === 'none' ? null : value)}
-                >
-                  <SelectTrigger variant="glass" id="featureCategory">
-                    <SelectValue placeholder="機能を選択" />
-                  </SelectTrigger>
-                  <SelectContent variant="glass">
-                    <SelectItem value="none">なし</SelectItem>
-                    {loadingFeatureCategory ? (
-                      <SelectItem value="loading" disabled>読込中...</SelectItem>
-                    ) : (
-                      featureCategoryOptions.map((opt) => (
-                        <SelectItem key={opt.id} value={opt.value}>{opt.label}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Evidence Code */}
-            <div className="space-y-2 mb-4">
-              <Label htmlFor="evidence">根拠コード</Label>
-              <Input
-                id="evidence"
-                variant="glass"
-                value={formData.evidence || ''}
-                onChange={(e) => handleFieldChange('evidence', e.target.value)}
-                placeholder="根拠コードを入力"
+          {/* isAutomated */}
+          <div className="space-y-2">
+            <Label htmlFor="isAutomated">自動化</Label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isAutomated"
+                checked={formData.isAutomated || false}
+                onChange={(e) => handleFieldChange('isAutomated', e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
+              <label htmlFor="isAutomated" className="text-sm text-white/70">
+                自動化テスト
+              </label>
             </div>
+          </div>
 
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">備考</Label>
-              <Textarea
-                id="notes"
-                variant="glass"
-                value={formData.notes || ''}
-                onChange={(e) => handleFieldChange('notes', e.target.value)}
-                placeholder="備考を入力"
-                rows={3}
-              />
-            </div>
+          {/* Evidence */}
+          <div className="space-y-2">
+            <Label htmlFor="evidence">根拠</Label>
+            <Textarea
+              id="evidence"
+              variant="glass"
+              value={formData.evidence || ''}
+              onChange={(e) => handleFieldChange('evidence', e.target.value)}
+              placeholder="Enter evidence"
+              rows={3}
+            />
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">備考</Label>
+            <Textarea
+              id="notes"
+              variant="glass"
+              value={formData.notes || ''}
+              onChange={(e) => handleFieldChange('notes', e.target.value)}
+              placeholder="Enter notes"
+              rows={3}
+            />
           </div>
         </div>
       ) : (
         <>
-          {/* Module, Domain, Feature row */}
-          {(testCase.module || testCase.moduleCategory || testCase.featureCategory) && (
-            <div className="grid grid-cols-3 gap-4">
-              {testCase.module && (
-                <div>
-                  <h4 className="text-sm font-medium text-white/60 mb-1">
-                    モジュール
-                  </h4>
-                  <p className="text-white/90">{testCase.module.name}</p>
+          {selectedModule && (
+            <div>
+              <h4 className="text-sm font-medium text-white/60 mb-1">
+                Module
+              </h4>
+              <p className="text-white/90">{selectedModule.name}</p>
+            </div>
+          )}
+
+          {/* Custom Fields Section */}
+          {(testCase.assertionId || testCase.rtcId || testCase.flowId || testCase.layer || testCase.targetType || testCase.testType) && (
+            <div className="border-t border-white/10 pt-6">
+              <h4 className="text-sm font-medium text-white/60 mb-3">
+                識別情報
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {testCase.assertionId && (
+                  <div>
+                    <span className="text-xs text-white/50">Assertion-ID</span>
+                    <p className="text-sm text-white/90">{testCase.assertionId}</p>
+                  </div>
+                )}
+                {testCase.rtcId && (
+                  <div>
+                    <span className="text-xs text-white/50">RTC-ID</span>
+                    <p className="text-sm text-white/90">{testCase.rtcId}</p>
+                  </div>
+                )}
+                {testCase.flowId && (
+                  <div>
+                    <span className="text-xs text-white/50">Flow-ID</span>
+                    <p className="text-sm text-white/90">{testCase.flowId}</p>
+                  </div>
+                )}
+                {testCase.layer && (
+                  <div>
+                    <span className="text-xs text-white/50">Layer</span>
+                    <p className="text-sm text-white/90">{testCase.layer}</p>
+                  </div>
+                )}
+                {testCase.testType && (
+                  <div>
+                    <span className="text-xs text-white/50">テスト種別</span>
+                    <p className="text-sm text-white/90">
+                      {testTypeOptions.find(opt => opt.value === testCase.testType)?.label || testCase.testType}
+                    </p>
+                  </div>
+                )}
+                {testCase.targetType && (
+                  <div>
+                    <span className="text-xs text-white/50">対象</span>
+                    <p className="text-sm text-white/90">{testCase.targetType}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Platforms */}
+          {testCase.platforms && testCase.platforms.length > 0 && (
+            <div className="border-t border-white/10 pt-6">
+              <div>
+                <span className="text-xs text-white/50">環境</span>
+                <div className="flex gap-1 mt-1">
+                  {testCase.platforms.map((platform) => (
+                    <span
+                      key={platform}
+                      className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded"
+                    >
+                      {platform}
+                    </span>
+                  ))}
                 </div>
-              )}
-              {testCase.moduleCategory && (
-                <div>
-                  <h4 className="text-sm font-medium text-white/60 mb-1">
-                    ドメイン
-                  </h4>
-                  <p className="text-white/90">{testCase.moduleCategory}</p>
-                </div>
-              )}
-              {testCase.featureCategory && (
-                <div>
-                  <h4 className="text-sm font-medium text-white/60 mb-1">
-                    機能
-                  </h4>
-                  <p className="text-white/90">{testCase.featureCategory}</p>
-                </div>
-              )}
+              </div>
+            </div>
+          )}
+
+          {/* isAutomated */}
+          <div className="border-t border-white/10 pt-6">
+            <h4 className="text-sm font-medium text-white/60 mb-2">
+              自動化
+            </h4>
+            <span className={`text-sm px-2 py-1 rounded ${testCase.isAutomated ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+              {testCase.isAutomated ? '自動化済み' : '手動'}
+            </span>
+          </div>
+
+          {/* Evidence */}
+          {testCase.evidence && (
+            <div className="border-t border-white/10 pt-6">
+              <h4 className="text-sm font-medium text-white/60 mb-2">
+                根拠
+              </h4>
+              <p className="text-white/90 whitespace-pre-wrap break-words">
+                {testCase.evidence}
+              </p>
             </div>
           )}
 
@@ -516,12 +509,12 @@ export function TestCaseDetailsCard({
             <div className="border-t border-white/10 pt-6">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-medium text-white/60">
-                  説明
+                  Description
                 </h4>
                 {descriptionAttachments.length > 0 ? (
-                  <span className="text-xs text-white/50">{descriptionAttachments.length} 添付ファイル</span>
+                  <span className="text-xs text-white/50">{descriptionAttachments.length} Attachments</span>
                 ) : (
-                  <span className="text-xs text-white/40">添付ファイルなし</span>
+                  <span className="text-xs text-white/40">No Attachments</span>
                 )}
               </div>
               {testCase.description && descriptionAttachments.length > 0 ? (
@@ -544,11 +537,11 @@ export function TestCaseDetailsCard({
           {testCase.estimatedTime && (
             <div className="border-t border-white/10 pt-6">
               <h4 className="text-sm font-medium text-white/60 mb-1">
-                見積時間
+                Estimated Time
               </h4>
               <div className="flex items-center gap-2 text-white/90">
                 <Clock className="w-4 h-4" />
-                <span>{testCase.estimatedTime} 分</span>
+                <span>{testCase.estimatedTime} minutes</span>
               </div>
             </div>
           )}
@@ -557,12 +550,12 @@ export function TestCaseDetailsCard({
             <div className="border-t border-white/10 pt-6">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-medium text-white/60">
-                  事前条件
+                  Preconditions
                 </h4>
                 {preconditionAttachments.length > 0 ? (
-                  <span className="text-xs text-white/50">{preconditionAttachments.length} 添付ファイル</span>
+                  <span className="text-xs text-white/50">{preconditionAttachments.length} Attachments</span>
                 ) : (
-                  <span className="text-xs text-white/40">添付ファイルなし</span>
+                  <span className="text-xs text-white/40">No Attachments</span>
                 )}
               </div>
               {testCase.preconditions && preconditionAttachments.length > 0 ? (
@@ -590,12 +583,12 @@ export function TestCaseDetailsCard({
             <div className="border-t border-white/10 pt-6">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-medium text-white/60">
-                  事後条件
+                  Postconditions
                 </h4>
                 {postconditionAttachments.length > 0 ? (
-                  <span className="text-xs text-white/50">{postconditionAttachments.length} 添付ファイル</span>
+                  <span className="text-xs text-white/50">{postconditionAttachments.length} Attachments</span>
                 ) : (
-                  <span className="text-xs text-white/40">添付ファイルなし</span>
+                  <span className="text-xs text-white/40">No Attachments</span>
                 )}
               </div>
               {testCase.postconditions && postconditionAttachments.length > 0 ? (
@@ -622,7 +615,7 @@ export function TestCaseDetailsCard({
           {testCase.testData && (
             <div className="border-t border-white/10 pt-6">
               <h4 className="text-sm font-medium text-white/60 mb-2">
-                テストデータ
+                Test Data
               </h4>
               <p className="text-white/90 whitespace-pre-wrap break-words">
                 {testCase.testData}
@@ -630,70 +623,15 @@ export function TestCaseDetailsCard({
             </div>
           )}
 
-          {/* Additional Fields Section */}
-          {(testCase.rtcId || testCase.flowId || testCase.layer || testCase.target || 
-            testCase.testType || testCase.automation || testCase.environment || 
-            testCase.evidence || testCase.notes) && (
+          {/* Notes */}
+          {testCase.notes && (
             <div className="border-t border-white/10 pt-6">
-              <h4 className="text-sm font-medium text-white/60 mb-4">
-                追加情報
+              <h4 className="text-sm font-medium text-white/60 mb-2">
+                備考
               </h4>
-              <div className="grid grid-cols-2 gap-4">
-                {testCase.rtcId && (
-                  <div>
-                    <span className="text-xs text-white/50">RTC-ID</span>
-                    <p className="text-sm text-white/90">{testCase.rtcId}</p>
-                  </div>
-                )}
-                {testCase.flowId && (
-                  <div>
-                    <span className="text-xs text-white/50">Flow-ID</span>
-                    <p className="text-sm text-white/90">{testCase.flowId}</p>
-                  </div>
-                )}
-                {testCase.layer && (
-                  <div>
-                    <span className="text-xs text-white/50">レイヤー</span>
-                    <p className="text-sm text-white/90">{testCase.layer}</p>
-                  </div>
-                )}
-                {testCase.target && (
-                  <div>
-                    <span className="text-xs text-white/50">対象</span>
-                    <p className="text-sm text-white/90">{testCase.target}</p>
-                  </div>
-                )}
-                {testCase.testType && (
-                  <div>
-                    <span className="text-xs text-white/50">テスト種別</span>
-                    <p className="text-sm text-white/90">{testCase.testType}</p>
-                  </div>
-                )}
-                {testCase.automation && (
-                  <div>
-                    <span className="text-xs text-white/50">自動化</span>
-                    <p className="text-sm text-white/90">{testCase.automation}</p>
-                  </div>
-                )}
-                {testCase.environment && (
-                  <div>
-                    <span className="text-xs text-white/50">環境</span>
-                    <p className="text-sm text-white/90">{testCase.environment}</p>
-                  </div>
-                )}
-              </div>
-              {testCase.evidence && (
-                <div className="mt-4">
-                  <span className="text-xs text-white/50">根拠コード</span>
-                  <p className="text-sm text-white/90">{testCase.evidence}</p>
-                </div>
-              )}
-              {testCase.notes && (
-                <div className="mt-4">
-                  <span className="text-xs text-white/50">備考</span>
-                  <p className="text-sm text-white/90 whitespace-pre-wrap">{testCase.notes}</p>
-                </div>
-              )}
+              <p className="text-white/90 whitespace-pre-wrap break-words">
+                {testCase.notes}
+              </p>
             </div>
           )}
         </>

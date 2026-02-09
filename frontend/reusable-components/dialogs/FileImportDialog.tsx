@@ -43,6 +43,8 @@ export interface FileImportDialogProps {
   templateEndpoint: string;
   itemName: string; // e.g., "test cases", "defects"
   onImportComplete: () => void;
+  /** テストケースインポート時のみ: 同一タイトルの既存を更新するオプションを表示 */
+  showUpdateExistingOption?: boolean;
 }
 
 export function FileImportDialog({
@@ -54,11 +56,13 @@ export function FileImportDialog({
   templateEndpoint,
   itemName,
   onImportComplete,
+  showUpdateExistingOption = false,
 }: FileImportDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [updateExisting, setUpdateExisting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Reset state when dialog opens
@@ -68,7 +72,7 @@ export function FileImportDialog({
       setResult(null);
       setError(null);
       setUploading(false);
-      // Reset file input
+      setUpdateExisting(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -146,13 +150,27 @@ export function FileImportDialog({
     try {
       const formData = new FormData();
       formData.append('file', file);
+      if (showUpdateExistingOption && updateExisting) {
+        formData.append('updateExisting', 'true');
+      }
 
       const response = await fetch(importEndpoint, {
         method: 'POST',
         body: formData,
       });
 
-      const data = await response.json();
+      const text = await response.text();
+      let data: { message?: string; data?: unknown };
+      try {
+        data = JSON.parse(text) as { message?: string; data?: unknown };
+      } catch {
+        if (text.trimStart().startsWith('<')) {
+          throw new Error(
+            'サーバーがHTMLを返しました。接続先URL・ネットワーク、またはサーバーエラーを確認してください。'
+          );
+        }
+        throw new Error('サーバーからの応答を解析できませんでした。');
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Import failed');
@@ -303,6 +321,19 @@ export function FileImportDialog({
               </div>
             )}
           </div>
+
+          {showUpdateExistingOption && (
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-white/80">
+              <input
+                type="checkbox"
+                checked={updateExisting}
+                onChange={(e) => setUpdateExisting(e.target.checked)}
+                disabled={uploading}
+                className="rounded border-white/30 bg-white/5 text-primary focus:ring-primary"
+              />
+              <span>同一タイトルの既存テストケースを更新する</span>
+            </label>
+          )}
 
           {/* Error Message */}
           {error && (

@@ -138,11 +138,12 @@ export class ImportService {
     type: ImportType,
     projectId: string,
     userId: string,
-    data: ParsedRow[]
+    data: ParsedRow[],
+    options?: { updateExisting?: boolean }
   ): Promise<MigrationResult> {
     switch (type) {
       case 'testcases':
-        return this.importTestCases(projectId, userId, data);
+        return this.importTestCases(projectId, userId, data, options?.updateExisting ?? false);
       case 'defects':
         return this.importDefects(projectId, userId, data);
       default:
@@ -152,11 +153,13 @@ export class ImportService {
 
   /**
    * Import test cases from parsed data
+   * @param updateExisting - 同一タイトルの既存テストケースをスキップせず更新する
    */
   private async importTestCases(
     projectId: string,
     userId: string,
-    data: ParsedRow[]
+    data: ParsedRow[],
+    updateExisting: boolean = false
   ): Promise<MigrationResult> {
     const result: MigrationResult = {
       success: 0,
@@ -227,6 +230,13 @@ export class ImportService {
     const validPriorities = new Set(priorities.map((p) => p.value.toUpperCase()));
     const validStatuses = new Set(statuses.map((s) => s.value.toUpperCase()));
 
+    // インポートデータのステータスを正規化（他システムの値 → 有効な値）
+    const statusAliasToCanonical: Record<string, string> = {
+      ACTIVE_IOS: 'ACTIVE',
+      ACTIVE_ANDROID: 'ACTIVE',
+      ACTIVE_WEB: 'ACTIVE',
+    };
+
     // Process each row
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -244,7 +254,15 @@ export class ImportService {
         const preconditions = this.getRowValue(row, 'preconditions');
         const postconditions = this.getRowValue(row, 'postconditions');
         const moduleValue = this.getRowValue(row, 'module');
-        const testsuite = this.getRowValue(row, 'testsuite');
+        // Test Suites 列: 正規化キーで取得、なければテンプレートでよく使う生ヘッダ名（Test Suites / Test Suite）で取得
+        const testsuiteRaw =
+          this.getRowValue(row, 'testsuite') ??
+          (row as Record<string, unknown>)['Test Suites'] ??
+          (row as Record<string, unknown>)['Test Suite'];
+        const testsuite =
+          testsuiteRaw !== undefined && testsuiteRaw !== null && String(testsuiteRaw).trim() !== ''
+            ? String(testsuiteRaw).trim()
+            : null;
         const testSteps = this.getRowValue(row, 'testSteps');
         const testData = this.getRowValue(row, 'testData');
         const defectId = this.getRowValue(row, 'defectId');
@@ -312,14 +330,19 @@ export class ImportService {
           },
         });
 
+        let existingTestCaseToUpdate: { id: string; tcId: string } | null = null;
         if (existingTestCase) {
-          result.skipped++;
-          result.skippedItems.push({
-            row: rowNumber,
-            title: testCaseTitle,
-            reason: `Already exists (${existingTestCase.tcId})`,
-          });
-          continue; // Skip this row
+          if (updateExisting) {
+            existingTestCaseToUpdate = { id: existingTestCase.id, tcId: existingTestCase.tcId };
+          } else {
+            result.skipped++;
+            result.skippedItems.push({
+              row: rowNumber,
+              title: testCaseTitle,
+              reason: `Already exists (${existingTestCase.tcId})`,
+            });
+            continue; // Skip this row
+          }
         }
 
         // Find or create module
@@ -376,12 +399,17 @@ export class ImportService {
           );
         }
 
-        // Validate status
-        const statusValue = status ? status.toString().toUpperCase() : 'ACTIVE';
+        // Validate status（エイリアスを正規化: ACTIVE_iOS 等 → ACTIVE）
+        let statusValue = status ? status.toString().toUpperCase() : 'ACTIVE';
         if (!validStatuses.has(statusValue)) {
-          throw new Error(
-            `Invalid status: ${status}. Valid values are: ${Array.from(validStatuses).join(', ')}`
-          );
+          const normalized = statusAliasToCanonical[statusValue];
+          if (normalized && validStatuses.has(normalized)) {
+            statusValue = normalized;
+          } else {
+            throw new Error(
+              `Invalid status: ${status}. Valid values are: ${Array.from(validStatuses).join(', ')}`
+            );
+          }
         }
 
         // Parse estimated time
@@ -832,19 +860,85 @@ export class ImportService {
           }
         }
 
-        // Always auto-generate tcId (Test Case ID column removed from import)
-        // Auto-generate tcId in TC-XXX format without padding (TC-1, TC-2, etc.)
-        let tcId = `TC-${nextTcIdNumber}`;
-        while (existingTcIds.has(tcId)) {
-          nextTcIdNumber++;
-          tcId = `TC-${nextTcIdNumber}`;
-        }
-        nextTcIdNumber++;
-        existingTcIds.add(tcId);
+        const filteredSteps =
+          testStepsData && testStepsData.length > 0
+            ? testStepsData
+                .filter((step) => (step.action && step.action.trim()) || (step.expectedResult && step.expectedResult.trim()))
+                .map((step) => ({
+                  stepNumber: step.stepNumber,
+                  action: step.action && step.action.trim() ? step.action.trim() : '',
+                  expectedResult: step.expectedResult && step.expectedResult.trim() ? step.expectedResult.trim() : '',
+                }))
+            : [];
 
-        // Create test case
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const testCase = await (prisma.testCase.create as any)({
+        if (existingTestCaseToUpdate) {
+          await prisma.testCase.update({
+            where: { id: existingTestCaseToUpdate.id },
+            data: {
+              title: testCaseTitle,
+              description: description ? description.toString().trim() : null,
+              expectedResult: finalExpectedResult,
+              priority: priorityValue,
+              status: statusValue,
+              estimatedTime: estimatedTimeValue,
+              preconditions: preconditions ? preconditions.toString().trim() : null,
+              postconditions: postconditions ? postconditions.toString().trim() : null,
+              testData: testDataValue,
+              pendingDefectIds: pendingDefectIds.length > 0 ? pendingDefectIds.join(', ') : null,
+              moduleId: moduleId ?? null,
+              suiteId: suiteId ?? null,
+              assertionId: assertionIdValue,
+              rtcId: rtcIdValue,
+              flowId: flowIdValue,
+              layer: layerValue,
+              targetType: targetTypeValue,
+              testType: testTypeValue,
+              evidence: evidenceValue,
+              notes: notesValue,
+              isAutomated: isAutomatedValue,
+              platforms: platformsValue.length > 0 ? platformsValue : [],
+            },
+          });
+          await prisma.testStep.deleteMany({ where: { testCaseId: existingTestCaseToUpdate.id } });
+          if (filteredSteps.length > 0) {
+            await prisma.testStep.createMany({
+              data: filteredSteps.map((step) => ({
+                testCaseId: existingTestCaseToUpdate!.id,
+                stepNumber: step.stepNumber,
+                action: step.action,
+                expectedResult: step.expectedResult,
+              })),
+            });
+          }
+          await prisma.testCaseSuite.deleteMany({ where: { testCaseId: existingTestCaseToUpdate.id } });
+          if (suiteId) {
+            await prisma.testCaseSuite.create({
+              data: { testCaseId: existingTestCaseToUpdate.id, testSuiteId: suiteId },
+            });
+          }
+          for (const defect of defectsToLink) {
+            try {
+              await prisma.testCaseDefect.create({
+                data: { testCaseId: existingTestCaseToUpdate.id, defectId: defect.id },
+              });
+            } catch {
+              // already linked
+            }
+          }
+          result.success++;
+          result.imported.push({ tcId: existingTestCaseToUpdate.tcId, title: testCaseTitle });
+        } else {
+          let tcId = `TC-${nextTcIdNumber}`;
+          while (existingTcIds.has(tcId)) {
+            nextTcIdNumber++;
+            tcId = `TC-${nextTcIdNumber}`;
+          }
+          nextTcIdNumber++;
+          existingTcIds.add(tcId);
+
+          // Create test case
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const testCase = await (prisma.testCase.create as any)({
           data: {
             tcId,
             projectId,
@@ -878,54 +972,31 @@ export class ImportService {
             notes: notesValue,
             isAutomated: isAutomatedValue,
             platforms: platformsValue.length > 0 ? platformsValue : [],
-            steps: testStepsData && testStepsData.length > 0
-              ? {
-                  create: testStepsData
-                    .filter((step) => (step.action && step.action.trim()) || (step.expectedResult && step.expectedResult.trim())) // Include steps with either action or expected result
-                    .map((step) => ({
-                      stepNumber: step.stepNumber,
-                      action: step.action && step.action.trim() ? step.action.trim() : '', // Allow empty action
-                      expectedResult: step.expectedResult && step.expectedResult.trim() 
-                        ? step.expectedResult.trim() 
-                        : '', // expectedResult is optional, allow empty string
-                    })),
-                }
-              : undefined,
+            steps: filteredSteps.length > 0 ? { create: filteredSteps } : undefined,
           },
         });
 
-        // Link to test suite via junction table if suite exists
-        if (suiteId) {
-          await prisma.testCaseSuite.create({
-            data: {
-              testCaseId: testCase.id,
-              testSuiteId: suiteId,
-            },
-          });
-        }
+          if (suiteId) {
+            await prisma.testCaseSuite.create({
+              data: { testCaseId: testCase.id, testSuiteId: suiteId },
+            });
+          }
 
-        // Link to defects if defect IDs were provided and found
-        if (defectsToLink.length > 0) {
-          for (const defect of defectsToLink) {
-            try {
-              await prisma.testCaseDefect.create({
-                data: {
-                  testCaseId: testCase.id,
-                  defectId: defect.id,
-                },
-              });
-            } catch {
-              // If link already exists, that's okay - just log it
-              console.warn(`Defect ${defect.defectId} (${defect.id}) already linked to test case ${testCase.id}`);
+          if (defectsToLink.length > 0) {
+            for (const defect of defectsToLink) {
+              try {
+                await prisma.testCaseDefect.create({
+                  data: { testCaseId: testCase.id, defectId: defect.id },
+                });
+              } catch {
+                console.warn(`Defect ${defect.defectId} (${defect.id}) already linked to test case ${testCase.id}`);
+              }
             }
           }
-        }
 
-        result.success++;
-        result.imported.push({
-          tcId: testCase.tcId,
-          title: testCase.title,
-        });
+          result.success++;
+          result.imported.push({ tcId: testCase.tcId, title: testCase.title });
+        }
       } catch (error) {
         result.failed++;
         const titleValue = this.getRowValue(row, 'title');

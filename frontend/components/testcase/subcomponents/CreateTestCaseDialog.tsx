@@ -181,6 +181,19 @@ export function CreateTestCaseDialog({
       cols: 1,
     },
     {
+      name: 'platform',
+      label: 'プラットフォーム',
+      type: 'select',
+      placeholder: 'プラットフォームを選択',
+      options: [
+        { value: 'Web', label: 'Web' },
+        { value: 'Web(SP)', label: 'Web(SP)' },
+        { value: 'iOS Native', label: 'iOS Native' },
+        { value: 'Android Native', label: 'Android Native' },
+      ],
+      cols: 1,
+    },
+    {
       name: 'device',
       label: '端末',
       type: 'select',
@@ -406,6 +419,7 @@ export function CreateTestCaseDialog({
         notes: formData.notes || undefined,
         isAutomated,
         platforms: platforms.length > 0 ? platforms : undefined,
+        platform: formData.platform || undefined,
         device: formData.device || undefined,
       }),
     });

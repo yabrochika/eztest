@@ -104,6 +104,7 @@ export class ExportService {
         notes: true,
         isAutomated: true,
         platforms: true,
+        platform: true,
         device: true,
         module: {
           select: {
@@ -249,6 +250,7 @@ export class ExportService {
         '備考': tc.notes || '',
         '自動化': isAutomatedFormatted,
         '環境（iOS / Android / Web）': platformsFormatted,
+        'プラットフォーム': tc.platform || '',
         '端末': tc.device || '',
         // Older fields (for backward compatibility)
         'Description': tc.description || '',

@@ -31,6 +31,7 @@ export interface TestCase {
 
   isAutomated?: boolean;
   platforms?: Platform[];
+  platform?: 'Web' | 'Web(SP)' | 'iOS Native' | 'Android Native' | null;
   device?: 'iPhone' | 'Android' | 'PC' | null;
 
   createdBy: {
@@ -75,6 +76,7 @@ export interface TestCaseFormData {
 
   isAutomated?: boolean;
   platforms?: Platform[];
+  platform?: 'Web' | 'Web(SP)' | 'iOS Native' | 'Android Native' | null;
   device?: 'iPhone' | 'Android' | 'PC' | null;
 }
 

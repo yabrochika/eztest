@@ -105,6 +105,7 @@ export class MigrationController {
         { name: '備考', required: false, description: '備考: Notes / Additional remarks' },
         { name: '自動化', required: false, description: '自動化: Automation status - true / false / yes / no / 自動化 (will be converted to boolean)' },
         { name: '環境（iOS / Android / Web）', required: false, description: '環境: Platforms - iOS / Android / Web (can specify multiple separated by "/", ",", "、", or whitespace. Duplicates are automatically removed). Will be converted to array: ["IOS", "ANDROID", "WEB"]' },
+        { name: 'プラットフォーム', required: false, description: 'プラットフォーム: Web / Web(SP) / iOS Native / Android Native（いずれか1つ）' },
         { name: '端末', required: false, description: '端末: Device - iPhone / Android / PC（いずれか1つ）' },
       ],
       example: {

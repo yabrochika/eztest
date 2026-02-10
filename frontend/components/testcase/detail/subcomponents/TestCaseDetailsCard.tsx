@@ -259,6 +259,23 @@ export function TestCaseDetailsCard({
                 </Select>
               </div>
               <div className="space-y-2">
+                <Label htmlFor="platform">プラットフォーム</Label>
+                <Select
+                  value={formData.platform || ''}
+                  onValueChange={(value) => handleFieldChange('platform', value)}
+                >
+                  <SelectTrigger variant="glass" id="platform">
+                    <SelectValue placeholder="プラットフォームを選択" />
+                  </SelectTrigger>
+                  <SelectContent variant="glass">
+                    <SelectItem value="Web">Web</SelectItem>
+                    <SelectItem value="Web(SP)">Web(SP)</SelectItem>
+                    <SelectItem value="iOS Native">iOS Native</SelectItem>
+                    <SelectItem value="Android Native">Android Native</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="device">端末</Label>
                 <Select
                   value={formData.device || ''}
@@ -422,7 +439,7 @@ export function TestCaseDetailsCard({
           )}
 
           {/* Custom Fields Section */}
-          {(testCase.rtcId || testCase.flowId || testCase.layer || testCase.targetType || testCase.testType || testCase.device) && (
+          {(testCase.rtcId || testCase.flowId || testCase.layer || testCase.targetType || testCase.testType || testCase.platform || testCase.device) && (
             <div className="border-t border-white/10 pt-6">
               <h4 className="text-sm font-medium text-white/60 mb-3">
                 識別情報
@@ -458,6 +475,12 @@ export function TestCaseDetailsCard({
                   <div>
                     <span className="text-xs text-white/50">対象</span>
                     <p className="text-sm text-white/90">{testCase.targetType}</p>
+                  </div>
+                )}
+                {testCase.platform && (
+                  <div>
+                    <span className="text-xs text-white/50">プラットフォーム</span>
+                    <p className="text-sm text-white/90">{testCase.platform}</p>
                   </div>
                 )}
                 {testCase.device && (

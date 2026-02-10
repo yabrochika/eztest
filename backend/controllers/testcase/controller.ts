@@ -145,6 +145,7 @@ export class TestCaseController {
       notes: validatedData.notes ?? undefined,
       isAutomated: validatedData.isAutomated ?? undefined,
       platforms: validatedData.platforms ?? undefined,
+      platform: validatedData.platform ?? undefined,
       device: validatedData.device ?? undefined,
     });
 
@@ -221,6 +222,7 @@ export class TestCaseController {
           notes: validatedData.notes,
           isAutomated: validatedData.isAutomated,
           platforms: validatedData.platforms,
+          platform: validatedData.platform,
           device: validatedData.device,
         }
       );

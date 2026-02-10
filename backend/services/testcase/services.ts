@@ -29,6 +29,7 @@ interface CreateTestCaseInput {
   notes?: string | null;
   isAutomated?: boolean;
   platforms?: ('IOS' | 'ANDROID' | 'WEB')[];
+  platform?: 'Web' | 'Web(SP)' | 'iOS Native' | 'Android Native' | null;
   device?: 'iPhone' | 'Android' | 'PC' | null;
 }
 
@@ -54,6 +55,7 @@ interface UpdateTestCaseInput {
   notes?: string | null;
   isAutomated?: boolean;
   platforms?: ('IOS' | 'ANDROID' | 'WEB')[];
+  platform?: 'Web' | 'Web(SP)' | 'iOS Native' | 'Android Native' | null;
   device?: 'iPhone' | 'Android' | 'PC' | null;
 }
 
@@ -589,6 +591,7 @@ export class TestCaseService {
             notes: data.notes,
             isAutomated: data.isAutomated ?? false,
             platforms: data.platforms || [],
+            platform: data.platform ?? undefined,
             device: data.device ?? undefined,
             steps: data.steps
               ? {
@@ -743,6 +746,7 @@ export class TestCaseService {
     if (data.notes !== undefined) updateData.notes = data.notes;
     if (data.isAutomated !== undefined) updateData.isAutomated = data.isAutomated;
     if (data.platforms !== undefined) updateData.platforms = data.platforms;
+    if (data.platform !== undefined) updateData.platform = data.platform;
     if (data.device !== undefined) updateData.device = data.device;
 
     return await prisma.testCase.update({

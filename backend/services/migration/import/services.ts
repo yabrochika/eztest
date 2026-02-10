@@ -92,6 +92,8 @@ export class ImportService {
       'platforms': 'platforms',
       '端末': 'device',
       'device': 'device',
+      'プラットフォーム': 'platform',
+      'platform': 'platform',
       // Test Type (テスト種別)
       'テスト種別': 'testType',
       'test type': 'testType',
@@ -283,6 +285,7 @@ export class ImportService {
         }
         const testType = this.getRowValue(row, 'testType');
         const device = this.getRowValue(row, 'device');
+        const platformCol = this.getRowValue(row, 'platform');
 
         // Determine title: Test Case Title is required
         let testCaseTitle: string;
@@ -857,6 +860,17 @@ export class ImportService {
           else if (deviceLower === 'pc' || deviceStr === 'PC') deviceValue = 'PC';
         }
 
+        // Platform (プラットフォーム) - single: Web, Web(SP), iOS Native, Android Native
+        let platformValue: 'Web' | 'Web(SP)' | 'iOS Native' | 'Android Native' | null = null;
+        if (platformCol != null && typeof platformCol === 'string' && platformCol.toString().trim()) {
+          const platformStr = platformCol.toString().trim();
+          const platformLower = platformStr.toLowerCase();
+          if (platformLower === 'web(sp)' || platformStr === 'Web(SP)' || platformLower === 'web (sp)') platformValue = 'Web(SP)';
+          else if (platformLower === 'ios native' || platformStr === 'iOS Native' || platformLower === 'ios') platformValue = 'iOS Native';
+          else if (platformLower === 'android native' || platformStr === 'Android Native' || platformLower === 'android') platformValue = 'Android Native';
+          else if (platformLower === 'web' || platformStr === 'Web') platformValue = 'Web';
+        }
+
         // Determine the expected result value to use for the test case
         // If there are no test steps, use the parsed expected result (singleExpectedResult) or original value
         // If there are test steps with individual expected results, only set test case level if single value
@@ -919,6 +933,7 @@ export class ImportService {
               notes: notesValue,
               isAutomated: isAutomatedValue,
               platforms: platformsValue.length > 0 ? platformsValue : [],
+              platform: platformValue,
               device: deviceValue,
             },
           });
@@ -994,6 +1009,7 @@ export class ImportService {
             notes: notesValue,
             isAutomated: isAutomatedValue,
             platforms: platformsValue.length > 0 ? platformsValue : [],
+            platform: platformValue,
             device: deviceValue,
             steps: filteredSteps.length > 0 ? { create: filteredSteps } : undefined,
           },

@@ -55,6 +55,7 @@ export const createTestCaseSchema = z.object({
   notes: z.string().optional().nullable(),
   isAutomated: z.boolean().optional().default(false),
   platforms: z.array(z.enum(['IOS', 'ANDROID', 'WEB'])).optional().default([]),
+  platform: z.enum(['Web', 'Web(SP)', 'iOS Native', 'Android Native']).optional().nullable(),
   device: z.enum(['iPhone', 'Android', 'PC']).optional().nullable(),
 });
 
@@ -85,6 +86,7 @@ export const updateTestCaseSchema = z.object({
   notes: z.string().optional().nullable(),
   isAutomated: z.boolean().optional(),
   platforms: z.array(z.enum(['IOS', 'ANDROID', 'WEB'])).optional(),
+  platform: z.enum(['Web', 'Web(SP)', 'iOS Native', 'Android Native']).optional().nullable(),
   device: z.enum(['iPhone', 'Android', 'PC']).optional().nullable(),
 });
 

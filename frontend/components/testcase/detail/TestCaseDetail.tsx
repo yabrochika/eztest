@@ -144,6 +144,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
           notes: data.data.notes || undefined,
           isAutomated: data.data.isAutomated,
           platforms: data.data.platforms,
+          platform: data.data.platform || undefined,
           device: data.data.device || undefined,
         });
 

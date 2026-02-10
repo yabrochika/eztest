@@ -205,6 +205,14 @@ export function TestCaseTable({
       ),
     },
     {
+      key: 'platform',
+      label: 'プラットフォーム',
+      width: '100px',
+      render: (row) => (
+        <span className="text-xs text-white/70 truncate">{row.platform || '-'}</span>
+      ),
+    },
+    {
       key: 'device',
       label: '端末',
       width: '80px',

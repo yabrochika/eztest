@@ -89,6 +89,7 @@ export const TEST_CASE_IMPORT_COLUMNS = {
   
   '根拠': { normalized: 'evidence', required: false },
   '根拠（ドキュメント）': { normalized: 'evidence', required: false },
+  '根拠コード': { normalized: 'evidence', required: false },
   'Evidence': { normalized: 'evidence', required: false },
   'evidence': { normalized: 'evidence', required: false },
   

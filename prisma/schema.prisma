@@ -228,7 +228,7 @@ model TestCase {
   layer         TestLayer?  // Layer
   targetType    TargetType?  // 対象
   testType      String?  // テスト種別（正常系、異常系、非機能、回帰、データ整合性確認、状態遷移確認、運用確認、障害時確認）
-  evidence      String?  // 根拠
+  evidence      String?  // 根拠コード
   notes         String?  // 備考
   platform      String?   // プラットフォーム: Web, Web(SP), iOS Native, Android Native（単一選択）
   device        String?   // 端末: iPhone, Android, PC

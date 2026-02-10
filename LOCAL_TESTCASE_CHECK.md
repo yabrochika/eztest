@@ -66,7 +66,7 @@ npm start
   - 対象（API/画面）
   - 操作手順
   - 期待値
-  - 根拠（ドキュメント）
+  - 根拠コード
   - 備考
   - 自動化（true/false）
   - 環境（iOS / Android / Web）

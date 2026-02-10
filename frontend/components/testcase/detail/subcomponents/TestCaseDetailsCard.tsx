@@ -440,7 +440,7 @@ export function TestCaseDetailsCard({
 
           {/* Evidence */}
           <div className="space-y-2">
-            <Label htmlFor="evidence">根拠</Label>
+            <Label htmlFor="evidence">根拠コード</Label>
             <Textarea
               id="evidence"
               variant="glass"
@@ -558,8 +558,8 @@ export function TestCaseDetailsCard({
           {testCase.evidence && (
             <div className="border-t border-white/10 pt-6">
               <h4 className="text-sm font-medium text-white/60 mb-2">
-                根拠
-              </h4>
+根拠コード
+            </h4>
               <p className="text-white/90 whitespace-pre-wrap break-words">
                 {testCase.evidence}
               </p>

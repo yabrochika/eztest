@@ -77,7 +77,7 @@ Prisma Studio (`http://localhost:5555`) で表示されるすべてのテーブ�
 - targetType (対象: API, SCREEN, FUNCTIONAL, etc.)
 - operation (操作手順)
 - expected (期待値)
-- evidence (根拠)
+- evidence (根拠コード)
 - notes (備考)
 - isAutomated (自動化: true/false)
 - platforms (環境: IOS, ANDROID, WEB の配列)

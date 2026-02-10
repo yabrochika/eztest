@@ -240,7 +240,7 @@ export class ExportService {
         'Layer': layerFormatted,
         '対象（API/画面）': targetTypeFormatted,
         'テスト種別': testTypeFormatted,
-        '根拠（ドキュメント）': tc.evidence || '',
+        '根拠コード': tc.evidence || '',
         '備考': tc.notes || '',
         'プラットフォーム': tc.platform || '',
         '端末': tc.device || '',

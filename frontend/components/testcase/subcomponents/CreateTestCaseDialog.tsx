@@ -264,7 +264,7 @@ export function CreateTestCaseDialog({
     // },
     {
       name: 'evidence',
-      label: '根拠',
+      label: '根拠コード',
       type: 'textarea',
       placeholder: 'Enter evidence',
       rows: 3,

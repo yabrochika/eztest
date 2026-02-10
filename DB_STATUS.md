@@ -25,7 +25,7 @@
 - `targetType` (TargetType?) - 対象 (API, SCREEN, FUNCTIONAL, etc.)
 - `operation` (String?) - 操作手順
 - `expected` (String?) - 期待値
-- `evidence` (String?) - 根拠
+- `evidence` (String?) - 根拠コード
 - `notes` (String?) - 備考
 - `isAutomated` (Boolean) - 自動化 (デフォルト: false)
 - `platforms` (Platform[]) - 環境 (IOS, ANDROID, WEB) - 配列で複数指定可能

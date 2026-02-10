@@ -81,6 +81,7 @@ export class ImportService {
       'targettype': 'targetType',
       '根拠': 'evidence',
       '根拠（ドキュメント）': 'evidence',
+      '根拠コード': 'evidence',
       'evidence': 'evidence',
       '備考': 'notes',
       'notes': 'notes',
@@ -746,7 +747,7 @@ export class ImportService {
           }
         }
 
-        // Evidence (根拠)
+        // Evidence (根拠コード)
         const evidenceValue = evidence && typeof evidence === 'string' && evidence.toString().trim()
           ? evidence.toString().trim()
           : null;

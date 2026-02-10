@@ -19,9 +19,13 @@ export function parseCSV(content: string): ParseResult {
   const headerCount = new Map<string, number>();
 
   try {
+    // BOM を除去（Excel 等で保存した CSV で必須列が認識されない問題を防ぐ）
+    content = content.replace(/^\uFEFF/, '');
+
     // 1行目が Column1,Column2,... の場合は2行目をヘッダーとして使う（テンプレートCSV対応）
     const lines = content.split(/\r?\n/).filter((line) => line.length > 0);
-    if (lines.length >= 2 && /^Column\d+/.test(lines[0].trim())) {
+    const firstLine = lines[0]?.replace(/^\uFEFF/, '').trim() ?? '';
+    if (lines.length >= 2 && /^Column\d+/.test(firstLine)) {
       content = lines.slice(1).join('\n');
     }
 

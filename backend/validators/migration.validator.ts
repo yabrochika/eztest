@@ -65,11 +65,6 @@ export const TEST_CASE_IMPORT_COLUMNS = {
   'test suite': { normalized: 'testsuite', required: false },
   
   // New fields for enhanced test case management
-  'Assertion-ID': { normalized: 'assertionId', required: false },
-  'assertion-id': { normalized: 'assertionId', required: false },
-  'assertion id': { normalized: 'assertionId', required: false },
-  'assertionid': { normalized: 'assertionId', required: false },
-  
   'RTC-ID': { normalized: 'rtcId', required: false },
   'rtc-id': { normalized: 'rtcId', required: false },
   'rtc id': { normalized: 'rtcId', required: false },
@@ -143,21 +138,17 @@ export function validateTestCaseImportColumns(data: ParsedRow[]): string[] {
     ])
   );
 
-  // Check for required field: Title (in any variation) or Assertion-ID
+  // Check for required field: Test Case Title (in any variation)
   const titleVariations = ['title', 'test case title', 'testcase title'];
-  const assertionIdVariations = ['assertion-id', 'assertion id', 'assertionid'];
-  
+
   const hasTitle = titleVariations.some((variation) =>
     availableFieldsLower.has(variation)
   );
-  const hasAssertionId = assertionIdVariations.some((variation) =>
-    availableFieldsLower.has(variation)
-  );
 
-  if (!hasTitle && !hasAssertionId) {
+  if (!hasTitle) {
     const availableFieldNames = availableFields.join(', ');
     errors.push(
-      `Missing required column: "Test Case Title" or "Assertion-ID". At least one of these is required. Available columns: ${availableFieldNames}`
+      `Missing required column: "Test Case Title". Available columns: ${availableFieldNames}`
     );
   }
 

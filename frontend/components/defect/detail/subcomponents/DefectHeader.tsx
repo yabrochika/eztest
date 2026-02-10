@@ -146,7 +146,7 @@ export function DefectHeader({
           buttonName: 'Defect Detail - Edit',
         },
         { 
-          label: 'Delete', 
+          label: '削除', 
           icon: Trash2, 
           onClick: onDelete, 
           variant: 'destructive', 

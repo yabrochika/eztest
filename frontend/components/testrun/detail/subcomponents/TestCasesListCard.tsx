@@ -90,6 +90,14 @@ export function TestCasesListCard({
       ),
     },
     {
+      key: 'rtcId',
+      label: 'RTC-ID',
+      width: '100px',
+      render: (row: ResultRow) => (
+        <p className="text-xs font-mono text-white/70 truncate">{row.testCase.rtcId || '-'}</p>
+      ),
+    },
+    {
       key: 'testCase',
       label: 'テストケース',
       className: 'min-w-0',
@@ -102,6 +110,18 @@ export function TestCasesListCard({
             </p>
           )}
         </div>
+      ),
+    },
+    {
+      key: 'estimatedTime',
+      label: '想定時間',
+      width: '100px',
+      render: (row: ResultRow) => (
+        <span className="text-white/70 text-sm">
+          {row.testCase.estimatedTime != null && Number.isFinite(row.testCase.estimatedTime)
+            ? `${row.testCase.estimatedTime}m`
+            : '-'}
+        </span>
       ),
     },
     {
@@ -264,6 +284,23 @@ export function TestCasesListCard({
       executedAt: result.executedAt,
     }));
 
+  /** モジュール名の末尾の数字を取得（並び替え用）。なければ no-module は末尾にするため Infinity、数字なしは 0 */
+  const getModuleSortKey = (row: ResultRow): number => {
+    const name = row.testCase.module?.name;
+    if (!name || !row.testCase.module?.id) return Number.POSITIVE_INFINITY; // モジュールなしは最後
+    const matches = name.match(/\d+/g);
+    if (!matches || matches.length === 0) return 0;
+    const lastNum = parseInt(matches[matches.length - 1], 10);
+    return Number.isNaN(lastNum) ? 0 : lastNum;
+  };
+
+  const tableDataSortedByModule = [...tableData].sort((a, b) => {
+    const keyA = getModuleSortKey(a);
+    const keyB = getModuleSortKey(b);
+    if (keyA !== keyB) return keyA - keyB;
+    return (a.testCase.tcId || '').localeCompare(b.testCase.tcId || '', undefined, { numeric: true });
+  });
+
   return (
     <DetailCard
       title={`Test Cases (${results?.length || 0})`}
@@ -278,7 +315,7 @@ export function TestCasesListCard({
               disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Test Suites
+              テストスイートを追加
             </Button>
             <Button
               variant="glass"
@@ -287,7 +324,7 @@ export function TestCasesListCard({
               disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Test Cases
+              テストケースを追加
             </Button>
           </div>
         ) : undefined
@@ -296,7 +333,7 @@ export function TestCasesListCard({
       {!results || results.length === 0 ? (
         <div className="text-center py-8">
           <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-400 mb-4">No test cases in this test run</p>
+          <p className="text-gray-400 mb-4">このテストランにテストケースはありません</p>
           {canCreate && (
             <div className="flex gap-2 justify-center flex-wrap">
               <ButtonPrimary
@@ -305,7 +342,7 @@ export function TestCasesListCard({
                 disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Test Cases
+                テストケースを追加
               </ButtonPrimary>
               <Button
                 variant="glass"
@@ -314,20 +351,20 @@ export function TestCasesListCard({
                 disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Test Suites
+                テストスイートを追加
               </Button>
             </div>
           )}
         </div>
       ) : (
         <GroupedDataTable
-          data={tableData}
+          data={tableDataSortedByModule}
           columns={columns}
           grouped={true}
           groupConfig={groupConfig}
           onRowClick={(row) => router.push(`/projects/${projectId}/testcases/${row.testCase.id}`)}
-          gridTemplateColumns="70px 1fr 90px 120px 120px 140px 140px"
-          emptyMessage="テストケースがありません"
+          gridTemplateColumns="70px 100px 1fr 100px 90px 120px 120px 140px 140px"
+          emptyMessage="テストケースはありません"
         />
       )}
     </DetailCard>

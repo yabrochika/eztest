@@ -47,7 +47,6 @@ export const createTestCaseSchema = z.object({
   postconditions: z.string().optional(),
   steps: z.array(testStepSchema).optional(),
   // New fields for enhanced test case management
-  assertionId: z.string().optional().nullable(),
   rtcId: z.string().optional().nullable(),
   flowId: z.string().optional().nullable(),
   layer: z.enum(['SMOKE', 'CORE', 'EXTENDED', 'UNKNOWN']).optional().nullable(),
@@ -56,6 +55,7 @@ export const createTestCaseSchema = z.object({
   notes: z.string().optional().nullable(),
   isAutomated: z.boolean().optional().default(false),
   platforms: z.array(z.enum(['IOS', 'ANDROID', 'WEB'])).optional().default([]),
+  device: z.enum(['iPhone', 'Android', 'PC']).optional().nullable(),
 });
 
 /**
@@ -77,7 +77,6 @@ export const updateTestCaseSchema = z.object({
   moduleId: z.string().optional().nullable(),
   suiteId: z.string().optional().nullable(),
   // New fields for enhanced test case management
-  assertionId: z.string().optional().nullable(),
   rtcId: z.string().optional().nullable(),
   flowId: z.string().optional().nullable(),
   layer: z.enum(['SMOKE', 'CORE', 'EXTENDED', 'UNKNOWN']).optional().nullable(),
@@ -86,6 +85,7 @@ export const updateTestCaseSchema = z.object({
   notes: z.string().optional().nullable(),
   isAutomated: z.boolean().optional(),
   platforms: z.array(z.enum(['IOS', 'ANDROID', 'WEB'])).optional(),
+  device: z.enum(['iPhone', 'Android', 'PC']).optional().nullable(),
 });
 
 /**

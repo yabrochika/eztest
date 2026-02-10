@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { SearchInput } from '@/frontend/reusable-elements/inputs/SearchInput';
 import { FilterDropdown, type FilterOption } from '@/frontend/reusable-components/inputs/FilterDropdown';
@@ -24,12 +24,12 @@ export function TestRunsFilterCard({
 
   // Map to FilterOption format with "All" option
   const statusOptions: FilterOption[] = [
-    { value: 'all', label: 'All Statuses' },
+    { value: 'all', label: 'すべてのステータス' },
     ...statusOptionsData.map(opt => ({ value: opt.value, label: opt.label })),
   ];
 
   const environmentOptions: FilterOption[] = [
-    { value: 'all', label: 'All Environments' },
+    { value: 'all', label: 'すべての環境' },
     ...environmentOptionsData.map(opt => ({ value: opt.value, label: opt.label })),
   ];
   return (

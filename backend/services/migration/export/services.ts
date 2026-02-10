@@ -95,7 +95,6 @@ export class ExportService {
         postconditions: true,
         testData: true,
         // New fields for enhanced test case management
-        assertionId: true,
         rtcId: true,
         flowId: true,
         layer: true,
@@ -105,6 +104,7 @@ export class ExportService {
         notes: true,
         isAutomated: true,
         platforms: true,
+        device: true,
         module: {
           select: {
             name: true,
@@ -240,7 +240,6 @@ export class ExportService {
         'Status': tc.status,
         'Defect ID': defectIds,
         // New fields for enhanced test case management
-        'Assertion-ID': tc.assertionId || '',
         'RTC-ID': tc.rtcId || '',
         'Flow-ID': tc.flowId || '',
         'Layer': layerFormatted,
@@ -250,6 +249,7 @@ export class ExportService {
         '備考': tc.notes || '',
         '自動化': isAutomatedFormatted,
         '環境（iOS / Android / Web）': platformsFormatted,
+        '端末': tc.device || '',
         // Older fields (for backward compatibility)
         'Description': tc.description || '',
         'Estimated Time (minutes)': tc.estimatedTime || '',

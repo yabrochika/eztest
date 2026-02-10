@@ -221,7 +221,7 @@ export const DefectCommentsCard: React.FC<DefectCommentsCardProps> = ({
         <div className={`flex-1 p-6 space-y-4 ${comments.length > 0 ? 'overflow-y-auto custom-scrollbar' : 'overflow-y-hidden'}`}>
           {loading ? (
             <div className="flex items-center justify-center h-full text-gray-400">
-              Loading comments...
+              コメントを読み込み中...
             </div>
           ) : comments.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">

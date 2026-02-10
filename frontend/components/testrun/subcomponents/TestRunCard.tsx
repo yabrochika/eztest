@@ -131,13 +131,13 @@ export function TestRunCard({
     <ActionMenu
       items={[
         {
-          label: 'View Details',
+          label: '詳細を見る',
           icon: Play,
           onClick: onViewDetails,
           buttonName: `Test Run Card - View Details (${testRun.name})`,
         },
         {
-          label: 'Delete',
+          label: '削除',
           icon: Trash2,
           onClick: onDelete,
           variant: 'destructive',
@@ -155,7 +155,7 @@ export function TestRunCard({
       {/* Progress */}
       {testRun._count.results > 0 && (
         <ProgressBarWithLabel
-          label="Pass Rate"
+          label="合格率"
           value={passRate}
           fillClassName="bg-green-400/30 border border-green-400/30"
         />
@@ -166,24 +166,24 @@ export function TestRunCard({
         stats={[
           {
             value: testRun._count.results,
-            label: 'Total',
+            label: '合計',
             show: true,
           },
           {
             value: counts.passed,
-            label: 'Passed',
+            label: '合格',
             valueClassName: 'text-green-500',
             show: counts.passed > 0,
           },
           {
             value: counts.failed,
-            label: 'Failed',
+            label: '不合格',
             valueClassName: 'text-red-500',
             show: counts.failed > 0,
           },
           {
             value: counts.blocked,
-            label: 'Blocked',
+            label: 'ブロック',
             valueClassName: 'text-orange-500',
             show: counts.blocked > 0,
           },

@@ -219,7 +219,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
         const data = await response.json();
         setAlert({
           type: 'error',
-          title: 'Failed to Delete Test Case',
+          title: 'テストケースの削除に失敗しました',
           message: data.error || 'Failed to delete test case',
         });
       }
@@ -245,7 +245,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
 
 
   if (loading || permissionsLoading) {
-    return <Loader fullScreen text="Loading test cases..." />;
+    return <Loader fullScreen text="テストケースを読み込み中..." />;
   }
 
   // Check permissions
@@ -260,9 +260,9 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
 
       <TopBar 
         breadcrumbs={[
-          { label: 'Projects', href: '/projects' },
-          { label: project?.name || 'Loading...', href: `/projects/${projectId}` },
-          { label: 'Test Cases' }
+          { label: 'プロジェクト', href: '/projects' },
+          { label: project?.name || '読み込み中...', href: `/projects/${projectId}` },
+          { label: 'テストケース' }
         ]}
         actions={
           canCreateTestCase ? (
@@ -271,29 +271,29 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
                 <>
                   <ButtonSecondary onClick={() => setImportDialogOpen(true)} className="cursor-pointer flex-shrink-0">
                     <Import className="w-4 h-4 mr-2" />
-                    Import
+                    インポート
                   </ButtonSecondary>
                   <ButtonSecondary 
                     onClick={() => setExportDialogOpen(true)} 
                     className="cursor-pointer flex-shrink-0"
-                    title="Export test cases"
+                    title="テストケースをエクスポート"
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    Export
+                    エクスポート
                   </ButtonSecondary>
                 </>
               )}
               <ActionButtonGroup
                 buttons={[
                   {
-                    label: 'New Module',
+                    label: '新規モジュール',
                     icon: FolderPlus,
                     onClick: () => setCreateModuleDialogOpen(true),
                     variant: 'secondary',
                     buttonName: 'Test Case List - New Module',
                   },
                   {
-                    label: 'New Test Case',
+                    label: '新規テストケース',
                     icon: Plus,
                     onClick: () => setCreateDialogOpen(true),
                     variant: 'primary',
@@ -312,7 +312,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
           header={
             <PageHeaderWithBadge
               badge={project?.key}
-              title="Test Cases"
+              title="テストケース"
               description={project?.name}
             />
           }
@@ -335,7 +335,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
       <div className="max-w-7xl mx-auto px-8 py-4">
         {/* Test Cases List */}
         {loading ? (
-          <Loader fullScreen={false} text="Loading test cases..." />
+          <Loader fullScreen={false} text="テストケースを読み込み中..." />
         ) : testCases.length === 0 && totalItems === 0 ? (
           <EmptyTestCaseState
             hasFilters={false}

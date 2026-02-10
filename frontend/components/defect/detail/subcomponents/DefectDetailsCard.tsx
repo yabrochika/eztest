@@ -124,7 +124,7 @@ export function DefectDetailsCard({
                 </SelectTrigger>
                 <SelectContent variant="glass">
                   {loadingSeverity ? (
-                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                    <SelectItem value="loading" disabled>読み込み中...</SelectItem>
                   ) : (
                     severityOptions.map((opt) => (
                       <SelectItem 
@@ -152,7 +152,7 @@ export function DefectDetailsCard({
                 </SelectTrigger>
                 <SelectContent variant="glass">
                   {loadingPriority ? (
-                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                    <SelectItem value="loading" disabled>読み込み中...</SelectItem>
                   ) : (
                     priorityOptions.map((opt) => (
                       <SelectItem 
@@ -183,7 +183,7 @@ export function DefectDetailsCard({
                 </SelectTrigger>
                 <SelectContent variant="glass">
                   {loadingStatus ? (
-                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                    <SelectItem value="loading" disabled>読み込み中...</SelectItem>
                   ) : (
                     statusOptions.map((opt) => (
                       <SelectItem 

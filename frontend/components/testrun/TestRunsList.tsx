@@ -160,7 +160,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setAlert({
         type: 'error',
-        title: 'Connection Error',
+        title: '接続エラー',
         message: errorMessage,
       });
       console.error('Error deleting test run:', error);
@@ -168,7 +168,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
   };
 
   if (loading || permissionsLoading) {
-    return <Loader fullScreen text="Loading test runs..." />;
+    return <Loader fullScreen text="テストランを読み込み中..." />;
   }
 
   const canCreateTestRun = hasPermissionCheck('testruns:create');
@@ -183,9 +183,9 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
 
       <TopBar
         breadcrumbs={[
-          { label: 'Projects', href: '/projects' },
-          { label: project?.name || 'Loading...', href: `/projects/${projectId}` },
-          { label: 'Test Runs' },
+          { label: 'プロジェクト', href: '/projects' },
+          { label: project?.name || '読み込み中...', href: `/projects/${projectId}` },
+          { label: 'テストラン' },
         ]}
         actions={
           <div className="flex gap-2">
@@ -194,20 +194,20 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
                 <ButtonSecondary 
                   onClick={() => setUploadXMLDialogOpen(true)} 
                   className="cursor-pointer"
-                  title="Upload TestNG XML results"
+                  title="TestNG XML 結果をアップロード"
                   buttonName="Test Runs List - Upload XML"
                 >
                   <FileCode className="w-4 h-4 mr-2" />
-                  Upload XML
+                  XML アップロード
                 </ButtonSecondary>
                 <ButtonSecondary 
                   onClick={() => setExportDialogOpen(true)} 
                   className="cursor-pointer"
-                  title="Export test runs"
+                  title="テストランをエクスポート"
                   buttonName="Test Runs List - Export"
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  Export
+                  エクスポート
                 </ButtonSecondary>
               </>
             )}
@@ -217,7 +217,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
                 buttonName="Test Runs List - New Test Run"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                New Test Run
+                新規テストラン
               </ButtonPrimary>
             )}
           </div>
@@ -230,8 +230,8 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
           header={
             <PageHeaderWithBadge
               badge={project?.key}
-              title="Test Runs"
-              description="Manage and track test execution progress"
+              title="テストラン"
+              description="テスト実行の進捗を管理・追跡します"
             />
           }
           filters={
@@ -305,8 +305,8 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
         <FileExportDialog
           open={exportDialogOpen}
           onOpenChange={setExportDialogOpen}
-          title="Export Test Runs"
-          description="Choose a format to export your test runs."
+          title="テストランをエクスポート"
+          description="エクスポート形式を選択してください。"
           exportOptions={{
             projectId,
             endpoint: `/api/projects/${projectId}/testruns/export`,

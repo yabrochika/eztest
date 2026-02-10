@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -319,7 +319,7 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
   };
 
   if (loading) {
-    return <Loader fullScreen text="Loading defect..." />;
+    return <Loader fullScreen text="欠陥を読み込み中..." />;
   }
 
   if (!defect) {
@@ -350,7 +350,7 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
                 href: `/projects/${defect.project.id}`,
               },
               {
-                label: 'Defects',
+                label: '欠陥',
                 href: `/projects/${defect.project.id}/defects`,
               },
               { label: defect.title, href: `/projects/${defect.project.id}/defects/${defect.id}` },
@@ -395,7 +395,7 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
         <ActionButtonGroup
           buttons={[
             {
-              label: 'View All Defects',
+              label: 'すべての欠陥を見る',
               icon: List,
               onClick: () => router.push(`/projects/${defect.project.id}/defects`),
               variant: 'secondary',

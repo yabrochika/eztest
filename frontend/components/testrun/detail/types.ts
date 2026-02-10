@@ -17,11 +17,13 @@ export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export interface TestCase {
   id: string;
   tcId?: string;
+  rtcId?: string | null;
   name?: string;
   title?: string;
   description?: string;
   priority: Priority | string;
   status: string;
+  estimatedTime?: number | null;
   suiteId?: string | null;
   module?: {
     id: string;

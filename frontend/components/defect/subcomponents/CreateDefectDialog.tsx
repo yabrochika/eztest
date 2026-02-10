@@ -115,7 +115,7 @@ export function CreateDefectDialog({
       cols: 1,
       placeholder: testCases.find(tc => tc.id === testCaseId) 
         ? `${testCases.find(tc => tc.id === testCaseId)!.testCaseId} - ${testCases.find(tc => tc.id === testCaseId)!.title}`
-        : 'Loading test case...',
+        : 'テストケースを読み込み中...',
     }] : [{
       name: 'testCaseId',
       label: 'Test Case (Optional)',
@@ -252,11 +252,11 @@ export function CreateDefectDialog({
   };
 
   const config: BaseDialogConfig = {
-    title: 'Create New Defect',
-    description: 'Fill in the details to create a new defect. Status will be set to New by default.',
+    title: '新規欠陥を作成',
+    description: '欠陥の詳細を入力してください。ステータスはデフォルトで「新規」になります。',
     fields,
-    submitLabel: 'Create Defect',
-    cancelLabel: 'Cancel',
+    submitLabel: '欠陥を作成',
+    cancelLabel: 'キャンセル',
     triggerOpen,
     onOpenChange: handleDialogOpenChange,
     formPersistenceKey: `create-defect-${projectId}`,

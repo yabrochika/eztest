@@ -229,7 +229,6 @@ model TestCase {
   testData      String?  // Test data/input values for the test case
   pendingDefectIds String?  // Comma-separated defect IDs that don't exist yet (e.g., "DEF-1, DEF-2")
   // New fields for enhanced test case management
-  assertionId   String?  // Assertion-ID
   rtcId         String?  // RTC-ID
   flowId        String?  // Flow-ID
   layer         TestLayer?  // Layer
@@ -239,6 +238,7 @@ model TestCase {
   notes         String?  // 備考
   isAutomated   Boolean  @default(false)  // 自動化
   platforms     Platform[] @default([])  // 環境 (複数環境を保存: IOS / ANDROID / WEB)
+  device        String?   // 端末: iPhone, Android, PC
   createdById   String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

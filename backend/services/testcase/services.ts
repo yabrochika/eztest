@@ -20,7 +20,6 @@ interface CreateTestCaseInput {
     expectedResult: string;
   }>;
   // New fields
-  assertionId?: string | null;
   rtcId?: string | null;
   flowId?: string | null;
   layer?: 'SMOKE' | 'CORE' | 'EXTENDED' | 'UNKNOWN' | null;
@@ -30,6 +29,7 @@ interface CreateTestCaseInput {
   notes?: string | null;
   isAutomated?: boolean;
   platforms?: ('IOS' | 'ANDROID' | 'WEB')[];
+  device?: 'iPhone' | 'Android' | 'PC' | null;
 }
 
 interface UpdateTestCaseInput {
@@ -45,7 +45,6 @@ interface UpdateTestCaseInput {
   moduleId?: string | null;
   suiteId?: string | null;
   // New fields
-  assertionId?: string | null;
   rtcId?: string | null;
   flowId?: string | null;
   layer?: 'SMOKE' | 'CORE' | 'EXTENDED' | 'UNKNOWN' | null;
@@ -55,6 +54,7 @@ interface UpdateTestCaseInput {
   notes?: string | null;
   isAutomated?: boolean;
   platforms?: ('IOS' | 'ANDROID' | 'WEB')[];
+  device?: 'iPhone' | 'Android' | 'PC' | null;
 }
 
 interface TestCaseFilters {
@@ -580,7 +580,6 @@ export class TestCaseService {
             postconditions: data.postconditions,
             createdById: data.createdById,
             // New fields
-            assertionId: data.assertionId,
             rtcId: data.rtcId,
             flowId: data.flowId,
             layer: data.layer,
@@ -590,6 +589,7 @@ export class TestCaseService {
             notes: data.notes,
             isAutomated: data.isAutomated ?? false,
             platforms: data.platforms || [],
+            device: data.device ?? undefined,
             steps: data.steps
               ? {
                   create: data.steps.map((step) => ({
@@ -734,7 +734,6 @@ export class TestCaseService {
     if (data.suiteId !== undefined) updateData.suiteId = data.suiteId;
     if (data.moduleId !== undefined) updateData.moduleId = data.moduleId;
     // New fields
-    if (data.assertionId !== undefined) updateData.assertionId = data.assertionId;
     if (data.rtcId !== undefined) updateData.rtcId = data.rtcId;
     if (data.flowId !== undefined) updateData.flowId = data.flowId;
     if (data.layer !== undefined) updateData.layer = data.layer;
@@ -744,6 +743,7 @@ export class TestCaseService {
     if (data.notes !== undefined) updateData.notes = data.notes;
     if (data.isAutomated !== undefined) updateData.isAutomated = data.isAutomated;
     if (data.platforms !== undefined) updateData.platforms = data.platforms;
+    if (data.device !== undefined) updateData.device = data.device;
 
     return await prisma.testCase.update({
       where: { id: testCaseId },

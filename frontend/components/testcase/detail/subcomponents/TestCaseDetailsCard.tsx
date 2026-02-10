@@ -108,7 +108,7 @@ export function TestCaseDetailsCard({
                 </SelectTrigger>
                 <SelectContent variant="glass">
                   {loadingPriority ? (
-                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                    <SelectItem value="loading" disabled>読み込み中...</SelectItem>
                   ) : (
                     priorityOptions.map((opt) => (
                       <SelectItem 
@@ -134,7 +134,7 @@ export function TestCaseDetailsCard({
                 </SelectTrigger>
                 <SelectContent variant="glass">
                   {loadingStatus ? (
-                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                    <SelectItem value="loading" disabled>読み込み中...</SelectItem>
                   ) : (
                     statusOptions.map((opt) => (
                       <SelectItem 
@@ -161,7 +161,7 @@ export function TestCaseDetailsCard({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent variant="glass">
-                <SelectItem value="none">None (No Module)</SelectItem>
+                <SelectItem value="none">なし（モジュールに属さない）</SelectItem>
                 {modules?.map((module) => (
                   <SelectItem key={module.id} value={module.id}>
                     {module.name}
@@ -176,23 +176,13 @@ export function TestCaseDetailsCard({
             <h4 className="text-sm font-medium text-white/60">識別情報</h4>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="assertionId">Assertion-ID</Label>
-                <Input
-                  id="assertionId"
-                  variant="glass"
-                  value={formData.assertionId || ''}
-                  onChange={(e) => handleFieldChange('assertionId', e.target.value)}
-                  placeholder="Enter assertion ID"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="rtcId">RTC-ID</Label>
                 <Input
                   id="rtcId"
                   variant="glass"
                   value={formData.rtcId || ''}
                   onChange={(e) => handleFieldChange('rtcId', e.target.value)}
-                  placeholder="Enter RTC ID"
+                  placeholder="RTC-ID を入力"
                 />
               </div>
               <div className="space-y-2">
@@ -202,7 +192,7 @@ export function TestCaseDetailsCard({
                   variant="glass"
                   value={formData.flowId || ''}
                   onChange={(e) => handleFieldChange('flowId', e.target.value)}
-                  placeholder="Enter flow ID"
+                  placeholder="Flow-ID を入力"
                 />
               </div>
             </div>
@@ -257,7 +247,7 @@ export function TestCaseDetailsCard({
                   </SelectTrigger>
                   <SelectContent variant="glass">
                     {loadingTestType ? (
-                      <SelectItem value="loading" disabled>Loading...</SelectItem>
+                      <SelectItem value="loading" disabled>読み込み中...</SelectItem>
                     ) : (
                       testTypeOptions.map((opt) => (
                         <SelectItem key={opt.id} value={opt.value}>
@@ -265,6 +255,22 @@ export function TestCaseDetailsCard({
                         </SelectItem>
                       ))
                     )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="device">端末</Label>
+                <Select
+                  value={formData.device || ''}
+                  onValueChange={(value) => handleFieldChange('device', value)}
+                >
+                  <SelectTrigger variant="glass" id="device">
+                    <SelectValue placeholder="端末を選択" />
+                  </SelectTrigger>
+                  <SelectContent variant="glass">
+                    <SelectItem value="iPhone">iPhone</SelectItem>
+                    <SelectItem value="Android">Android</SelectItem>
+                    <SelectItem value="PC">PC</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -416,18 +422,12 @@ export function TestCaseDetailsCard({
           )}
 
           {/* Custom Fields Section */}
-          {(testCase.assertionId || testCase.rtcId || testCase.flowId || testCase.layer || testCase.targetType || testCase.testType) && (
+          {(testCase.rtcId || testCase.flowId || testCase.layer || testCase.targetType || testCase.testType || testCase.device) && (
             <div className="border-t border-white/10 pt-6">
               <h4 className="text-sm font-medium text-white/60 mb-3">
                 識別情報
               </h4>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {testCase.assertionId && (
-                  <div>
-                    <span className="text-xs text-white/50">Assertion-ID</span>
-                    <p className="text-sm text-white/90">{testCase.assertionId}</p>
-                  </div>
-                )}
                 {testCase.rtcId && (
                   <div>
                     <span className="text-xs text-white/50">RTC-ID</span>
@@ -458,6 +458,12 @@ export function TestCaseDetailsCard({
                   <div>
                     <span className="text-xs text-white/50">対象</span>
                     <p className="text-sm text-white/90">{testCase.targetType}</p>
+                  </div>
+                )}
+                {testCase.device && (
+                  <div>
+                    <span className="text-xs text-white/50">端末</span>
+                    <p className="text-sm text-white/90">{testCase.device}</p>
                   </div>
                 )}
               </div>
@@ -514,7 +520,7 @@ export function TestCaseDetailsCard({
                 {descriptionAttachments.length > 0 ? (
                   <span className="text-xs text-white/50">{descriptionAttachments.length} Attachments</span>
                 ) : (
-                  <span className="text-xs text-white/40">No Attachments</span>
+                  <span className="text-xs text-white/40">添付なし</span>
                 )}
               </div>
               {testCase.description && descriptionAttachments.length > 0 ? (
@@ -555,7 +561,7 @@ export function TestCaseDetailsCard({
                 {preconditionAttachments.length > 0 ? (
                   <span className="text-xs text-white/50">{preconditionAttachments.length} Attachments</span>
                 ) : (
-                  <span className="text-xs text-white/40">No Attachments</span>
+                  <span className="text-xs text-white/40">添付なし</span>
                 )}
               </div>
               {testCase.preconditions && preconditionAttachments.length > 0 ? (
@@ -588,7 +594,7 @@ export function TestCaseDetailsCard({
                 {postconditionAttachments.length > 0 ? (
                   <span className="text-xs text-white/50">{postconditionAttachments.length} Attachments</span>
                 ) : (
-                  <span className="text-xs text-white/40">No Attachments</span>
+                  <span className="text-xs text-white/40">添付なし</span>
                 )}
               </div>
               {testCase.postconditions && postconditionAttachments.length > 0 ? (

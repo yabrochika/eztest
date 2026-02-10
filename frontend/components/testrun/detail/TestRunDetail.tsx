@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Navbar } from '@/frontend/reusable-components/layout/Navbar';
 import { Breadcrumbs } from '@/frontend/reusable-components/layout/Breadcrumbs';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
@@ -88,7 +88,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     if (canUpdateTestRun) {
       actions.push({
         type: 'action' as const,
-        label: 'Export Report',
+        label: 'レポートをエクスポート',
         icon: Upload,
         onClick: () => setExportDialogOpen(true),
         variant: 'secondary' as const,
@@ -691,13 +691,13 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         breadcrumbs={
           <Breadcrumbs 
             items={[
-              { label: 'Projects', href: '/projects' },
+              { label: 'プロジェクト', href: '/projects' },
               {
-                label: testRun.project?.name || 'Project',
+                label: testRun.project?.name || 'プロジェクト',
                 href: `/projects/${testRun.project?.id}`,
               },
               {
-                label: 'Test Runs',
+                label: 'テストラン',
                 href: `/projects/${testRun.project?.id}/testruns`,
               },
               { label: testRun.name, href: `/projects/${testRun.project?.id}/testruns/${testRun.id}` },
@@ -832,8 +832,8 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           <FileExportDialog
             open={exportDialogOpen}
             onOpenChange={setExportDialogOpen}
-            title="Export Test Run Report"
-            description="Choose a format to export the detailed test run report with test cases and defects."
+            title="テストランレポートをエクスポート"
+            description="テストケースと欠陥を含む詳細レポートのエクスポート形式を選択してください。"
             exportOptions={{
               projectId: testRun.project?.id || '',
               endpoint: `/api/projects/${testRun.project?.id}/testruns/${testRunId}/export`,

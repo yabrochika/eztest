@@ -205,6 +205,14 @@ export function TestCaseTable({
       ),
     },
     {
+      key: 'device',
+      label: '端末',
+      width: '80px',
+      render: (row) => (
+        <span className="text-xs text-white/70 truncate">{row.device || '-'}</span>
+      ),
+    },
+    {
       key: 'owner',
       label: 'OWNER',
       width: '140px',

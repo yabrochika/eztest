@@ -81,7 +81,7 @@ export class MigrationController {
   getTestCaseImportTemplate() {
     const template = {
       columns: [
-        { name: 'Test Case Title', required: false, description: 'Short, clear description of the test case. If not provided, "Assertion-ID" will be used as title. At least one of "Test Case Title" or "Assertion-ID" is required.' },
+        { name: 'Test Case Title', required: true, description: 'Short, clear description of the test case. Required.' },
         { name: 'Module / Feature', required: false, description: 'Application area (Login, Payments, IoT Device, etc.). Will be created if not exists' },
         { name: 'Priority', required: false, description: 'Priority level: High / Medium / Low' },
         { name: 'Preconditions', required: false, description: 'Conditions required before test execution' },
@@ -96,7 +96,6 @@ export class MigrationController {
         { name: 'Postconditions', required: false, description: 'Postconditions (older field)' },
         { name: 'Test Suites', required: false, description: 'Test suite name (will be created if not exists) (older field)' },
         // New fields for enhanced test case management (EZ Test UI labels)
-        { name: 'Assertion-ID', required: false, description: 'Assertion-ID: Assertion identifier (e.g., AST-RTC-SM-001-01)' },
         { name: 'RTC-ID', required: false, description: 'RTC-ID: RTC identifier (e.g., RTC-SM-001)' },
         { name: 'Flow-ID', required: false, description: 'Flow-ID: Flow identifier (e.g., SM-001)' },
         { name: 'Layer', required: false, description: 'Layer: Test layer - Smoke / Core / Extended / Unknown (will be converted to uppercase: SMOKE, CORE, EXTENDED, UNKNOWN). Unknown or invalid values will default to UNKNOWN.' },
@@ -106,6 +105,7 @@ export class MigrationController {
         { name: '備考', required: false, description: '備考: Notes / Additional remarks' },
         { name: '自動化', required: false, description: '自動化: Automation status - true / false / yes / no / 自動化 (will be converted to boolean)' },
         { name: '環境（iOS / Android / Web）', required: false, description: '環境: Platforms - iOS / Android / Web (can specify multiple separated by "/", ",", "、", or whitespace. Duplicates are automatically removed). Will be converted to array: ["IOS", "ANDROID", "WEB"]' },
+        { name: '端末', required: false, description: '端末: Device - iPhone / Android / PC（いずれか1つ）' },
       ],
       example: {
         'Test Case Title': 'Verify user authentication with valid credentials',
@@ -181,8 +181,8 @@ export class MigrationController {
           'Status': 'ACTIVE',
         },
         {
-          description: 'Test case with new enhanced fields (Assertion-ID, RTC-ID, Flow-ID, Layer, 対象, 根拠, 備考, 自動化, 環境) - No Test Case Title, using Assertion-ID as title',
-          'Assertion-ID': 'AST-RTC-SM-001-01',
+          description: 'Test case with new enhanced fields (RTC-ID, Flow-ID, Layer, 対象, 根拠, 備考, 自動化, 環境)',
+          'Test Case Title': 'POST /signup/sms - SMS送信',
           'RTC-ID': 'RTC-SM-001',
           'Flow-ID': 'SM-001',
           'Layer': 'Smoke',
@@ -196,7 +196,7 @@ export class MigrationController {
         },
         {
           description: 'Test case with screen/flow target type',
-          'Assertion-ID': 'AST-RTC-SM-001-04',
+          'Test Case Title': 'フロー（新規登録→ログイン）',
           'RTC-ID': 'RTC-SM-001',
           'Flow-ID': 'SM-001',
           'Layer': 'Smoke',
@@ -208,7 +208,7 @@ export class MigrationController {
         },
         {
           description: 'Test case with multiple platforms',
-          'Assertion-ID': 'AST-RTC-SM-003-01',
+          'Test Case Title': 'POST /me/oripa_lotteries/:id/withdraw',
           'RTC-ID': 'RTC-SM-003',
           'Flow-ID': 'SM-003',
           'Layer': 'Smoke',

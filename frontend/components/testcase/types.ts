@@ -19,7 +19,6 @@ export interface TestCase {
   suiteId?: string;
   moduleId?: string;
 
-  assertionId?: string;
   rtcId?: string;
   flowId?: string;
 
@@ -32,6 +31,7 @@ export interface TestCase {
 
   isAutomated?: boolean;
   platforms?: Platform[];
+  device?: 'iPhone' | 'Android' | 'PC' | null;
 
   createdBy: {
     id: string;
@@ -63,7 +63,6 @@ export interface TestCaseFormData {
   suiteId: string | null;
   moduleId: string | null;
 
-  assertionId?: string;
   rtcId?: string;
   flowId?: string;
 
@@ -76,6 +75,7 @@ export interface TestCaseFormData {
 
   isAutomated?: boolean;
   platforms?: Platform[];
+  device?: 'iPhone' | 'Android' | 'PC' | null;
 }
 
 export interface TestSuite {

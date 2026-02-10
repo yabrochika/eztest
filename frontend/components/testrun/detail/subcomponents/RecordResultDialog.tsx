@@ -212,7 +212,7 @@ export function RecordResultDialog({
               onValueChange={(value: string) => onFormChange({ status: value })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select result status" />
+                <SelectValue placeholder="結果ステータスを選択" />
               </SelectTrigger>
               <SelectContent>
                 {statusOptions.map((option) => (
@@ -234,7 +234,7 @@ export function RecordResultDialog({
               variant="glass"
               value={formData.comment}
               onChange={(e) => onFormChange({ comment: e.target.value })}
-              placeholder="Add any comments about this test execution"
+              placeholder="このテスト実行についてコメントを追加（任意）"
               rows={4}
             />
           </div>

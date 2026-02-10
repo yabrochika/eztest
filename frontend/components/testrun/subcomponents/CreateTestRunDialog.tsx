@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
 import { TestRun } from '../types';
@@ -35,11 +35,11 @@ export function CreateTestRunDialog({
       name: 'environment',
       label: 'Environment',
       type: 'select',
-      placeholder: 'Select environment',
+      placeholder: '環境を選択',
       required: true,
       defaultValue: 'none',
       options: [
-        { value: 'none', label: 'Select environment' },
+        { value: 'none', label: '環境を選択' },
         ...environmentOptions.map(opt => ({ value: opt.value, label: opt.label })),
       ],
       cols: 2,

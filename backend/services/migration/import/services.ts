@@ -67,9 +67,6 @@ export class ImportService {
       'testsuite': 'testsuite',
       'test suite': 'testsuite',
       // New test case fields for enhanced test case management
-      'assertion-id': 'assertionId',
-      'assertion id': 'assertionId',
-      'assertionid': 'assertionId',
       'rtc-id': 'rtcId',
       'rtc id': 'rtcId',
       'rtcid': 'rtcId',
@@ -93,6 +90,8 @@ export class ImportService {
       '環境': 'platforms',
       '環境（ios / android / web）': 'platforms',
       'platforms': 'platforms',
+      '端末': 'device',
+      'device': 'device',
       // Test Type (テスト種別)
       'テスト種別': 'testType',
       'test type': 'testType',
@@ -267,7 +266,6 @@ export class ImportService {
         const testData = this.getRowValue(row, 'testData');
         const defectId = this.getRowValue(row, 'defectId');
         // New fields for enhanced test case management
-        const assertionId = this.getRowValue(row, 'assertionId');
         const rtcId = this.getRowValue(row, 'rtcId');
         const flowId = this.getRowValue(row, 'flowId');
         const layer = this.getRowValue(row, 'layer');
@@ -284,15 +282,14 @@ export class ImportService {
           }
         }
         const testType = this.getRowValue(row, 'testType');
+        const device = this.getRowValue(row, 'device');
 
-        // Determine title: use title column if provided, otherwise use assertionId as fallback
+        // Determine title: Test Case Title is required
         let testCaseTitle: string;
         if (title && typeof title === 'string' && title.toString().trim() !== '') {
           testCaseTitle = title.toString().trim();
-        } else if (assertionId && typeof assertionId === 'string' && assertionId.toString().trim() !== '') {
-          testCaseTitle = assertionId.toString().trim();
         } else {
-          throw new Error('Test Case Title is required. Please provide "Test Case Title" or "Assertion-ID"');
+          throw new Error('Test Case Title is required. Please provide "Test Case Title"');
         }
 
         // RTC-ID の文字列（既存テストケース判定に使用）
@@ -690,10 +687,7 @@ export class ImportService {
           : null;
 
         // Parse new fields for enhanced test case management
-        // Assertion-ID, RTC-ID, Flow-ID (strings)
-        const assertionIdValue = assertionId && typeof assertionId === 'string' && assertionId.toString().trim()
-          ? assertionId.toString().trim()
-          : null;
+        // RTC-ID, Flow-ID (strings)
         const rtcIdValue = rtcId && typeof rtcId === 'string' && rtcId.toString().trim()
           ? rtcId.toString().trim()
           : null;
@@ -853,6 +847,16 @@ export class ImportService {
           // If no match found, leave as null (don't import invalid values)
         }
 
+        // Device (端末) - iPhone, Android, PC
+        let deviceValue: 'iPhone' | 'Android' | 'PC' | null = null;
+        if (device != null && typeof device === 'string' && device.toString().trim()) {
+          const deviceStr = device.toString().trim();
+          const deviceLower = deviceStr.toLowerCase();
+          if (deviceLower === 'iphone' || deviceStr === 'iPhone') deviceValue = 'iPhone';
+          else if (deviceLower === 'android' || deviceStr === 'Android') deviceValue = 'Android';
+          else if (deviceLower === 'pc' || deviceStr === 'PC') deviceValue = 'PC';
+        }
+
         // Determine the expected result value to use for the test case
         // If there are no test steps, use the parsed expected result (singleExpectedResult) or original value
         // If there are test steps with individual expected results, only set test case level if single value
@@ -906,7 +910,6 @@ export class ImportService {
               pendingDefectIds: pendingDefectIds.length > 0 ? pendingDefectIds.join(', ') : null,
               moduleId: moduleId ?? null,
               suiteId: suiteId ?? null,
-              assertionId: assertionIdValue,
               rtcId: rtcIdValue,
               flowId: flowIdValue,
               layer: layerValue,
@@ -916,6 +919,7 @@ export class ImportService {
               notes: notesValue,
               isAutomated: isAutomatedValue,
               platforms: platformsValue.length > 0 ? platformsValue : [],
+              device: deviceValue,
             },
           });
           await prisma.testStep.deleteMany({ where: { testCaseId: existingTestCaseToUpdate.id } });
@@ -981,7 +985,6 @@ export class ImportService {
             suiteId,
             createdById: userId,
             // New fields for enhanced test case management
-            assertionId: assertionIdValue,
             rtcId: rtcIdValue,
             flowId: flowIdValue,
             layer: layerValue,
@@ -991,6 +994,7 @@ export class ImportService {
             notes: notesValue,
             isAutomated: isAutomatedValue,
             platforms: platformsValue.length > 0 ? platformsValue : [],
+            device: deviceValue,
             steps: filteredSteps.length > 0 ? { create: filteredSteps } : undefined,
           },
         });

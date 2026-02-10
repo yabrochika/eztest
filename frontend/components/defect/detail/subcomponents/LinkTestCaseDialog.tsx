@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
@@ -80,7 +80,7 @@ export function LinkTestCaseDialog({
     description: 'Link a test case to this defect to track related failures.',
     fields,
     submitLabel: 'Link Test Case',
-    cancelLabel: 'Cancel',
+    cancelLabel: 'キャンセル',
     triggerOpen: open,
     onOpenChange,
     onSubmit: async (formData) => {

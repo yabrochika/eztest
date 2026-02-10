@@ -410,10 +410,12 @@ export class TestRunService {
               select: {
                 id: true,
                 tcId: true,
+                rtcId: true,
                 title: true,
                 description: true,
                 priority: true,
                 status: true,
+                estimatedTime: true,
                 module: {
                   select: {
                     id: true,
@@ -600,6 +602,7 @@ export class TestRunService {
               select: {
                 id: true,
                 tcId: true,
+                rtcId: true,
                 title: true,
                 description: true,
                 priority: true,
@@ -686,6 +689,7 @@ export class TestRunService {
           select: {
             id: true,
             tcId: true,
+            rtcId: true,
             title: true,
             priority: true,
           },

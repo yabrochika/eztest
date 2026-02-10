@@ -107,7 +107,7 @@ export function CreateTestCaseDialog({
       placeholder: 'Select a module',
       defaultValue: defaultModuleId || 'none',
       options: [
-        { value: 'none', label: 'None (No Module)' },
+        { value: 'none', label: 'なし（モジュールに属さない）' },
         ...moduleOptions,
       ],
       cols: 1,
@@ -117,13 +117,6 @@ export function CreateTestCaseDialog({
       label: 'Estimated Time (minutes)',
       type: 'number',
       placeholder: 'Enter estimated time',
-      cols: 1,
-    },
-    {
-      name: 'assertionId',
-      label: 'Assertion-ID',
-      type: 'text',
-      placeholder: 'Enter assertion ID',
       cols: 1,
     },
     {
@@ -184,6 +177,18 @@ export function CreateTestCaseDialog({
         { value: 'STATE_TRANSITION', label: '状態遷移確認' },
         { value: 'OPERATIONAL', label: '運用確認' },
         { value: 'FAILURE', label: '障害時確認' },
+      ],
+      cols: 1,
+    },
+    {
+      name: 'device',
+      label: '端末',
+      type: 'select',
+      placeholder: '端末を選択',
+      options: [
+        { value: 'iPhone', label: 'iPhone' },
+        { value: 'Android', label: 'Android' },
+        { value: 'PC', label: 'PC' },
       ],
       cols: 1,
     },
@@ -392,7 +397,6 @@ export function CreateTestCaseDialog({
         postconditions: formData.postconditions || undefined,
         moduleId: formData.moduleId !== 'none' ? formData.moduleId : undefined,
         // New fields
-        assertionId: formData.assertionId || undefined,
         rtcId: formData.rtcId || undefined,
         flowId: formData.flowId || undefined,
         layer: formData.layer || undefined,
@@ -402,6 +406,7 @@ export function CreateTestCaseDialog({
         notes: formData.notes || undefined,
         isAutomated,
         platforms: platforms.length > 0 ? platforms : undefined,
+        device: formData.device || undefined,
       }),
     });
 
@@ -476,11 +481,11 @@ export function CreateTestCaseDialog({
   };
 
   const config: BaseDialogConfig<TestCase> = {
-    title: 'Create Test Case',
-    description: 'Add a new test case to this project. Fill in the details to get started.',
+    title: 'テストケースを作成',
+    description: 'このプロジェクトに新しいテストケースを追加します。詳細を入力してください。',
     fields,
-    submitLabel: 'Create Test Case',
-    cancelLabel: 'Cancel',
+    submitLabel: 'テストケースを作成',
+    cancelLabel: 'キャンセル',
     triggerOpen: open !== undefined ? open : triggerOpen,
     onOpenChange,
     onSubmit: handleSubmit,

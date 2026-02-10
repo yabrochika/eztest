@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
@@ -42,17 +42,26 @@ export interface SidebarProps {
 
 const iconMap: Record<string, React.ReactNode> = {
   Dashboard: <LayoutDashboard className="w-4 h-4" />,
-  Projects: <Folder className="w-4 h-4" />,
   Overview: <LayoutDashboard className="w-4 h-4" />,
+  'Test Plans': <ClipboardList className="w-4 h-4" />,
+  Projects: <Folder className="w-4 h-4" />,
   'Test Suites': <FolderTree className="w-4 h-4" />,
   'Test Cases': <FileCheck className="w-4 h-4" />,
-  'Test Plans': <ClipboardList className="w-4 h-4" />,
   'Test Runs': <PlayCircle className="w-4 h-4" />,
   Defects: <Bug className="w-4 h-4" />,
   Members: <Users className="w-4 h-4" />,
   Settings: <Settings className="w-4 h-4" />,
   Admin: <Shield className="w-4 h-4" />,
   Users: <Users className="w-4 h-4" />,
+  // 日本語ラベル
+  プロジェクト: <Folder className="w-4 h-4" />,
+  テストスイート: <FolderTree className="w-4 h-4" />,
+  テストケース: <FileCheck className="w-4 h-4" />,
+  テストラン: <PlayCircle className="w-4 h-4" />,
+  欠陥: <Bug className="w-4 h-4" />,
+  メンバー: <Users className="w-4 h-4" />,
+  設定: <Settings className="w-4 h-4" />,
+  管理: <Shield className="w-4 h-4" />,
 };
 
 export function Sidebar({ items, projectId, className }: SidebarProps) {
@@ -82,7 +91,7 @@ export function Sidebar({ items, projectId, className }: SidebarProps) {
             setProjectName(data.data?.name || null);
           } else if (response.status === 404 || response.status === 403) {
             // Project was deleted, not found, or no access
-            setProjectName('Project Undefined');
+            setProjectName('プロジェクトがありません');
             
             // Redirect to projects page after a brief moment
             if (typeof window !== 'undefined' && window.location.pathname.includes(`/projects/${projectId}`)) {
@@ -105,7 +114,7 @@ export function Sidebar({ items, projectId, className }: SidebarProps) {
   // Update display items when test suites or test runs change
   React.useEffect(() => {
     const updatedItems = items.map(item => {
-      if (item.label === 'Test Suites') {
+      if (item.label === 'テストスイート') {
         return {
           ...item,
           children: testSuites.length > 0 ? testSuites.map(suite => ({
@@ -114,7 +123,7 @@ export function Sidebar({ items, projectId, className }: SidebarProps) {
           })) : [], // Keep as empty array if no data, but item will still be treated as expandable
         };
       }
-      if (item.label === 'Test Runs') {
+      if (item.label === 'テストラン') {
         return {
           ...item,
           children: testRuns.length > 0 ? testRuns.map(run => ({

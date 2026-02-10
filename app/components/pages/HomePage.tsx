@@ -13,7 +13,7 @@ import { PhilosophySection } from './subcomponents/PhilosophySection';
 import { FeaturesGrid } from './subcomponents/FeaturesGrid';
 import { StatsSection } from './subcomponents/StatsSection';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { ProductShowcaseSection } from './subcomponents/ProductShowcaseSection';
+import { ProductShowcaseSection } from '@/app/components/pages/subcomponents/ProductShowcaseSection';
 
 const navItems = [
   { label: 'Features', href: '#features' },

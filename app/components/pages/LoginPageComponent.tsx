@@ -15,6 +15,7 @@ import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
 const navItems = [
+  { label: 'Features', href: '/#features' },
   { label: 'Why Choose?', href: '/#why-choose' },
 ];
 
@@ -176,7 +177,7 @@ export default function LoginPageComponent() {
       });
       setIsLoading(false);
       setShowOtpVerification(true);
-    } catch {
+    } catch (error) {
       const errorMsg = 'An unexpected error occurred';
       setError(errorMsg);
       setAlert({

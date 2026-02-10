@@ -19,6 +19,12 @@ export function parseCSV(content: string): ParseResult {
   const headerCount = new Map<string, number>();
 
   try {
+    // 1行目が Column1,Column2,... の場合は2行目をヘッダーとして使う（テンプレートCSV対応）
+    const lines = content.split(/\r?\n/).filter((line) => line.length > 0);
+    if (lines.length >= 2 && /^Column\d+/.test(lines[0].trim())) {
+      content = lines.slice(1).join('\n');
+    }
+
     const result = Papa.parse(content, {
       header: true,
       skipEmptyLines: true,

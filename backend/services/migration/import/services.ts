@@ -295,6 +295,12 @@ export class ImportService {
           throw new Error('Test Case Title is required. Please provide "Test Case Title" or "Assertion-ID"');
         }
 
+        // RTC-ID の文字列（既存テストケース判定に使用）
+        const rtcIdStr =
+          rtcId != null && typeof rtcId === 'string' && rtcId.toString().trim() !== ''
+            ? rtcId.toString().trim()
+            : null;
+
         // Process defect IDs if provided (supports multiple defects: comma or semicolon separated)
         // Store all defect IDs (both existing and pending) for later linking
         const defectsToLink: Array<{ id: string; title: string; defectId: string }> = [];
@@ -326,16 +332,22 @@ export class ImportService {
           }
         }
 
-        // Check if test case with same title already exists
-        const existingTestCase = await prisma.testCase.findFirst({
-          where: {
-            projectId,
-            title: {
-              equals: testCaseTitle,
-              mode: 'insensitive',
+        // 既存テストケースの判定: RTC-ID があれば RTC-ID でのみ照合（異なる RTC-ID は別テストケース）、なければタイトルで照合
+        let existingTestCase: { id: string; tcId: string } | null = null;
+        if (rtcIdStr) {
+          existingTestCase = await prisma.testCase.findFirst({
+            where: { projectId, rtcId: rtcIdStr },
+            select: { id: true, tcId: true },
+          });
+        } else {
+          existingTestCase = await prisma.testCase.findFirst({
+            where: {
+              projectId,
+              title: { equals: testCaseTitle, mode: 'insensitive' },
             },
-          },
-        });
+            select: { id: true, tcId: true },
+          });
+        }
 
         let existingTestCaseToUpdate: { id: string; tcId: string } | null = null;
         if (existingTestCase) {

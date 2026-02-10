@@ -24,7 +24,8 @@
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
     "export:titles": "tsx scripts/export-testcase-titles.ts",
-    "seed:testcases": "tsx scripts/seed-testcases.ts"
+    "seed:testcases": "tsx scripts/seed-testcases.ts",
+    "verify:smoke": "tsx scripts/verify-smoke-import-count.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

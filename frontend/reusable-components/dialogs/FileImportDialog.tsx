@@ -323,16 +323,22 @@ export function FileImportDialog({
           </div>
 
           {showUpdateExistingOption && (
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-white/80">
+            <div className="flex items-start gap-3 p-4 rounded-lg border border-white/20 bg-white/5">
               <input
+                id="import-update-existing"
                 type="checkbox"
                 checked={updateExisting}
                 onChange={(e) => setUpdateExisting(e.target.checked)}
                 disabled={uploading}
-                className="rounded border-white/30 bg-white/5 text-primary focus:ring-primary"
+                className="mt-1 rounded border-white/30 bg-white/5 text-primary focus:ring-primary"
               />
-              <span>同一タイトルの既存テストケースを更新する</span>
-            </label>
+              <label htmlFor="import-update-existing" className="flex-1 cursor-pointer text-sm">
+                <span className="font-medium text-white/90">同一タイトルの既存テストケースを更新する</span>
+                <p className="mt-1 text-xs text-white/50">
+                  オフのときは同一タイトルはスキップされます。オンにすると既存レコードを上書き更新します。
+                </p>
+              </label>
+            </div>
           )}
 
           {/* Error Message */}

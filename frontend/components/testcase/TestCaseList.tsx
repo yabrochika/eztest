@@ -410,7 +410,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
             fetchTestCases();
             setImportDialogOpen(false);
           }}
-          showUpdateExistingOption
+          showUpdateExistingOption={true}
         />
 
         {/* Export Dialog */}

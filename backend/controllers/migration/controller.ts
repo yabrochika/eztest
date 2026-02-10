@@ -194,7 +194,7 @@ export class MigrationController {
           '状態': 'ACTIVE',
         },
         {
-          description: 'Test case with screen/flow target type',
+          description: 'Test case with screen/flow',
           'テストケース名': 'フロー（新規登録→ログイン）',
           'RTC-ID': 'RTC-SM-001',
           'Flow-ID': 'SM-001',

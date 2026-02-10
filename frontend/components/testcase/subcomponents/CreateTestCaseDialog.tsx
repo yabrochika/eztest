@@ -220,6 +220,30 @@ export function CreateTestCaseDialog({
       cols: 1,
     },
     {
+      name: 'executionType',
+      label: '実行方式',
+      type: 'select',
+      placeholder: '実行方式を選択',
+      options: [
+        { value: '手動', label: '手動' },
+        { value: '自動', label: '自動' },
+      ],
+      cols: 1,
+    },
+    {
+      name: 'automationStatus',
+      label: '自動化状況',
+      type: 'select',
+      placeholder: '自動化状況を選択',
+      options: [
+        { value: '自動化済', label: '自動化済' },
+        { value: '自動化対象', label: '自動化対象' },
+        { value: '自動化対象外', label: '自動化対象外' },
+        { value: '検討中', label: '検討中' },
+      ],
+      cols: 1,
+    },
+    {
       name: 'isAutomated',
       label: '自動化',
       type: 'custom',
@@ -437,6 +461,8 @@ export function CreateTestCaseDialog({
         device: formData.device || undefined,
         domain: formData.domain || undefined,
         functionName: formData.functionName || undefined,
+        executionType: formData.executionType || undefined,
+        automationStatus: formData.automationStatus || undefined,
       }),
     });
 

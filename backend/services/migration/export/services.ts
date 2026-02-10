@@ -108,6 +108,8 @@ export class ExportService {
         device: true,
         domain: true,
         functionName: true,
+        executionType: true,
+        automationStatus: true,
         module: {
           select: {
             name: true,
@@ -256,6 +258,8 @@ export class ExportService {
         '端末': tc.device || '',
         'ドメイン': tc.domain || '',
         '機能': tc.functionName || '',
+        '実行方式': tc.executionType || '',
+        '自動化状況': tc.automationStatus || '',
         // Older fields (for backward compatibility)
         'Description': tc.description || '',
         'Estimated Time (minutes)': tc.estimatedTime || '',

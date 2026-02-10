@@ -64,3 +64,17 @@ export const TEST_CASE_FUNCTION_NAME_OPTIONS: string[] = [
   'E2E統合',
   'エッジケース',
 ];
+
+/** 実行方式（プルダウン） */
+export const EXECUTION_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: '手動', label: '手動' },
+  { value: '自動', label: '自動' },
+];
+
+/** 自動化状況（プルダウン） */
+export const AUTOMATION_STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: '自動化済', label: '自動化済' },
+  { value: '自動化対象', label: '自動化対象' },
+  { value: '自動化対象外', label: '自動化対象外' },
+  { value: '検討中', label: '検討中' },
+];

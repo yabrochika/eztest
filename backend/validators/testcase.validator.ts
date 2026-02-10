@@ -59,6 +59,8 @@ export const createTestCaseSchema = z.object({
   device: z.enum(['iPhone', 'Android', 'PC']).optional().nullable(),
   domain: z.string().optional().nullable(),
   functionName: z.string().optional().nullable(),
+  executionType: z.enum(['手動', '自動']).optional().nullable(),
+  automationStatus: z.enum(['自動化済', '自動化対象', '自動化対象外', '検討中']).optional().nullable(),
 });
 
 /**
@@ -92,6 +94,8 @@ export const updateTestCaseSchema = z.object({
   device: z.enum(['iPhone', 'Android', 'PC']).optional().nullable(),
   domain: z.string().optional().nullable(),
   functionName: z.string().optional().nullable(),
+  executionType: z.enum(['手動', '自動']).optional().nullable(),
+  automationStatus: z.enum(['自動化済', '自動化対象', '自動化対象外', '検討中']).optional().nullable(),
 });
 
 /**

@@ -33,6 +33,8 @@ interface CreateTestCaseInput {
   device?: 'iPhone' | 'Android' | 'PC' | null;
   domain?: string | null;
   functionName?: string | null;
+  executionType?: '手動' | '自動' | null;
+  automationStatus?: '自動化済' | '自動化対象' | '自動化対象外' | '検討中' | null;
 }
 
 interface UpdateTestCaseInput {
@@ -61,6 +63,8 @@ interface UpdateTestCaseInput {
   device?: 'iPhone' | 'Android' | 'PC' | null;
   domain?: string | null;
   functionName?: string | null;
+  executionType?: '手動' | '自動' | null;
+  automationStatus?: '自動化済' | '自動化対象' | '自動化対象外' | '検討中' | null;
 }
 
 interface TestCaseFilters {
@@ -630,6 +634,8 @@ export class TestCaseService {
             device: data.device ?? undefined,
             domain: data.domain ?? undefined,
             functionName: data.functionName ?? undefined,
+            executionType: data.executionType ?? undefined,
+            automationStatus: data.automationStatus ?? undefined,
             steps: data.steps
               ? {
                   create: data.steps.map((step) => ({
@@ -787,6 +793,8 @@ export class TestCaseService {
     if (data.device !== undefined) updateData.device = data.device;
     if (data.domain !== undefined) updateData.domain = data.domain;
     if (data.functionName !== undefined) updateData.functionName = data.functionName;
+    if (data.executionType !== undefined) updateData.executionType = data.executionType;
+    if (data.automationStatus !== undefined) updateData.automationStatus = data.automationStatus;
 
     return await prisma.testCase.update({
       where: { id: testCaseId },

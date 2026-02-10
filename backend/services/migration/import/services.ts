@@ -99,6 +99,12 @@ export class ImportService {
       '機能': 'functionName',
       'functionname': 'functionName',
       'function name': 'functionName',
+      '実行方式': 'executionType',
+      'executiontype': 'executionType',
+      'execution type': 'executionType',
+      '自動化状況': 'automationStatus',
+      'automationstatus': 'automationStatus',
+      'automation status': 'automationStatus',
       // Test Type (テスト種別)
       'テスト種別': 'testType',
       'test type': 'testType',
@@ -293,6 +299,8 @@ export class ImportService {
         const platformCol = this.getRowValue(row, 'platform');
         const domainCol = this.getRowValue(row, 'domain');
         const functionNameCol = this.getRowValue(row, 'functionName');
+        const executionTypeCol = this.getRowValue(row, 'executionType');
+        const automationStatusCol = this.getRowValue(row, 'automationStatus');
 
         // Determine title: Test Case Title is required
         let testCaseTitle: string;
@@ -886,6 +894,23 @@ export class ImportService {
           ? functionNameCol.toString().trim()
           : null;
 
+        // 実行方式: 手動 / 自動
+        let executionTypeValue: '手動' | '自動' | null = null;
+        if (executionTypeCol != null && typeof executionTypeCol === 'string' && executionTypeCol.toString().trim()) {
+          const s = executionTypeCol.toString().trim();
+          if (s === '手動') executionTypeValue = '手動';
+          else if (s === '自動') executionTypeValue = '自動';
+        }
+        // 自動化状況: 自動化済 / 自動化対象 / 自動化対象外 / 検討中
+        let automationStatusValue: '自動化済' | '自動化対象' | '自動化対象外' | '検討中' | null = null;
+        if (automationStatusCol != null && typeof automationStatusCol === 'string' && automationStatusCol.toString().trim()) {
+          const s = automationStatusCol.toString().trim();
+          if (s === '自動化済') automationStatusValue = '自動化済';
+          else if (s === '自動化対象') automationStatusValue = '自動化対象';
+          else if (s === '自動化対象外') automationStatusValue = '自動化対象外';
+          else if (s === '検討中') automationStatusValue = '検討中';
+        }
+
         // Determine the expected result value to use for the test case
         // If there are no test steps, use the parsed expected result (singleExpectedResult) or original value
         // If there are test steps with individual expected results, only set test case level if single value
@@ -952,6 +977,8 @@ export class ImportService {
               device: deviceValue,
               domain: domainValue,
               functionName: functionNameValue,
+              executionType: executionTypeValue,
+              automationStatus: automationStatusValue,
             },
           });
           await prisma.testStep.deleteMany({ where: { testCaseId: existingTestCaseToUpdate.id } });
@@ -1030,6 +1057,8 @@ export class ImportService {
             device: deviceValue,
             domain: domainValue,
             functionName: functionNameValue,
+            executionType: executionTypeValue,
+            automationStatus: automationStatusValue,
             steps: filteredSteps.length > 0 ? { create: filteredSteps } : undefined,
           },
         });

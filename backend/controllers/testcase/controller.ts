@@ -160,6 +160,8 @@ export class TestCaseController {
       device: validatedData.device ?? undefined,
       domain: validatedData.domain ?? undefined,
       functionName: validatedData.functionName ?? undefined,
+      executionType: validatedData.executionType ?? undefined,
+      automationStatus: validatedData.automationStatus ?? undefined,
     });
 
     return { data: testCase, statusCode: 201 };
@@ -239,6 +241,8 @@ export class TestCaseController {
           device: validatedData.device,
           domain: validatedData.domain,
           functionName: validatedData.functionName,
+          executionType: validatedData.executionType,
+          automationStatus: validatedData.automationStatus,
         }
       );
 

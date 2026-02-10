@@ -313,6 +313,38 @@ export function TestCaseDetailsCard({
                   placeholder="機能を入力"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="executionType">実行方式</Label>
+                <Select
+                  value={formData.executionType || ''}
+                  onValueChange={(value) => handleFieldChange('executionType', value)}
+                >
+                  <SelectTrigger variant="glass" id="executionType">
+                    <SelectValue placeholder="実行方式を選択" />
+                  </SelectTrigger>
+                  <SelectContent variant="glass">
+                    <SelectItem value="手動">手動</SelectItem>
+                    <SelectItem value="自動">自動</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="automationStatus">自動化状況</Label>
+                <Select
+                  value={formData.automationStatus || ''}
+                  onValueChange={(value) => handleFieldChange('automationStatus', value)}
+                >
+                  <SelectTrigger variant="glass" id="automationStatus">
+                    <SelectValue placeholder="自動化状況を選択" />
+                  </SelectTrigger>
+                  <SelectContent variant="glass">
+                    <SelectItem value="自動化済">自動化済</SelectItem>
+                    <SelectItem value="自動化対象">自動化対象</SelectItem>
+                    <SelectItem value="自動化対象外">自動化対象外</SelectItem>
+                    <SelectItem value="検討中">検討中</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -461,7 +493,7 @@ export function TestCaseDetailsCard({
           )}
 
           {/* Custom Fields Section */}
-          {(testCase.rtcId || testCase.flowId || testCase.layer || testCase.targetType || testCase.testType || testCase.platform || testCase.device || testCase.domain || testCase.functionName) && (
+          {(testCase.rtcId || testCase.flowId || testCase.layer || testCase.targetType || testCase.testType || testCase.platform || testCase.device || testCase.domain || testCase.functionName || testCase.executionType || testCase.automationStatus) && (
             <div className="border-t border-white/10 pt-6">
               <h4 className="text-sm font-medium text-white/60 mb-3">
                 識別情報
@@ -521,6 +553,18 @@ export function TestCaseDetailsCard({
                   <div>
                     <span className="text-xs text-white/50">機能</span>
                     <p className="text-sm text-white/90">{testCase.functionName}</p>
+                  </div>
+                )}
+                {testCase.executionType && (
+                  <div>
+                    <span className="text-xs text-white/50">実行方式</span>
+                    <p className="text-sm text-white/90">{testCase.executionType}</p>
+                  </div>
+                )}
+                {testCase.automationStatus && (
+                  <div>
+                    <span className="text-xs text-white/50">自動化状況</span>
+                    <p className="text-sm text-white/90">{testCase.automationStatus}</p>
                   </div>
                 )}
               </div>

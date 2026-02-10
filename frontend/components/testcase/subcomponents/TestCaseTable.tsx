@@ -229,6 +229,22 @@ export function TestCaseTable({
       ),
     },
     {
+      key: 'executionType',
+      label: '実行方式',
+      width: '80px',
+      render: (row) => (
+        <span className="text-xs text-white/70 truncate">{row.executionType || '-'}</span>
+      ),
+    },
+    {
+      key: 'automationStatus',
+      label: '自動化状況',
+      width: '100px',
+      render: (row) => (
+        <span className="text-xs text-white/70 truncate">{row.automationStatus || '-'}</span>
+      ),
+    },
+    {
       key: 'device',
       label: '端末',
       width: '80px',

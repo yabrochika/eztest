@@ -35,6 +35,8 @@ export interface TestCase {
   device?: 'iPhone' | 'Android' | 'PC' | null;
   domain?: string | null;
   functionName?: string | null;
+  executionType?: '手動' | '自動' | null;
+  automationStatus?: '自動化済' | '自動化対象' | '自動化対象外' | '検討中' | null;
 
   createdBy: {
     id: string;
@@ -82,6 +84,8 @@ export interface TestCaseFormData {
   device?: 'iPhone' | 'Android' | 'PC' | null;
   domain?: string | null;
   functionName?: string | null;
+  executionType?: '手動' | '自動' | null;
+  automationStatus?: '自動化済' | '自動化対象' | '自動化対象外' | '検討中' | null;
 }
 
 export interface TestSuite {

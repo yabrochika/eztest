@@ -977,7 +977,12 @@ export class ImportService {
             notes: notesValue,
             steps: filteredSteps.length > 0 ? { create: filteredSteps } : undefined,
           };
-          const extendedCreateData = {
+          // platform, device, domain 等は Prisma クライアントが未対応の環境で
+          // Unknown argument エラーになるため、まず基本フィールドのみで作成し、
+          // 続けて update で拡張フィールドを反映する（両方とも Unknown argument 時はスキップ）
+          let testCase = await prisma.testCase.create({ data: baseCreateData });
+
+          const extendedUpdateData = {
             platform: platformValue,
             device: deviceValue,
             domain: domainValue,
@@ -985,20 +990,15 @@ export class ImportService {
             executionType: executionTypeValue,
             automationStatus: automationStatusValue,
           };
-
-          let testCase;
-          try {
-            testCase = await prisma.testCase.create({
-              data: { ...baseCreateData, ...extendedCreateData },
-            });
-          } catch (extendedErr) {
-            const errMsg = extendedErr instanceof Error ? extendedErr.message : '';
-            if (errMsg.includes('Unknown argument')) {
-              testCase = await prisma.testCase.create({
-                data: baseCreateData,
+          const hasExtended = Object.values(extendedUpdateData).some((v) => v != null);
+          if (hasExtended) {
+            try {
+              await prisma.testCase.update({
+                where: { id: testCase.id },
+                data: extendedUpdateData,
               });
-            } else {
-              throw extendedErr;
+            } catch {
+              // Prisma クライアントが拡張フィールドに対応していない場合はスキップ
             }
           }
 

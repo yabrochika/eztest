@@ -52,7 +52,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const [totalPagesCount, setTotalPagesCount] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [isPaginationChange, setIsPaginationChange] = useState(false);

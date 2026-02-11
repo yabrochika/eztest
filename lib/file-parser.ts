@@ -39,7 +39,7 @@ export function parseCSV(content: string): ParseResult {
       header: true,
       skipEmptyLines: true,
       transformHeader: (header: string) => {
-        const trimmed = header.trim();
+        const trimmed = header.replace(/^\uFEFF/, '').trim();
         const key = trimmed.toLowerCase();
         const count = (headerCount.get(key) ?? 0) + 1;
         headerCount.set(key, count);

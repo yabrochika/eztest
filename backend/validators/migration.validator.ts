@@ -132,19 +132,17 @@ export function validateTestCaseImportColumns(data: ParsedRow[]): string[] {
 
   const firstRow = data[0];
   const availableFields = Object.keys(firstRow);
-  // 列名の正規化: BOM・前後空白を除去して小文字化（Excel 保存 CSV 等で必須列が認識されない問題を防ぐ）
-  const availableFieldsLower = new Map(
-    availableFields.map((field) => [
-      field.replace(/^\uFEFF/, '').trim().toLowerCase(),
-      field,
-    ])
-  );
+  // 列名の正規化: BOM・前後空白を除去（Excel 保存 CSV 等で必須列が認識されない問題を防ぐ）
+  const normalize = (s: string) => s.replace(/^\uFEFF/, '').trim();
+  const normalizedFields = availableFields.map((f) => normalize(f));
 
-  // Check for required field: テストケース名 / Test Case Title (in any variation)
-  const titleVariations = ['テストケース名', 'title', 'test case title', 'testcase title'];
-
-  const hasTitle = titleVariations.some((variation) =>
-    availableFieldsLower.has(variation) || availableFields.some((f) => f.trim() === variation)
+  // Check for required field: テストケース名 / Test Case Title (正規化後のキーで判定)
+  const hasTitle = normalizedFields.some(
+    (n) =>
+      n === 'テストケース名' ||
+      n.toLowerCase() === 'title' ||
+      n.toLowerCase() === 'test case title' ||
+      n.toLowerCase() === 'testcase title'
   );
 
   if (!hasTitle) {

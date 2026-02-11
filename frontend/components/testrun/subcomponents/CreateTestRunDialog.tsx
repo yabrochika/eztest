@@ -23,8 +23,8 @@ export function CreateTestRunDialog({
   const fields: BaseDialogField[] = [
     {
       name: 'name',
-      label: 'Test Run Name',
-      placeholder: 'E.g., Login Feature - Build #123',
+      label: 'テストラン名',
+      placeholder: '例: ログイン機能 - ビルド #123',
       type: 'text',
       required: true,
       minLength: 3,
@@ -33,7 +33,7 @@ export function CreateTestRunDialog({
     },
     {
       name: 'environment',
-      label: 'Environment',
+      label: '環境',
       type: 'select',
       placeholder: '環境を選択',
       required: true,
@@ -46,8 +46,8 @@ export function CreateTestRunDialog({
     },
     {
       name: 'description',
-      label: 'Description',
-      placeholder: 'Enter test run description',
+      label: '説明',
+      placeholder: 'テストランの説明を入力',
       type: 'textarea',
       rows: 3,
       cols: 2,
@@ -58,7 +58,7 @@ export function CreateTestRunDialog({
   const handleSubmit = async (formData: Record<string, string>) => {
     // Validate environment is selected
     if (formData.environment === 'none' || !formData.environment) {
-      throw new Error('Environment is required');
+      throw new Error('環境を選択してください');
     }
 
     const response = await fetch(`/api/projects/${projectId}/testruns`, {
@@ -77,18 +77,18 @@ export function CreateTestRunDialog({
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || data.error || 'Failed to create test run');
+      throw new Error(data.message || data.error || 'テストランの作成に失敗しました');
     }
 
     return data.data;
   };
 
   const config: BaseDialogConfig<TestRun> = {
-    title: 'Create Test Run',
-    description: 'Create a new test run to execute test cases and track results.',
+    title: 'テストランを作成',
+    description: 'テストケースを実行し、結果を記録するための新しいテストランを作成します。',
     fields,
-    submitLabel: 'Create Test Run',
-    cancelLabel: 'Cancel',
+    submitLabel: 'テストランを作成',
+    cancelLabel: 'キャンセル',
     triggerOpen,
     onOpenChange,
     onSubmit: handleSubmit,

@@ -136,11 +136,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       if (data.data) {
         setTestRun(data.data);
       } else {
-        alert(data.error || 'Failed to fetch test run');
+        alert(data.error || 'テストランの取得に失敗しました');
       }
     } catch (error) {
       console.error('Error fetching test run:', error);
-      alert('Failed to fetch test run');
+      alert('テストランの取得に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -166,11 +166,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       if (data.data) {
         fetchTestRun();
       } else {
-        alert(data.error || 'Failed to start test run');
+        alert(data.error || 'テストランの開始に失敗しました');
       }
     } catch (error) {
       console.error('Error starting test run:', error);
-      alert('Failed to start test run');
+      alert('テストランの開始に失敗しました');
     } finally {
       setActionLoading(false);
     }
@@ -204,11 +204,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           setSendReportDialogOpen(false);
         }
       } else {
-        alert(data.error || 'Failed to complete test run');
+        alert(data.error || 'テストランの完了に失敗しました');
       }
     } catch (error) {
       console.error('Error completing test run:', error);
-      alert('Failed to complete test run');
+      alert('テストランの完了に失敗しました');
     } finally {
       setActionLoading(false);
     }
@@ -243,8 +243,8 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       const hasInvalidEmails = data.data.message?.includes('Invalid email') || data.data.message?.includes('No valid email');
       setFloatingAlert({
         type: 'error',
-        title: hasInvalidEmails ? 'Invalid Email Addresses' : 'Email Report Failed',
-        message: data.data.message || data.error || 'Failed to send report. Please check recipient email addresses.',
+        title: hasInvalidEmails ? '無効なメールアドレス' : 'レポート送信に失敗しました',
+        message: data.data.message || data.error || 'レポートの送信に失敗しました。受信者のメールアドレスを確認してください。',
       });
       return;
     }
@@ -257,14 +257,14 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     if (hasInvalidEmails || hasFailedSends) {
       setFloatingAlert({
         type: 'error', // Use error type to highlight the warning about invalid emails
-        title: 'Report Sent - Some Issues',
+        title: 'レポート送信完了 - 一部問題あり',
         message: data.data.message, // Message will include: "Report sent successfully to X recipient(s). Invalid email addresses skipped: ..."
       });
     } else {
       // All emails sent successfully, no issues
       setFloatingAlert({
         type: 'success',
-        title: 'Report Sent Successfully',
+        title: 'レポートを送信しました',
         message: data.data.message,
       });
     }
@@ -290,7 +290,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
 
   const handleSubmitResult = async () => {
     if (!selectedTestCase || !resultForm.status) {
-      alert('Please select a result status');
+      alert('結果ステータスを選択してください');
       return;
     }
 
@@ -321,11 +321,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         clearResultForm(); // Clear persisted form data after successful submission
         fetchTestRun();
       } else {
-        alert(data.error || 'Failed to save result');
+        alert(data.error || '結果の保存に失敗しました');
       }
     } catch (error) {
       console.error('Error saving result:', error);
-      alert('Failed to save result');
+      alert('結果の保存に失敗しました');
     }
   };
 
@@ -365,7 +365,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
 
   const handleAddTestCases = async () => {
     if (selectedCaseIds.length === 0) {
-      alert('Please select at least one test case');
+      alert('1件以上のテストケースを選択してください');
       return;
     }
 
@@ -419,7 +419,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       await fetchAvailableTestSuites();
     } catch (error) {
       console.error('Error adding test cases:', error);
-      alert(`Failed to add test cases: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      alert(`テストケースの追加に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setAddingTestCases(false);
     }
@@ -492,8 +492,8 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           if (ungroupedTestCases.length > 0) {
             availableSuites.push({
               id: 'ungrouped',
-              name: 'Ungrouped Test Cases',
-              description: 'Test cases not assigned to any test suite',
+              name: 'テストスイート未割当',
+              description: 'いずれのテストスイートにも割り当てられていないテストケース',
               projectId: testRun.project.id,
               testCases: ungroupedTestCases,
               _count: {
@@ -514,7 +514,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
 
   const handleAddTestSuites = async () => {
     if (selectedSuiteIds.length === 0) {
-      alert('Please select at least one test suite');
+      alert('1件以上のテストスイートを選択してください');
       return;
     }
 
@@ -536,7 +536,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       });
 
       if (testCaseIds.length === 0) {
-        alert('No new test cases to add from selected suites');
+        alert('選択したテストスイートに追加する新しいテストケースがありません');
         return;
       }
 
@@ -584,7 +584,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       await fetchAvailableTestCases();
     } catch (error) {
       console.error('Error adding test cases from suites:', error);
-      alert(`Failed to add test cases from suites: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      alert(`テストスイートからのテストケース追加に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setAddingTestSuites(false);
     }
@@ -671,13 +671,13 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     executed > 0 ? Math.round((stats.passed / executed) * 100) : 0;
 
   if (loading || permissionsLoading) {
-    return <Loader fullScreen text="Loading test run..." />;
+    return <Loader fullScreen text="テストランを読み込み中..." />;
   }
 
   if (!testRun) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <p className="text-gray-400">Test run not found</p>
+        <p className="text-gray-400">テストランが見つかりません</p>
       </div>
     );
   }
@@ -839,7 +839,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
               endpoint: `/api/projects/${testRun.project?.id}/testruns/${testRunId}/export`,
               filters: {},
             }}
-            itemName="test run report"
+            itemName="テストランレポート"
           />
         )}
       </div>

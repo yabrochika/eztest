@@ -61,7 +61,7 @@ export function TestRunHeader({
     : null;
 
   // Determine execution type badge color based on label
-  const executionTypeBadgeClassName = executionTypeLabel === 'Automation'
+  const executionTypeBadgeClassName = executionTypeLabel === 'AUTOMATION'
     ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
     : 'bg-blue-500/10 text-blue-500 border-blue-500/20';
 
@@ -74,7 +74,7 @@ export function TestRunHeader({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex flex-wrap gap-6 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-white/60">Status:</span>
+            <span className="text-white/60">ステータス:</span>
             <Badge 
               variant="outline" 
               className={statusBadgeProps.className}
@@ -85,7 +85,7 @@ export function TestRunHeader({
           </div>
           {executionTypeLabel && (
             <div className="flex items-center gap-2">
-              <span className="text-white/60">Execution:</span>
+              <span className="text-white/60">実行種別:</span>
               <Badge variant="outline" className={executionTypeBadgeClassName}>
                 {executionTypeLabel}
               </Badge>
@@ -93,7 +93,7 @@ export function TestRunHeader({
           )}
           {testRun.environment && environmentBadgeProps && (
             <div className="flex items-center gap-2">
-              <span className="text-white/60">Environment:</span>
+              <span className="text-white/60">環境:</span>
               <Badge
                 variant="outline"
                 className={environmentBadgeProps.className}
@@ -109,7 +109,7 @@ export function TestRunHeader({
           <ActionButtonGroup
             buttons={[
               {
-                label: 'Start Test Run',
+                label: 'テストランを開始',
                 icon: Play,
                 onClick: onStartTestRun,
                 variant: 'primary',
@@ -117,7 +117,7 @@ export function TestRunHeader({
                 loading: actionLoading && testRun.status === 'PLANNED',
               },
               {
-                label: 'Complete Test Run',
+                label: 'テストランを完了',
                 icon: Square,
                 onClick: onCompleteTestRun,
                 variant: 'primary',

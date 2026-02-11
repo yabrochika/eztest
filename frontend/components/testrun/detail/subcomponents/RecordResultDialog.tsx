@@ -200,13 +200,13 @@ export function RecordResultDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader className="mb-4">
-          <DialogTitle>Record Test Result</DialogTitle>
+          <DialogTitle>テスト結果を記録</DialogTitle>
           <DialogDescription>{testCaseName}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mb-4">
           <div className="space-y-2">
-            <Label htmlFor="status">Result Status *</Label>
+            <Label htmlFor="status">結果ステータス *</Label>
             <Select
               value={formData.status}
               onValueChange={(value: string) => onFormChange({ status: value })}
@@ -228,7 +228,7 @@ export function RecordResultDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="comment">Comment</Label>
+            <Label htmlFor="comment">コメント</Label>
             <Textarea
               id="comment"
               variant="glass"
@@ -243,14 +243,14 @@ export function RecordResultDialog({
           {formData.status === 'FAILED' && (
             <div className="space-y-4 border-t border-white/10 pt-4">
               <div className="flex flex-col gap-2">
-                <Label>Link to Defects (Optional)</Label>
+                <Label>欠陥をリンク（任意）</Label>
                 <p className="text-xs text-white/50">
-                  To create a new defect, use the &ldquo;Create Defect&rdquo; button in the table&apos;s Actions column.
+                  新規欠陥を作成するには、テーブルのアクション列の「欠陥を作成」ボタンを使用してください。
                 </p>
               </div>
 
               {loadingDefects ? (
-                <p className="text-sm text-white/50">Loading defects...</p>
+                <p className="text-sm text-white/50">欠陥を読み込み中...</p>
               ) : (
                 <div className="space-y-4">
                   {/* Filter Buttons */}
@@ -263,7 +263,7 @@ export function RecordResultDialog({
                       }}
                       className={defectFilter === 'all' ? 'bg-blue-500/20 border-blue-500/50 text-white' : ''}
                     >
-                      All Defects
+                      すべての欠陥
                     </ButtonSecondary>
                     {existingDefects.length > 0 && (
                       <ButtonSecondary
@@ -273,9 +273,9 @@ export function RecordResultDialog({
                           setSearchQuery('');
                         }}
                         className={defectFilter === 'existing' ? 'bg-blue-500/20 border-blue-500/50 text-white' : ''}
-                      >
-                        Existing Defects ({existingDefects.length})
-                      </ButtonSecondary>
+                    >
+                      リンク済み欠陥 ({existingDefects.length})
+                    </ButtonSecondary>
                     )}
                     {otherDefects.length > 0 && (
                       <ButtonSecondary
@@ -285,9 +285,9 @@ export function RecordResultDialog({
                           setSearchQuery('');
                         }}
                         className={defectFilter === 'other' ? 'bg-blue-500/20 border-blue-500/50 text-white' : ''}
-                      >
-                        Other Defects ({otherDefects.length})
-                      </ButtonSecondary>
+                    >
+                      その他の欠陥 ({otherDefects.length})
+                    </ButtonSecondary>
                     )}
                   </div>
 
@@ -295,7 +295,7 @@ export function RecordResultDialog({
                   <SearchInput
                     value={searchQuery}
                     onChange={setSearchQuery}
-                    placeholder="Search defects by title or ID..."
+                    placeholder="タイトルまたはIDで欠陥を検索..."
                   />
 
                   {/* Defects List */}
@@ -330,7 +330,7 @@ export function RecordResultDialog({
                       ))
                     ) : (
                       <p className="text-sm text-white/50 text-center py-4">
-                        {searchQuery ? 'No defects match your search' : 'No defects available'}
+                        {searchQuery ? '検索に一致する欠陥がありません' : '利用可能な欠陥がありません'}
                       </p>
                     )}
                   </div>
@@ -346,16 +346,16 @@ export function RecordResultDialog({
             onClick={() => onOpenChange(false)}
             buttonName="Record Test Result Dialog - Cancel"
           >
-            Cancel
+            キャンセル
           </Button>
           <ButtonPrimary 
             onClick={handleSubmitWithDefects}
             buttonName="Record Test Result Dialog - Save Result"
           >
-            Save Result
+            結果を保存
             {formData.status === 'FAILED' && selectedDefectIds.length > 0 && (
               <span className="ml-2 text-xs">
-                ({selectedDefectIds.length} defect{selectedDefectIds.length > 1 ? 's' : ''})
+                （{selectedDefectIds.length} 件の欠陥）
               </span>
             )}
           </ButtonPrimary>

@@ -303,7 +303,7 @@ export function TestCasesListCard({
 
   return (
     <DetailCard
-      title={`Test Cases (${results?.length || 0})`}
+      title={`テストケース (${results?.length || 0})`}
       contentClassName=""
       headerAction={
         results && results.length > 0 && canCreate ? (

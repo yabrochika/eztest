@@ -55,7 +55,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
 
   useEffect(() => {
     if (project) {
-      document.title = `Test Runs - ${project.name} | EZTest`;
+      document.title = `テストラン - ${project.name} | EZTest`;
     }
   }, [project]);
 
@@ -122,8 +122,8 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
   const handleTestRunCreated = (newTestRun: TestRun) => {
     setAlert({
       type: 'success',
-      title: 'Success',
-      message: `Test run "${newTestRun.name}" created successfully`,
+      title: '成功',
+      message: `テストラン「${newTestRun.name}」を作成しました`,
     });
     setTimeout(() => setAlert(null), 5000);
     fetchTestRuns();
@@ -143,8 +143,8 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
         setSelectedTestRun(null);
         setAlert({
           type: 'success',
-          title: 'Success',
-          message: `Test run "${deletedTestRunName}" deleted successfully`,
+          title: '成功',
+          message: `テストラン「${deletedTestRunName}」を削除しました`,
         });
         setTimeout(() => setAlert(null), 5000);
         fetchTestRuns();
@@ -152,12 +152,12 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
         const data = await response.json();
         setAlert({
           type: 'error',
-          title: 'Failed to Delete Test Run',
-          message: data.error || 'Failed to delete test run',
+          title: 'テストランの削除に失敗しました',
+          message: data.error || 'テストランの削除に失敗しました',
         });
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました';
       setAlert({
         type: 'error',
         title: '接続エラー',
@@ -315,7 +315,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
               environment: filters.environmentFilter !== 'all' ? filters.environmentFilter : undefined,
             },
           }}
-          itemName="test runs"
+          itemName="テストラン"
         />
 
         {/* Upload XML Dialog */}

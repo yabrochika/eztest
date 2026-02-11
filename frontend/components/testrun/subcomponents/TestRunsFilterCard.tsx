@@ -39,7 +39,7 @@ export function TestRunsFilterCard({
           <SearchInput
             value={filters.searchQuery}
             onChange={onSearchChange}
-            placeholder="Search test runs..."
+            placeholder="テストランを検索..."
           />
         </div>
 
@@ -47,7 +47,7 @@ export function TestRunsFilterCard({
           <FilterDropdown
             value={filters.statusFilter}
             onValueChange={onStatusFilterChange}
-            placeholder="Status"
+            placeholder="ステータス"
             options={statusOptions}
           />
         </div>
@@ -56,7 +56,7 @@ export function TestRunsFilterCard({
           <FilterDropdown
             value={filters.environmentFilter}
             onValueChange={onEnvironmentFilterChange}
-            placeholder="Environment"
+            placeholder="環境"
             options={environmentOptions}
           />
         </div>

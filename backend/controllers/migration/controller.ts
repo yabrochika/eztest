@@ -29,13 +29,15 @@ export class MigrationController {
       if (type === 'testcases') {
         const validationErrors = validateTestCaseImportColumns(parseResult.data);
         if (validationErrors.length > 0) {
-          throw new ValidationException('Missing required fields', validationErrors);
+          const detailMessage = validationErrors.join(' ');
+          throw new ValidationException(detailMessage, validationErrors);
         }
       } else {
         // For defects, use dedicated validator
         const validationErrors = validateDefectImportColumns(parseResult.data);
         if (validationErrors.length > 0) {
-          throw new ValidationException('Missing required fields', validationErrors);
+          const detailMessage = validationErrors.join(' ');
+          throw new ValidationException(detailMessage, validationErrors);
         }
       }
 

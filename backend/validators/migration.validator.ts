@@ -147,9 +147,12 @@ export function validateTestCaseImportColumns(data: ParsedRow[]): string[] {
 
   if (!hasTitle) {
     const availableFieldNames = availableFields.join(', ');
-    errors.push(
-      `必須列「テストケース名」がありません。利用可能な列: ${availableFieldNames}`
-    );
+    let msg = `必須列「テストケース名」（または「title」）がありません。利用可能な列: ${availableFieldNames}`;
+    // 1列しかない場合、区切り文字（カンマ／タブ／セミコロン）が正しくない可能性
+    if (availableFields.length <= 1 && availableFieldNames.length > 20) {
+      msg += ' ※列が1つしか認識されていません。ファイルの区切り文字を確認してください（カンマ区切りで保存、またはExcelで「CSV UTF-8（コンマ区切り）」で保存）。';
+    }
+    errors.push(msg);
   }
 
   // Validate all columns exist (optional - just for information)

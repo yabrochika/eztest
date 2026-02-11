@@ -38,14 +38,6 @@ export function TestSuiteTestCaseTable({
   // Define columns
   const columns: ColumnDef<TestCase>[] = [
     {
-      key: 'tcId',
-      label: 'ID',
-      width: '70px',
-      render: (row) => (
-        <p className="text-xs font-mono text-white/70 truncate">{row.tcId}</p>
-      ),
-    },
-    {
       key: 'title',
       label: 'TITLE',
       className: 'min-w-0',
@@ -119,30 +111,6 @@ export function TestSuiteTestCaseTable({
           </Badge>
         );
       },
-    },
-    {
-      key: 'owner',
-      label: 'OWNER',
-      width: '140px',
-      render: (row) => (
-        <div className="min-w-0">
-          <HoverCard openDelay={200}>
-            <HoverCardTrigger asChild>
-              <span className="text-xs text-white/70 truncate block cursor-pointer">
-                {row.createdBy.name}
-              </span>
-            </HoverCardTrigger>
-            {row.createdBy.name && row.createdBy.name.length > 20 && (
-              <HoverCardContent side="top" className="w-60">
-                <div className="space-y-1">
-                  <h4 className="text-xs font-semibold text-white/60">Owner</h4>
-                  <p className="text-sm text-white/90">{row.createdBy.name}</p>
-                </div>
-              </HoverCardContent>
-            )}
-          </HoverCard>
-        </div>
-      ),
     },
     {
       key: 'runs',

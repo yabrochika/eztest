@@ -201,8 +201,8 @@ export class TestCaseService {
       where,
       select: TEST_CASE_LIST_SELECT,
       orderBy: [
-        { module: { name: 'desc' } },  // Module name descending (SM_014, SM_013...)
-        { flowId: 'desc' }  // Then Flow-ID descending
+        { module: { name: 'asc' } },  // Module name ascending (SM_008, SM_009...)
+        { flowId: 'asc' }  // Then Flow-ID ascending
       ],
     });
   }
@@ -262,7 +262,7 @@ export class TestCaseService {
           select: { testCases: true }
         }
       },
-      orderBy: { name: 'desc' }
+      orderBy: { name: 'asc' }
     });
 
     if (groupBy === 'module') {
@@ -274,8 +274,8 @@ export class TestCaseService {
         where,
         select: TEST_CASE_LIST_SELECT,
         orderBy: [
-          { module: { name: 'desc' } },  // Module name descending (SM_014, SM_013...)
-          { flowId: 'desc' }  // Then Flow-ID descending
+          { module: { name: 'asc' } },  // Module name ascending (SM_008, SM_009...)
+          { flowId: 'asc' }  // Then Flow-ID ascending
         ]
       });
 
@@ -379,8 +379,8 @@ export class TestCaseService {
         take: limit,
         select: TEST_CASE_LIST_SELECT,
         orderBy: [
-          { module: { name: 'desc' } },  // Module name descending (SM_014, SM_013...)
-          { flowId: 'desc' }  // Then Flow-ID descending
+          { module: { name: 'asc' } },  // Module name ascending (SM_008, SM_009...)
+          { flowId: 'asc' }  // Then Flow-ID ascending
         ]
       });
 

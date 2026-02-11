@@ -200,9 +200,10 @@ export class TestCaseService {
     return await prisma.testCase.findMany({
       where,
       select: TEST_CASE_LIST_SELECT,
-      orderBy: {
-        flowId: 'asc',
-      },
+      orderBy: [
+        { module: { order: 'asc' } },  // Module order ascending
+        { flowId: 'asc' }  // Then Flow-ID ascending
+      ],
     });
   }
 
@@ -268,11 +269,14 @@ export class TestCaseService {
       // Module-based pagination with proper handling of large modules
       // Strategy: Flatten test cases while maintaining module order, then paginate
       
-      // Get all test cases for grouping, sorted by flowId ASC (ascending order)
+      // Get all test cases for grouping, sorted by module order then flowId
       const allTestCases = await prisma.testCase.findMany({
         where,
         select: TEST_CASE_LIST_SELECT,
-        orderBy: { flowId: 'asc' }  // Flow-ID ascending order
+        orderBy: [
+          { module: { order: 'asc' } },  // Module order ascending
+          { flowId: 'asc' }  // Then Flow-ID ascending
+        ]
       });
 
       // Group test cases by module
@@ -392,7 +396,7 @@ export class TestCaseService {
         }
       };
     } else {
-      // Simple pagination (no grouping) - sorted by flowId
+      // Simple pagination (no grouping) - sorted by module order then flowId
       const skip = (page - 1) * limit;
       
       const testCases = await prisma.testCase.findMany({
@@ -400,7 +404,10 @@ export class TestCaseService {
         skip,
         take: limit,
         select: TEST_CASE_LIST_SELECT,
-        orderBy: { flowId: 'asc' }  // Flow-ID ascending order
+        orderBy: [
+          { module: { order: 'asc' } },  // Module order ascending
+          { flowId: 'asc' }  // Then Flow-ID ascending
+        ]
       });
 
       const totalPages = Math.ceil(totalItems / limit) || 1;

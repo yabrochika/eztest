@@ -147,7 +147,7 @@ export function TestSuiteTestCaseTable({
       grouped={true}
       groupConfig={groupConfig}
       actions={actions}
-      gridTemplateColumns="70px 1fr 100px 90px 140px 70px 40px"
+      gridTemplateColumns="70px 3fr 100px 90px 140px 70px 40px"
       emptyMessage="No test cases available"
     />
   );

@@ -894,12 +894,12 @@ export class ImportService {
           testType: testTypeValue,
           evidence: evidenceValue,
           notes: notesValue,
+          domain: domainValue,
+          functionName: functionNameValue,
         };
         const extendedUpdateData = {
           platform: platformValue,
           device: deviceValue,
-          domain: domainValue,
-          functionName: functionNameValue,
           executionType: executionTypeValue,
           automationStatus: automationStatusValue,
         };
@@ -989,9 +989,11 @@ export class ImportService {
             testType: testTypeValue,
             evidence: evidenceValue,
             notes: notesValue,
+            domain: domainValue,
+            functionName: functionNameValue,
             steps: normalizedSteps.length > 0 ? { create: normalizedSteps } : undefined,
           };
-          // platform, device, domain 等は Prisma クライアントが未対応の環境で
+          // platform, device 等は Prisma クライアントが未対応の環境で
           // Unknown argument エラーになるため、まず基本フィールドのみで作成し、
           // 続けて update で拡張フィールドを反映する（両方とも Unknown argument 時はスキップ）
           let testCase = await prisma.testCase.create({ data: baseCreateData });
@@ -999,14 +1001,10 @@ export class ImportService {
           const extendedUpdateData = {
             platform: platformValue,
             device: deviceValue,
-            domain: domainValue,
-            functionName: functionNameValue,
             executionType: executionTypeValue,
             automationStatus: automationStatusValue,
           };
-          console.log(`[Import Row ${rowNumber}] extendedUpdateData:`, JSON.stringify(extendedUpdateData));
           const hasExtended = Object.values(extendedUpdateData).some((v) => v != null);
-          console.log(`[Import Row ${rowNumber}] hasExtended:`, hasExtended);
           if (hasExtended) {
             try {
               await prisma.testCase.update({

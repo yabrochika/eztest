@@ -863,6 +863,14 @@ export class ImportService {
                 }))
             : [];
 
+        // DB の一意制約 (testCaseId, stepNumber) に抵触しないよう、
+        // 取り込み時は空行除去後の順序で手順番号を連番に正規化する
+        const normalizedSteps = filteredSteps.map((step, index) => ({
+          stepNumber: index + 1,
+          action: step.action,
+          expectedResult: step.expectedResult,
+        }));
+
         const baseUpdateData = {
           title: testCaseTitle,
           description: description ? description.toString().trim() : null,
@@ -910,9 +918,9 @@ export class ImportService {
             }
           }
           await prisma.testStep.deleteMany({ where: { testCaseId: existingTestCaseToUpdate.id } });
-          if (filteredSteps.length > 0) {
+          if (normalizedSteps.length > 0) {
             await prisma.testStep.createMany({
-              data: filteredSteps.map((step) => ({
+              data: normalizedSteps.map((step) => ({
                 testCaseId: existingTestCaseToUpdate!.id,
                 stepNumber: step.stepNumber,
                 action: step.action,
@@ -975,7 +983,7 @@ export class ImportService {
             testType: testTypeValue,
             evidence: evidenceValue,
             notes: notesValue,
-            steps: filteredSteps.length > 0 ? { create: filteredSteps } : undefined,
+            steps: normalizedSteps.length > 0 ? { create: normalizedSteps } : undefined,
           };
           // platform, device, domain 等は Prisma クライアントが未対応の環境で
           // Unknown argument エラーになるため、まず基本フィールドのみで作成し、

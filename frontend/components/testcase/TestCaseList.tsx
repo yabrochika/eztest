@@ -46,7 +46,6 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [domainFilter, setDomainFilter] = useState<string>('');
   const [functionNameFilter, setFunctionNameFilter] = useState<string>('');
@@ -75,7 +74,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
   useEffect(() => {
     fetchTestCases();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, currentPage, itemsPerPage, searchQuery, priorityFilter, statusFilter, domainFilter, functionNameFilter]);
+  }, [projectId, currentPage, itemsPerPage, searchQuery, statusFilter, domainFilter, functionNameFilter]);
 
   useEffect(() => {
     if (project) {
@@ -112,7 +111,6 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
       });
       
       if (searchQuery) params.append('search', searchQuery);
-      if (priorityFilter !== 'all') params.append('priority', priorityFilter);
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (domainFilter) params.append('domain', domainFilter);
       if (functionNameFilter) params.append('functionName', functionNameFilter);
@@ -324,12 +322,10 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
             mounted ? (
               <TestCaseFilters
                 searchQuery={searchQuery}
-                priorityFilter={priorityFilter}
                 statusFilter={statusFilter}
                 domainFilter={domainFilter}
                 functionNameFilter={functionNameFilter}
                 onSearchChange={setSearchQuery}
-                onPriorityChange={setPriorityFilter}
                 onStatusChange={setStatusFilter}
                 onDomainChange={setDomainFilter}
                 onFunctionNameChange={setFunctionNameFilter}
@@ -434,7 +430,6 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
               moduleId: undefined,
               suiteId: undefined,
               status: statusFilter !== 'all' ? statusFilter : undefined,
-              priority: priorityFilter !== 'all' ? priorityFilter : undefined,
             },
           }}
           itemName="test cases"

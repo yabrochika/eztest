@@ -8,12 +8,10 @@ import { TEST_CASE_DOMAIN_OPTIONS, TEST_CASE_FUNCTION_NAME_OPTIONS } from '../co
 
 interface TestCaseFiltersProps {
   searchQuery: string;
-  priorityFilter: string;
   statusFilter: string;
   domainFilter: string;
   functionNameFilter: string;
   onSearchChange: (value: string) => void;
-  onPriorityChange: (value: string) => void;
   onStatusChange: (value: string) => void;
   onDomainChange: (value: string) => void;
   onFunctionNameChange: (value: string) => void;
@@ -21,26 +19,18 @@ interface TestCaseFiltersProps {
 
 export function TestCaseFilters({
   searchQuery,
-  priorityFilter,
   statusFilter,
   domainFilter,
   functionNameFilter,
   onSearchChange,
-  onPriorityChange,
   onStatusChange,
   onDomainChange,
   onFunctionNameChange,
 }: TestCaseFiltersProps) {
   // Fetch dynamic dropdown options
-  const { options: priorityOptionsData } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptionsData } = useDropdownOptions('TestCase', 'status');
 
   // Map to FilterOption format with "All" option
-  const priorityOptions: FilterOption[] = [
-    { value: 'all', label: 'すべての優先度' },
-    ...priorityOptionsData.map(opt => ({ value: opt.value, label: opt.label })),
-  ];
-
   const statusOptions: FilterOption[] = [
     { value: 'all', label: 'すべてのステータス' },
     ...statusOptionsData.map(opt => ({ value: opt.value, label: opt.label })),
@@ -48,21 +38,12 @@ export function TestCaseFilters({
 
   return (
     <div className="mb-6 w-full min-w-0">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 w-full min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full min-w-0">
         <div className="sm:col-span-2 min-w-0">
           <SearchInput
             value={searchQuery}
             onChange={onSearchChange}
             placeholder="テストケースを検索..."
-          />
-        </div>
-
-        <div className="min-w-0 w-full">
-          <FilterDropdown
-            value={priorityFilter}
-            onValueChange={onPriorityChange}
-            placeholder="優先度"
-            options={priorityOptions}
           />
         </div>
 

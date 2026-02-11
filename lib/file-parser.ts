@@ -10,6 +10,28 @@ export interface ParseResult {
   errors: string[];
 }
 
+/** _2, _3 等の重複サフィックスを除去（Excel等で全列に _2 が付く場合に対応） */
+function stripDuplicateSuffix(s: string): string {
+  return s.replace(/_[0-9]+$/, '').trim();
+}
+
+/**
+ * パース済みデータのキーから _2, _3 を除去して正規化
+ * 同一ベース名が複数ある場合は先に出現したものを採用
+ */
+function normalizeRowKeys(data: ParsedRow[]): ParsedRow[] {
+  return data.map((row) => {
+    const normalizedRow: ParsedRow = {};
+    for (const key of Object.keys(row)) {
+      const baseKey = stripDuplicateSuffix(key);
+      if (baseKey && !(baseKey in normalizedRow)) {
+        normalizedRow[baseKey] = row[key];
+      }
+    }
+    return normalizedRow;
+  });
+}
+
 /**
  * Parse CSV file from buffer or string.
  * Duplicate headers are made unique by appending _2, _3, ... so the first column's value is preserved.
@@ -54,8 +76,9 @@ export function parseCSV(content: string): ParseResult {
       });
     }
 
+    const parsedData = result.data as ParsedRow[];
     return {
-      data: result.data as ParsedRow[],
+      data: normalizeRowKeys(parsedData),
       errors,
     };
   } catch (error) {
@@ -104,7 +127,7 @@ export function parseExcel(buffer: Buffer): ParseResult {
     });
 
     return {
-      data: cleanedData,
+      data: normalizeRowKeys(cleanedData),
       errors,
     };
   } catch (error) {

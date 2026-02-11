@@ -119,7 +119,7 @@ export function TestCaseTable({
     {
       key: 'status',
       label: 'STATUS',
-      width: '90px',
+      width: '70px',
       render: (row) => {
         const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
         const label = statusOptions.find(opt => opt.value === row.status)?.label || row.status;
@@ -238,7 +238,7 @@ export function TestCaseTable({
       grouped={groupedByModule}
       groupConfig={groupConfig}
       actions={actions}
-      gridTemplateColumns="minmax(320px, 3fr) 90px 80px 100px 80px 100px 80px 70px 40px"
+      gridTemplateColumns="minmax(400px, 4fr) 70px 80px 100px 80px 100px 80px 70px 40px"
       emptyMessage="No test cases available"
     />
   );

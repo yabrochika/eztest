@@ -7,7 +7,6 @@ import {
   HoverCardTrigger,
 } from '@/frontend/reusable-elements/hover-cards/HoverCard';
 import { Trash2, Bug } from 'lucide-react';
-import { PriorityBadge } from '@/frontend/reusable-components/badges/PriorityBadge';
 import { GroupedDataTable, ColumnDef, GroupConfig, ActionConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
 import { TestCase, Module } from '@/frontend/components/testcase/types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
@@ -32,7 +31,6 @@ export function TestSuiteTestCaseTable({
   onClick,
   canDelete = true,
 }: TestSuiteTestCaseTableProps) {
-  const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
 
   // Define columns
@@ -75,24 +73,6 @@ export function TestSuiteTestCaseTable({
           )}
         </div>
       ),
-    },
-    {
-      key: 'priority',
-      label: 'PRIORITY',
-      width: '100px',
-      render: (row) => {
-        const badgeProps = getDynamicBadgeProps(row.priority, priorityOptions);
-        const priorityLabel = priorityOptions.find(opt => opt.value === row.priority)?.label || row.priority;
-        return (
-          <PriorityBadge
-            priority={row.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'critical'}
-            dynamicClassName={badgeProps.className}
-            dynamicStyle={badgeProps.style}
-          >
-            {priorityLabel}
-          </PriorityBadge>
-        );
-      },
     },
     {
       key: 'status',

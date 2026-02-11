@@ -908,7 +908,9 @@ export class ImportService {
             });
           } catch (extendedErr) {
             const errMsg = extendedErr instanceof Error ? extendedErr.message : '';
+            console.warn(`Failed to update test case with extended fields:`, errMsg);
             if (errMsg.includes('Unknown argument')) {
+              console.warn('Retrying update without extended fields...');
               await prisma.testCase.update({
                 where: { id: existingTestCaseToUpdate.id },
                 data: baseUpdateData,
@@ -1005,8 +1007,9 @@ export class ImportService {
                 where: { id: testCase.id },
                 data: extendedUpdateData,
               });
-            } catch {
+            } catch (updateErr) {
               // Prisma クライアントが拡張フィールドに対応していない場合はスキップ
+              console.warn(`Failed to update extended fields for test case ${testCase.id}:`, updateErr);
             }
           }
 

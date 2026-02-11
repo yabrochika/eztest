@@ -802,12 +802,16 @@ export class ImportService {
         }
 
         // Domain (ドメイン) and Function (機能) - free text
-        const domainValue = domainCol != null && typeof domainCol === 'string' && domainCol.toString().trim()
-          ? domainCol.toString().trim()
+        console.log(`[Import Row ${rowNumber}] domainCol raw:`, JSON.stringify(domainCol), `type: ${typeof domainCol}`);
+        console.log(`[Import Row ${rowNumber}] functionNameCol raw:`, JSON.stringify(functionNameCol), `type: ${typeof functionNameCol}`);
+        console.log(`[Import Row ${rowNumber}] Row keys:`, Object.keys(row).join(', '));
+        const domainValue = domainCol != null && String(domainCol).trim()
+          ? String(domainCol).trim()
           : null;
-        const functionNameValue = functionNameCol != null && typeof functionNameCol === 'string' && functionNameCol.toString().trim()
-          ? functionNameCol.toString().trim()
+        const functionNameValue = functionNameCol != null && String(functionNameCol).trim()
+          ? String(functionNameCol).trim()
           : null;
+        console.log(`[Import Row ${rowNumber}] domainValue:`, JSON.stringify(domainValue), `functionNameValue:`, JSON.stringify(functionNameValue));
 
         // 実行方式: 手動 / 自動
         let executionTypeValue: '手動' | '自動' | null = null;
@@ -1000,16 +1004,18 @@ export class ImportService {
             executionType: executionTypeValue,
             automationStatus: automationStatusValue,
           };
+          console.log(`[Import Row ${rowNumber}] extendedUpdateData:`, JSON.stringify(extendedUpdateData));
           const hasExtended = Object.values(extendedUpdateData).some((v) => v != null);
+          console.log(`[Import Row ${rowNumber}] hasExtended:`, hasExtended);
           if (hasExtended) {
             try {
               await prisma.testCase.update({
                 where: { id: testCase.id },
                 data: extendedUpdateData,
               });
+              console.log(`[Import Row ${rowNumber}] Extended fields updated successfully for test case ${testCase.id}`);
             } catch (updateErr) {
-              // Prisma クライアントが拡張フィールドに対応していない場合はスキップ
-              console.warn(`Failed to update extended fields for test case ${testCase.id}:`, updateErr);
+              console.error(`[Import Row ${rowNumber}] Failed to update extended fields for test case ${testCase.id}:`, updateErr);
             }
           }
 

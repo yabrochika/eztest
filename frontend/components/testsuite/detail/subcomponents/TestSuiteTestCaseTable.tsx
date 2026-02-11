@@ -38,6 +38,7 @@ export function TestSuiteTestCaseTable({
     {
       key: 'title',
       label: 'TITLE',
+      width: '90px',
       className: 'min-w-0',
       render: (row) => (
         <div className="min-w-0 flex items-center gap-2">
@@ -77,7 +78,6 @@ export function TestSuiteTestCaseTable({
     {
       key: 'status',
       label: 'STATUS',
-      width: '90px',
       render: (row) => {
         const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
         const label = statusOptions.find(opt => opt.value === row.status)?.label || row.status;
@@ -147,7 +147,7 @@ export function TestSuiteTestCaseTable({
       grouped={true}
       groupConfig={groupConfig}
       actions={actions}
-      gridTemplateColumns="70px 3fr 100px 90px 140px 70px 40px"
+      gridTemplateColumns="70px 90px 100px 3fr 140px 70px 40px"
       emptyMessage="No test cases available"
     />
   );

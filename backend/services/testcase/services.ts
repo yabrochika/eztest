@@ -262,7 +262,7 @@ export class TestCaseService {
           select: { testCases: true }
         }
       },
-      orderBy: { updatedAt: 'desc' }
+      orderBy: { order: 'asc' }
     });
 
     if (groupBy === 'module') {
@@ -281,7 +281,6 @@ export class TestCaseService {
 
       // Group test cases by module
       const grouped: Record<string, typeof allTestCases> = {};
-      const moduleLastUpdate: Record<string, Date> = {};
       
       allTestCases.forEach(tc => {
         const moduleId = tc.moduleId || 'no-module';
@@ -289,57 +288,39 @@ export class TestCaseService {
           grouped[moduleId] = [];
         }
         grouped[moduleId].push(tc);
-        
-        // Track the most recent update time for each module
-        const tcUpdateTime = new Date(tc.updatedAt);
-        if (!moduleLastUpdate[moduleId] || tcUpdateTime > moduleLastUpdate[moduleId]) {
-          moduleLastUpdate[moduleId] = tcUpdateTime;
-        }
       });
 
-      // Create list of all groups (modules + ungrouped) with their sort keys
+      // Create list of all groups (modules + ungrouped) preserving module order
       interface GroupInfo {
         id: string;
         testCases: typeof allTestCases;
-        mostRecentUpdate: number;
         isEmpty: boolean;
       }
 
       const allGroups: GroupInfo[] = [];
 
-      // Add all module groups (including empty modules)
+      // Add all module groups (including empty modules) in the order from modules array
+      // modules array is already sorted by order: 'asc', so we preserve that order
       modules.forEach(module => {
         const hasTestCases = grouped[module.id] && grouped[module.id].length > 0;
-        const moduleUpdatedTime = new Date(module.updatedAt).getTime();
-        const testCaseUpdatedTime = moduleLastUpdate[module.id]?.getTime() || 0;
         
         allGroups.push({
           id: module.id,
           testCases: hasTestCases ? grouped[module.id] : [],
-          // Use the most recent time between module's own updatedAt and its test cases' updatedAt
-          mostRecentUpdate: Math.max(moduleUpdatedTime, testCaseUpdatedTime),
           isEmpty: !hasTestCases
         });
       });
 
-      // Add ungrouped test cases as a group
+      // Add ungrouped test cases as a group at the end
       if (grouped['no-module'] && grouped['no-module'].length > 0) {
         allGroups.push({
           id: 'no-module',
           testCases: grouped['no-module'],
-          mostRecentUpdate: moduleLastUpdate['no-module']?.getTime() || 0,
           isEmpty: false
         });
       }
 
-      // Sort all groups: non-empty modules first (by most recent update), then empty modules last (by most recent update)
-      allGroups.sort((a, b) => {
-        // Empty modules always go last
-        if (a.isEmpty && !b.isEmpty) return 1;
-        if (!a.isEmpty && b.isEmpty) return -1;
-        // Within the same category (both empty or both non-empty), sort by most recent update
-        return b.mostRecentUpdate - a.mostRecentUpdate;
-      });
+      // No additional sorting needed - modules are already in correct order from the modules array
 
       // Flatten all test cases in sorted group order
       const orderedTestCases: typeof allTestCases = [];
@@ -347,20 +328,13 @@ export class TestCaseService {
       allGroups.forEach(group => {
         // Only add test cases from groups that have them (skip empty modules)
         if (group.testCases.length > 0) {
-          // Sort test cases within each group by updatedAt DESC (most recent first)
-          const sortedTestCases = group.testCases.sort((a, b) => {
-            const timeA = new Date(a.updatedAt).getTime();
-            const timeB = new Date(b.updatedAt).getTime();
-            return timeB - timeA; // Descending order
-          });
-          orderedTestCases.push(...sortedTestCases);
+          // Test cases are already sorted by module order and flowId from the query above
+          orderedTestCases.push(...group.testCases);
         }
       });
 
-      // Get empty modules (sorted by most recent update)
-      const emptyModules = allGroups
-        .filter(g => g.isEmpty)
-        .sort((a, b) => b.mostRecentUpdate - a.mostRecentUpdate);
+      // Get empty modules (preserve order from modules array)
+      const emptyModules = allGroups.filter(g => g.isEmpty);
 
       // Calculate pagination including empty modules as "phantom items" on the last page
       const emptyModuleCount = emptyModules.length;

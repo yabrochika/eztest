@@ -238,7 +238,7 @@ export function TestCaseTable({
       grouped={groupedByModule}
       groupConfig={groupConfig}
       actions={actions}
-      gridTemplateColumns="90px minmax(320px, 3fr) 80px 100px 80px 100px 80px 70px 40px"
+      gridTemplateColumns="minmax(320px, 3fr) 90px 80px 100px 80px 100px 80px 70px 40px"
       emptyMessage="No test cases available"
     />
   );

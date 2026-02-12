@@ -735,42 +735,41 @@ export class ImportService {
           ? notes.toString().trim()
           : null;
 
-        // Test Type (テスト種別) - convert to standard values
-        // Valid values: NORMAL, ABNORMAL, NON_FUNCTIONAL, REGRESSION, DATA_INTEGRITY, STATE_TRANSITION, OPERATIONAL, FAILURE
+        // Test Type (テスト種別) - preserve Japanese labels, normalize English to Japanese
         let testTypeValue: string | null = null;
         if (testType && typeof testType === 'string' && testType.toString().trim()) {
           const testTypeStr = testType.toString().trim();
           const testTypeUpper = testTypeStr.toUpperCase();
           
-          // Map Japanese labels and variations to standard values
+          // Map to Japanese labels (CSV の日本語値はそのまま保持)
           const testTypeMap: Record<string, string> = {
-            // English values
-            'NORMAL': 'NORMAL',
-            'ABNORMAL': 'ABNORMAL',
-            'NON_FUNCTIONAL': 'NON_FUNCTIONAL',
-            'NONFUNCTIONAL': 'NON_FUNCTIONAL',
-            'NON-FUNCTIONAL': 'NON_FUNCTIONAL',
-            'REGRESSION': 'REGRESSION',
-            'DATA_INTEGRITY': 'DATA_INTEGRITY',
-            'DATAINTEGRITY': 'DATA_INTEGRITY',
-            'DATA-INTEGRITY': 'DATA_INTEGRITY',
-            'STATE_TRANSITION': 'STATE_TRANSITION',
-            'STATETRANSITION': 'STATE_TRANSITION',
-            'STATE-TRANSITION': 'STATE_TRANSITION',
-            'OPERATIONAL': 'OPERATIONAL',
-            'FAILURE': 'FAILURE',
-            // Japanese labels
-            '正常系': 'NORMAL',
-            '異常系': 'ABNORMAL',
-            '非機能': 'NON_FUNCTIONAL',
-            '回帰': 'REGRESSION',
-            'データ整合性確認': 'DATA_INTEGRITY',
-            '状態遷移確認': 'STATE_TRANSITION',
-            '運用確認': 'OPERATIONAL',
-            '障害時確認': 'FAILURE',
+            // English values → Japanese labels
+            'NORMAL': '正常系',
+            'ABNORMAL': '異常系',
+            'NON_FUNCTIONAL': '非機能',
+            'NONFUNCTIONAL': '非機能',
+            'NON-FUNCTIONAL': '非機能',
+            'REGRESSION': '回帰',
+            'DATA_INTEGRITY': 'データ整合性確認',
+            'DATAINTEGRITY': 'データ整合性確認',
+            'DATA-INTEGRITY': 'データ整合性確認',
+            'STATE_TRANSITION': '状態遷移確認',
+            'STATETRANSITION': '状態遷移確認',
+            'STATE-TRANSITION': '状態遷移確認',
+            'OPERATIONAL': '運用確認',
+            'FAILURE': '障害時確認',
+            // Japanese labels → そのまま保持
+            '正常系': '正常系',
+            '異常系': '異常系',
+            '非機能': '非機能',
+            '回帰': '回帰',
+            'データ整合性確認': 'データ整合性確認',
+            '状態遷移確認': '状態遷移確認',
+            '運用確認': '運用確認',
+            '障害時確認': '障害時確認',
           };
           
-          // Try direct match first
+          // Try direct match first (English uppercase)
           if (testTypeMap[testTypeUpper]) {
             testTypeValue = testTypeMap[testTypeUpper];
           } else if (testTypeMap[testTypeStr]) {

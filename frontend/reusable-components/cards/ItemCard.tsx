@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/frontend/reusable-elements/cards/Card';
 import { ReactNode } from 'react';
@@ -61,7 +61,7 @@ export const ItemCard = ({
         <CardHeader className="pb-1 pt-2.5 px-3.5">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              {badges && <div className="flex items-center gap-2 mb-1">{badges}</div>}
+              {badges && <div className="flex items-center flex-wrap gap-1.5 mb-1">{badges}</div>}
               <div className="overflow-hidden">
                 <CardTitle 
                   className="text-lg mb-1 group-hover:text-primary transition-colors line-clamp-2 break-words text-white"

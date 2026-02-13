@@ -221,6 +221,7 @@ export function CreateDefectDialog({
       maxLength: 2000,
       attachments: descriptionAttachments,
       onAttachmentsChange: setDescriptionAttachments,
+      entityType: 'defect',
     },
   ];
 

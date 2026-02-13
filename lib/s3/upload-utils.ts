@@ -46,14 +46,6 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
     };
   }
 
-  // Block video files
-  if (file.type.startsWith('video/')) {
-    return {
-      valid: false,
-      error: 'Video files are not supported. Please upload images or documents.',
-    };
-  }
-
   return { valid: true };
 }
 

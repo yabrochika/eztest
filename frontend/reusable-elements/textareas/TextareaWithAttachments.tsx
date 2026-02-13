@@ -362,7 +362,7 @@ function TextareaWithAttachments({
             onChange={handleFileSelect}
             disabled={uploading}
             className="hidden"
-            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.rar"
+            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.rar"
           />
           
           {/* Upload Progress */}

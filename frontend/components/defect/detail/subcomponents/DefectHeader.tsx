@@ -112,19 +112,19 @@ export function DefectHeader({
       onTitleChange={(title) => onFormChange({ ...formData, title })}
       badges={[
         { 
-          label: 'Severity', 
+          label: '深刻度', 
           value: severityLabel, 
           className: severityBadgeProps.className,
           style: severityBadgeProps.style 
         },
         { 
-          label: 'Priority', 
+          label: '優先度', 
           value: priorityLabel, 
           className: priorityBadgeProps.className,
           style: priorityBadgeProps.style 
         },
         { 
-          label: 'Status', 
+          label: 'ステータス', 
           value: statusLabel, 
           className: statusBadgeProps.className,
           style: statusBadgeProps.style 
@@ -132,14 +132,14 @@ export function DefectHeader({
       ]}
       actions={[
         { 
-          label: 'Reopen', 
+          label: '再オープン', 
           icon: RotateCcw, 
           onClick: onReopen, 
           show: defect.status === 'CLOSED' && canUpdate,
           buttonName: 'Defect Detail - Reopen',
         },
         { 
-          label: 'Edit', 
+          label: '編集', 
           icon: Edit, 
           onClick: onEdit, 
           show: canUpdate,

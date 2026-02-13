@@ -83,7 +83,7 @@ export default function DefectList({ projectId }: DefectListProps) {
     if (canImport) {
       actions.push({
         type: 'dropdown' as const,
-        label: 'Migration',
+        label: 'マイグレーション',
         items: [
           {
             label: '欠陥をインポート',
@@ -163,7 +163,7 @@ export default function DefectList({ projectId }: DefectListProps) {
 
   useEffect(() => {
     if (project) {
-      document.title = `Defects - ${project.name} | EZTest`;
+      document.title = `欠陥 - ${project.name} | EZTest`;
     }
   }, [project]);
 
@@ -404,8 +404,8 @@ export default function DefectList({ projectId }: DefectListProps) {
     } catch {
       setAlert({
         type: 'error',
-        title: 'Error',
-        message: 'Failed to delete some defects',
+        title: 'エラー',
+        message: '一部の欠陥の削除に失敗しました',
       });
       setTimeout(() => setAlert(null), 5000);
     }
@@ -420,8 +420,8 @@ export default function DefectList({ projectId }: DefectListProps) {
       if (response.ok) {
         setAlert({
           type: 'success',
-          title: 'Success',
-          message: 'Defect deleted successfully',
+          title: '成功',
+          message: '欠陥を削除しました',
         });
         setTimeout(() => setAlert(null), 5000);
         fetchDefects();
@@ -431,8 +431,8 @@ export default function DefectList({ projectId }: DefectListProps) {
     } catch {
       setAlert({
         type: 'error',
-        title: 'Error',
-        message: 'Failed to delete defect',
+        title: 'エラー',
+        message: '欠陥の削除に失敗しました',
       });
       setTimeout(() => setAlert(null), 5000);
     } finally {
@@ -445,8 +445,8 @@ export default function DefectList({ projectId }: DefectListProps) {
     // This would open a dialog to select new status
     setAlert({
       type: 'success',
-      title: 'Coming Soon',
-      message: 'Bulk status change feature is under development',
+      title: '準備中',
+      message: '一括ステータス変更機能は開発中です',
     });
     setTimeout(() => setAlert(null), 3000);
   };
@@ -456,8 +456,8 @@ export default function DefectList({ projectId }: DefectListProps) {
     // This would open a dialog to select assignee
     setAlert({
       type: 'success',
-      title: 'Coming Soon',
-      message: 'Bulk assign feature is under development',
+      title: '準備中',
+      message: '一括アサイン機能は開発中です',
     });
     setTimeout(() => setAlert(null), 3000);
   };
@@ -649,7 +649,7 @@ export default function DefectList({ projectId }: DefectListProps) {
         description="CSV または Excel ファイルをアップロードして、複数の欠陥を一括インポートできます。"
         importEndpoint={`/api/projects/${projectId}/defects/import`}
         templateEndpoint={`/api/projects/${projectId}/defects/import/template`}
-        itemName="defects"
+        itemName="欠陥"
         onImportComplete={() => {
           fetchDefects();
           setImportDialogOpen(false);
@@ -661,7 +661,7 @@ export default function DefectList({ projectId }: DefectListProps) {
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
         title="欠陥をエクスポート"
-        description="Choose a format to export your defects."
+        description="欠陥のエクスポート形式を選択してください"
         exportOptions={{
           projectId,
           endpoint: `/api/projects/${projectId}/defects/export`,
@@ -672,7 +672,7 @@ export default function DefectList({ projectId }: DefectListProps) {
             assignedToId: assigneeFilter !== 'all' && assigneeFilter !== 'unassigned' ? assigneeFilter : undefined,
           },
         }}
-        itemName="defects"
+        itemName="欠陥"
       />
     </>
   );

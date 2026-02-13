@@ -85,6 +85,8 @@ export class TestRunController {
       executionType: validatedData.executionType,
       assignedToId,
       environment: validatedData.environment,
+      platform: validatedData.platform,
+      device: validatedData.device,
       status: validatedData.status,
       testCaseIds: validatedData.testCaseIds,
       createdById: userId,
@@ -151,6 +153,15 @@ export class TestRunController {
           : 'Email service is not configured. Report cannot be sent.',
       },
     };
+  }
+
+  /**
+   * Reopen a completed test run
+   */
+  async reopenTestRun(testRunId: string) {
+    const testRun = await testRunService.reopenTestRun(testRunId);
+
+    return { data: testRun };
   }
 
   /**

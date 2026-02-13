@@ -206,7 +206,7 @@ model TestCase {
   expectedResult String?  // Overall expected result for the test case
   priority      String   @default("MEDIUM") // Dynamic dropdown value
   status        String   @default("ACTIVE") // Dynamic dropdown value
-  estimatedTime Int?     // in minutes
+  estimatedTime Int?     // in seconds
   preconditions String?
   postconditions String?
   testData      String?  // Test data/input values for the test case
@@ -288,6 +288,8 @@ model TestRun {
   status      String   @default("PLANNED") // Dynamic dropdown value
   assignedToId String?
   environment String?  // Dynamic dropdown value e.g., "Production", "Staging", "QA"
+  platform    String?  // Web, Web(SP), iOS Native, Android Native
+  device      String?  // iPhone, Android, PC
   startedAt   DateTime?
   completedAt DateTime?
   createdById String

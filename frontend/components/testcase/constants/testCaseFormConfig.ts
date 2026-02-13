@@ -55,7 +55,7 @@ export function getTestCaseFormFields(modules: Module[] = []): FormFieldConfig[]
     },
     {
       name: 'estimatedTime',
-      label: '想定時間（分）',
+      label: 'テスト実行時間（秒）',
       type: 'number',
       placeholder: 'Enter estimated time',
     },

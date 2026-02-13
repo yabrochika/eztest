@@ -64,7 +64,7 @@ export default function UserDetailsContent({ userId }: UserDetailsContentProps) 
   }, [fetchUser]);
 
   if (loading) {
-    return <Loader fullScreen text="Loading user details..." />;
+    return <Loader fullScreen text="ユーザー詳細を読み込み中..." />;
   }
 
   if (!user) {
@@ -109,15 +109,15 @@ export default function UserDetailsContent({ userId }: UserDetailsContentProps) 
           <div className="flex items-center justify-between">
             <Breadcrumbs 
               items={[
-                { label: 'Admin', href: '/admin' },
-                { label: 'Users', href: '/admin/users' },
+                { label: '管理', href: '/admin' },
+                { label: 'ユーザー', href: '/admin/users' },
                 { label: user.name },
               ]}
             />
             <form action="/api/auth/signout" method="POST" onSubmit={handleSignOut}>
               <ButtonDestructive type="submit" size="default" className="px-5">
                 <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+                サインアウト
               </ButtonDestructive>
             </form>
           </div>
@@ -127,8 +127,8 @@ export default function UserDetailsContent({ userId }: UserDetailsContentProps) 
       <div className="max-w-4xl mx-auto px-8 py-10">
         {/* Profile Header Card */}
         <DetailCard 
-          title="Profile" 
-          description="User account overview"
+          title="プロフィール" 
+          description="ユーザーアカウントの概要"
           className="mb-8"
           contentClassName="p-0"
         >
@@ -157,11 +157,11 @@ export default function UserDetailsContent({ userId }: UserDetailsContentProps) 
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  <span>Joined {formatDateTime(user.createdAt)}</span>
+                  <span>参加日 {formatDateTime(user.createdAt)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Briefcase className="w-4 h-4" />
-                  <span>{user._count.createdProjects} projects created</span>
+                  <span>作成プロジェクト数 {user._count.createdProjects}</span>
                 </div>
               </div>
             </div>
@@ -172,39 +172,39 @@ export default function UserDetailsContent({ userId }: UserDetailsContentProps) 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* User Information */}
           <DetailCard
-            title="User Information"
-            description="Basic user details"
+            title="ユーザー情報"
+            description="基本情報"
             contentClassName="space-y-4"
             headerClassName=""
           >
             <div className="space-y-4">
               <div>
-                <label className="text-xs uppercase tracking-wide text-muted-foreground">Name</label>
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">氏名</label>
                 <p className="text-white font-medium mt-1">{user.name}</p>
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wide text-muted-foreground">Email</label>
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">メール</label>
                 <p className="text-white font-medium mt-1">{user.email}</p>
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wide text-muted-foreground">Role</label>
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">ロール</label>
                 <p className="text-white font-medium mt-1">{user.role.name}</p>
               </div>
               {user.phone && (
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-muted-foreground">Phone</label>
+                  <label className="text-xs uppercase tracking-wide text-muted-foreground">電話</label>
                   <p className="text-white font-medium mt-1">{user.phone}</p>
                 </div>
               )}
               {user.location && (
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-muted-foreground">Location</label>
+                  <label className="text-xs uppercase tracking-wide text-muted-foreground">所在地</label>
                   <p className="text-white font-medium mt-1">{user.location}</p>
                 </div>
               )}
               {user.bio && (
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-muted-foreground">Bio</label>
+                  <label className="text-xs uppercase tracking-wide text-muted-foreground">自己紹介</label>
                   <p className="text-white font-medium mt-1">{user.bio}</p>
                 </div>
               )}
@@ -213,22 +213,22 @@ export default function UserDetailsContent({ userId }: UserDetailsContentProps) 
 
           {/* Statistics */}
           <DetailCard
-            title="Statistics"
-            description="User activity metrics"
+            title="統計"
+            description="ユーザーアクティビティ指標"
             contentClassName="space-y-4"
             headerClassName=""
           >
             <div className="space-y-4">
               <div>
-                <label className="text-xs uppercase tracking-wide text-muted-foreground">Projects Created</label>
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">作成プロジェクト数</label>
                 <p className="text-white font-medium mt-1 text-2xl">{user._count.createdProjects}</p>
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wide text-muted-foreground">Member Since</label>
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">参加日</label>
                 <p className="text-white font-medium mt-1">{formatDateTime(user.createdAt)}</p>
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wide text-muted-foreground">Last Updated</label>
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">最終更新</label>
                 <p className="text-white font-medium mt-1">{formatDateTime(user.updatedAt)}</p>
               </div>
             </div>
@@ -236,11 +236,11 @@ export default function UserDetailsContent({ userId }: UserDetailsContentProps) 
         </div>
 
         {/* Footer */}
-        <DetailCard title="About" className="mt-12" contentClassName="p-0">
+        <DetailCard title="情報" className="mt-12" contentClassName="p-0">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} EZTest Admin</p>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="hidden sm:inline">User Details</span>
+              <span className="hidden sm:inline">ユーザー詳細</span>
               <span className="text-primary">v0.1.0</span>
             </div>
           </div>

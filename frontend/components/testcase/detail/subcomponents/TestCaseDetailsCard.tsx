@@ -329,7 +329,7 @@ export function TestCaseDetailsCard({
 
           {/* Estimated Time */}
           <div className="space-y-2 pt-6 mt-6 border-t border-white/10">
-            <Label htmlFor="estimatedTime">想定時間（分）</Label>
+            <Label htmlFor="estimatedTime">テスト実行時間（秒）</Label>
             <Input
               id="estimatedTime"
               variant="glass"
@@ -565,11 +565,15 @@ export function TestCaseDetailsCard({
           {testCase.estimatedTime && (
             <div className="border-t border-white/10 pt-6">
               <h4 className="text-sm font-medium text-white/60 mb-1">
-                想定時間
+                テスト実行時間
               </h4>
               <div className="flex items-center gap-2 text-white/90">
                 <Clock className="w-4 h-4" />
-                <span>{testCase.estimatedTime} minutes</span>
+                <span className="font-mono">
+                  {String(Math.floor(testCase.estimatedTime / 3600)).padStart(2, '0')}:
+                  {String(Math.floor((testCase.estimatedTime % 3600) / 60)).padStart(2, '0')}:
+                  {String(testCase.estimatedTime % 60).padStart(2, '0')}
+                </span>
               </div>
             </div>
           )}

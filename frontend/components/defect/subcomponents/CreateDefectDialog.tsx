@@ -97,8 +97,8 @@ export function CreateDefectDialog({
   const fields: BaseDialogField[] = [
     {
       name: 'title',
-      label: 'Title',
-      placeholder: 'Enter defect title',
+      label: 'タイトル',
+      placeholder: '欠陥タイトルを入力',
       type: 'text',
       required: true,
       minLength: 5,
@@ -108,7 +108,7 @@ export function CreateDefectDialog({
     // Test Case field - searchable select when from defect list, text input when from test run
     ...(testCaseId ? [{
       name: 'testCaseId',
-      label: 'Test Case (Auto-populated)',
+      label: 'テストケース（自動入力）',
       type: 'text' as const,
       defaultValue: testCaseId,
       readOnly: true,
@@ -118,7 +118,7 @@ export function CreateDefectDialog({
         : 'テストケースを読み込み中...',
     }] : [{
       name: 'testCaseId',
-      label: 'Test Case (Optional)',
+      label: 'テストケース（任意）',
       type: 'custom' as const,
       cols: 1,
       customRender: (value: string, onChange: (value: string) => void) => (
@@ -128,15 +128,15 @@ export function CreateDefectDialog({
           onValueChange={onChange}
           label=""
           id="testCaseSearch"
-          searchPlaceholder="Search by TC-ID or title..."
-          emptyMessage="No test cases found matching"
+          searchPlaceholder="TC-IDまたはタイトルで検索..."
+          emptyMessage="該当するテストケースがありません"
           maxResults={10}
         />
       ),
     }]),
     {
       name: 'severity',
-      label: 'Severity',
+      label: '深刻度',
       type: 'select',
       required: true,
       defaultValue: 'MEDIUM',
@@ -145,7 +145,7 @@ export function CreateDefectDialog({
     },
     {
       name: 'priority',
-      label: 'Priority',
+      label: '優先度',
       type: 'select',
       required: true,
       defaultValue: 'MEDIUM',
@@ -154,18 +154,18 @@ export function CreateDefectDialog({
     },
     {
       name: 'assignedToId',
-      label: 'Assignee',
+      label: '担当者',
       type: 'select',
-      placeholder: 'Select assignee',
+      placeholder: '担当者を選択',
       options: assigneeOptions,
       cols: 1,
     },
     // Environment field - dropdown if from defect list, auto-populated if from test run
     {
       name: 'environment',
-      label: testRunEnvironment ? 'Environment (Auto-populated)' : 'Environment',
+      label: testRunEnvironment ? '環境（自動入力）' : '環境',
       type: testRunEnvironment ? 'text' : 'select',
-      placeholder: testRunEnvironment ? testRunEnvironment : 'Select environment',
+      placeholder: testRunEnvironment ? testRunEnvironment : '環境を選択',
       defaultValue: testRunEnvironment,
       options: testRunEnvironment ? undefined : ENVIRONMENT_OPTIONS,
       readOnly: !!testRunEnvironment,
@@ -174,13 +174,13 @@ export function CreateDefectDialog({
     },
     {
       name: 'dueDate',
-      label: 'Due Date (optional)',
+      label: '期限（任意）',
       type: 'date',
       cols: 1,
     },
     {
       name: 'progressPercentage',
-      label: 'Progress % (optional)',
+      label: '進捗 %（任意）',
       type: 'number',
       placeholder: '0-100',
       min: 0,
@@ -189,9 +189,9 @@ export function CreateDefectDialog({
     },
     {
       name: 'description',
-      label: 'Description',
+      label: '説明',
       type: 'textarea-with-attachments',
-      placeholder: 'Describe the defect...',
+      placeholder: '欠陥の詳細を入力...',
       rows: 3,
       cols: 2,
       maxLength: 2000,
@@ -317,8 +317,8 @@ export function CreateDefectDialog({
         const defect = result as Defect;
         setAlert({
           type: 'success',
-          title: 'Defect Created',
-          message: `Defect ${defect.defectId} has been created successfully`,
+          title: '欠陥を作成しました',
+          message: `欠陥 ${defect.defectId} が正常に作成されました`,
         });
         // Reset attachments state
         setDescriptionAttachments([]);

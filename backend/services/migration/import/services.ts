@@ -29,9 +29,11 @@ export interface MigrationResult {
 export class ImportService {
   /**
    * Normalize column names to handle both export format and import format
+   * _2, _3 等の重複サフィックスを除去（Excel等で全列に _2 が付く場合に対応）
    */
   private normalizeColumnName(columnName: string): string {
-    const normalized = columnName.trim().toLowerCase();
+    const base = columnName.trim().replace(/_[0-9]+$/, '');
+    const normalized = base.toLowerCase();
     
     // Map export format column names to import format
     const columnMap: Record<string, string> = {
@@ -47,7 +49,7 @@ export class ImportService {
       '状態': 'status',
       '不具合id': 'defectId',
       '説明': 'description',
-      '想定時間（分）': 'estimatedTime',
+      'テスト実行時間（秒）': 'estimatedTime',
       '事後条件': 'postconditions',
       'テストスイート': 'testsuite',
       // English (backward compatibility)
@@ -1046,6 +1048,28 @@ export class ImportService {
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
+    }
+
+    // Cleanup: Delete modules that have no test cases
+    try {
+      const emptyModules = await prisma.module.findMany({
+        where: {
+          projectId,
+          testCases: { none: {} },
+        },
+        select: { id: true, name: true },
+      });
+
+      if (emptyModules.length > 0) {
+        await prisma.module.deleteMany({
+          where: {
+            id: { in: emptyModules.map((m) => m.id) },
+          },
+        });
+        console.log(`[Import] Deleted ${emptyModules.length} empty module(s):`, emptyModules.map((m) => m.name));
+      }
+    } catch (error) {
+      console.warn('[Import] Failed to clean up empty modules:', error instanceof Error ? error.message : error);
     }
 
     // Debug: Log the test case import result before returning

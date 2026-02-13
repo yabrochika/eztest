@@ -124,6 +124,16 @@ export function TestRunCard({
           {environmentLabel}
         </Badge>
       )}
+      {testRun.platform && (
+        <Badge variant="outline" className="bg-cyan-500/10 text-cyan-500 border-cyan-500/20">
+          {testRun.platform}
+        </Badge>
+      )}
+      {testRun.device && (
+        <Badge variant="outline" className="bg-teal-500/10 text-teal-500 border-teal-500/20">
+          {testRun.device}
+        </Badge>
+      )}
     </>
   );
 

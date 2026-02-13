@@ -202,12 +202,12 @@ export const DefectCommentsCard: React.FC<DefectCommentsCardProps> = ({
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return 'たった今';
+    if (diffMins < 60) return `${diffMins}分前`;
+    if (diffHours < 24) return `${diffHours}時間前`;
+    if (diffDays < 7) return `${diffDays}日前`;
     
-    return commentDate.toLocaleDateString('en-US', {
+    return commentDate.toLocaleDateString('ja-JP', {
       month: 'short',
       day: 'numeric',
       year: commentDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
@@ -215,7 +215,7 @@ export const DefectCommentsCard: React.FC<DefectCommentsCardProps> = ({
   };
 
   return (
-    <DetailCard title="Comments" contentClassName="!p-0">
+    <DetailCard title="コメント" contentClassName="!p-0">
       <div className="flex flex-col h-[500px]">
         {/* Comments list */}
         <div className={`flex-1 p-6 space-y-4 ${comments.length > 0 ? 'overflow-y-auto custom-scrollbar' : 'overflow-y-hidden'}`}>
@@ -226,8 +226,8 @@ export const DefectCommentsCard: React.FC<DefectCommentsCardProps> = ({
           ) : comments.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">
               <div className="bg-gray-800/50 rounded-xl p-8 text-center">
-                <p className="text-base font-medium text-gray-300">No comments yet</p>
-                <p className="text-sm mt-2 text-gray-500">Be the first to share your thoughts</p>
+                <p className="text-base font-medium text-gray-300">まだコメントがありません</p>
+                <p className="text-sm mt-2 text-gray-500">最初のコメントを投稿してみましょう</p>
               </div>
             </div>
           ) : (
@@ -258,7 +258,7 @@ export const DefectCommentsCard: React.FC<DefectCommentsCardProps> = ({
                       <span className={`text-sm font-semibold ${
                         isCurrentUser ? 'text-blue-400' : 'text-gray-200'
                       }`}>
-                        {isCurrentUser ? 'You' : comment.user.name}
+                        {isCurrentUser ? 'あなた' : comment.user.name}
                       </span>
                       <span className="text-xs text-gray-500 font-medium">
                         {formatTimestamp(comment.createdAt)}
@@ -303,7 +303,7 @@ export const DefectCommentsCard: React.FC<DefectCommentsCardProps> = ({
               attachments={commentAttachments}
               onAttachmentsChange={setCommentAttachments}
               entityType="comment"
-              placeholder="Write a comment..."
+              placeholder="コメントを入力..."
               rows={2}
               disabled={submitting}
             />
@@ -315,7 +315,7 @@ export const DefectCommentsCard: React.FC<DefectCommentsCardProps> = ({
                 className="min-w-[120px]"
               >
                 <Send className="w-4 h-4 mr-2" />
-                {submitting ? 'Posting...' : 'Post Comment'}
+                {submitting ? '投稿中...' : 'コメントする'}
               </ButtonPrimary>
             </div>
           </form>

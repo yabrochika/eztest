@@ -114,15 +114,20 @@ export function TestCasesListCard({
     },
     {
       key: 'estimatedTime',
-      label: '想定時間',
+      label: 'テスト実行時間',
       width: '100px',
-      render: (row: ResultRow) => (
-        <span className="text-white/70 text-sm">
-          {row.testCase.estimatedTime != null && Number.isFinite(row.testCase.estimatedTime)
-            ? `${row.testCase.estimatedTime}m`
-            : '-'}
-        </span>
-      ),
+      render: (row: ResultRow) => {
+        const t = row.testCase.estimatedTime;
+        if (t == null || !Number.isFinite(t)) return <span className="text-white/70 text-sm">-</span>;
+        const h = Math.floor(t / 3600);
+        const m = Math.floor((t % 3600) / 60);
+        const s = t % 60;
+        return (
+          <span className="text-white/70 text-sm font-mono">
+            {String(h).padStart(2, '0')}:{String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}
+          </span>
+        );
+      },
     },
     {
       key: 'priority',
@@ -294,12 +299,19 @@ export function TestCasesListCard({
     return Number.isNaN(lastNum) ? 0 : lastNum;
   };
 
-  const tableDataSortedByModule = [...tableData].sort((a, b) => {
-    const keyA = getModuleSortKey(a);
-    const keyB = getModuleSortKey(b);
-    if (keyA !== keyB) return keyA - keyB;
-    return (a.testCase.tcId || '').localeCompare(b.testCase.tcId || '', undefined, { numeric: true });
-  });
+  // IN_PROGRESS時はRTC-ID昇順のフラットリスト、それ以外はモジュールグループ表示
+  const isInProgress = testRunStatus === 'IN_PROGRESS';
+
+  const tableDataSorted = isInProgress
+    ? [...tableData].sort((a, b) =>
+        (a.testCase.rtcId || '').localeCompare(b.testCase.rtcId || '', undefined, { numeric: true })
+      )
+    : [...tableData].sort((a, b) => {
+        const keyA = getModuleSortKey(a);
+        const keyB = getModuleSortKey(b);
+        if (keyA !== keyB) return keyA - keyB;
+        return (a.testCase.rtcId || '').localeCompare(b.testCase.rtcId || '', undefined, { numeric: true });
+      });
 
   return (
     <DetailCard
@@ -358,10 +370,11 @@ export function TestCasesListCard({
         </div>
       ) : (
         <GroupedDataTable
-          data={tableDataSortedByModule}
+          data={tableDataSorted}
           columns={columns}
-          grouped={true}
+          grouped={!isInProgress}
           groupConfig={groupConfig}
+          defaultExpanded={true}
           onRowClick={(row) => router.push(`/projects/${projectId}/testcases/${row.testCase.id}`)}
           gridTemplateColumns="70px 100px 1fr 100px 90px 120px 120px 140px 140px"
           emptyMessage="テストケースはありません"

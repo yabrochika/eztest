@@ -167,8 +167,8 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
             setSaving(false);
             setAlert({
               type: 'error',
-              title: 'Upload Failed',
-              message: error instanceof Error ? error.message : 'Failed to upload attachments',
+              title: 'アップロード失敗',
+              message: error instanceof Error ? error.message : '添付ファイルのアップロードに失敗しました',
             });
             return;
           }
@@ -231,8 +231,8 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
         setIsEditing(false);
         setAlert({
           type: 'success',
-          title: 'Success',
-          message: 'Defect updated successfully',
+          title: '更新しました',
+          message: '欠陥が正常に更新されました',
         });
         setTimeout(() => setAlert(null), 5000);
         fetchDefect();
@@ -242,7 +242,7 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
           : data.message || 'Failed to update defect';
         setAlert({
           type: 'error',
-          title: 'Failed to Update Defect',
+          title: '欠陥の更新に失敗しました',
           message: errorMessage,
         });
       }
@@ -251,7 +251,7 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
         error instanceof Error ? error.message : 'Unknown error occurred';
       setAlert({
         type: 'error',
-        title: 'Connection Error',
+        title: '接続エラー',
         message: errorMessage,
       });
       console.error('Error updating defect:', error);
@@ -269,8 +269,8 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
       setDeleteDialogOpen(false);
       setAlert({
         type: 'success',
-        title: 'Success',
-        message: 'Defect deleted successfully',
+        title: '削除しました',
+        message: '欠陥が正常に削除されました',
       });
       setTimeout(() => {
         router.push(`/projects/${projectId}/defects`);
@@ -294,16 +294,16 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
       if (data.data) {
         setAlert({
           type: 'success',
-          title: 'Success',
-          message: 'Defect reopened successfully',
+          title: '再オープンしました',
+          message: '欠陥が正常に再オープンされました',
         });
         setTimeout(() => setAlert(null), 5000);
         fetchDefect();
       } else {
         setAlert({
           type: 'error',
-          title: 'Failed to Reopen Defect',
-          message: data.error || 'Failed to reopen defect',
+          title: '欠陥の再オープンに失敗しました',
+          message: data.error || '欠陥の再オープンに失敗しました',
         });
       }
     } catch (error) {
@@ -311,7 +311,7 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
         error instanceof Error ? error.message : 'Unknown error occurred';
       setAlert({
         type: 'error',
-        title: 'Connection Error',
+        title: '接続エラー',
         message: errorMessage,
       });
       console.error('Error reopening defect:', error);
@@ -326,7 +326,7 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
     return (
       <div className="min-h-screen p-4 md:p-6 lg:p-8">
         <div className="text-center py-12">
-          <p className="text-gray-400">Defect not found</p>
+          <p className="text-gray-400">欠陥が見つかりません</p>
         </div>
       </div>
     );
@@ -344,7 +344,7 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
         breadcrumbs={
           <Breadcrumbs 
             items={[
-              { label: 'Projects', href: '/projects' },
+              { label: 'プロジェクト', href: '/projects' },
               {
                 label: defect.project.name,
                 href: `/projects/${defect.project.id}`,
@@ -402,14 +402,14 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
               buttonName: 'Defect Detail - View All Defects',
             },
             {
-              label: 'View All Test Cases',
+              label: 'すべてのテストケースを見る',
               icon: TestTube2,
               onClick: () => router.push(`/projects/${defect.project.id}/testcases`),
               variant: 'secondary',
               buttonName: 'Defect Detail - View All Test Cases',
             },
             {
-              label: 'View All Test Runs',
+              label: 'すべてのテスト実行を見る',
               icon: PlayCircle,
               onClick: () => router.push(`/projects/${defect.project.id}/testruns`),
               variant: 'secondary',

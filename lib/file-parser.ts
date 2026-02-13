@@ -32,11 +32,48 @@ function normalizeRowKeys(data: ParsedRow[]): ParsedRow[] {
   });
 }
 
+/** 必須列「テストケース名」がヘッダーに含まれるか判定（_2 サフィックス対応） */
+function hasRequiredTitleColumn(headers: string[]): boolean {
+  const normalize = (s: string) => s.replace(/^\uFEFF/, '').trim();
+  return headers.some((h) => {
+    const n = normalize(h);
+    const base = stripDuplicateSuffix(n);
+    return (
+      base === 'テストケース名' ||
+      base.toLowerCase() === 'title' ||
+      base.toLowerCase() === 'test case title' ||
+      base.toLowerCase() === 'testcase title'
+    );
+  });
+}
+
+/** 指定区切りでパースして結果を返す */
+function parseWithDelimiter(
+  content: string,
+  delimiter: string,
+  headerCount: Map<string, number>
+): Papa.ParseResult<ParsedRow> {
+  return Papa.parse(content, {
+    header: true,
+    skipEmptyLines: true,
+    delimiter,
+    transformHeader: (header: string) => {
+      const trimmed = header.replace(/^\uFEFF/, '').trim();
+      const key = trimmed.toLowerCase();
+      const count = (headerCount.get(key) ?? 0) + 1;
+      headerCount.set(key, count);
+      return count === 1 ? trimmed : `${trimmed}_${count}`;
+    },
+    transform: (value: string) => value.trim(),
+  });
+}
+
 /**
  * Parse CSV file from buffer or string.
  * Duplicate headers are made unique by appending _2, _3, ... so the first column's value is preserved.
  *
  * 対応形式:
+ * - カンマ／タブ／セミコロン区切りを自動検出（Excel のロケール設定に依存する保存形式に対応）
  * - 1行目が正式ヘッダー（テストケース名、モジュール・機能、...）→ そのままパース
  * - 1行目が Column1,Column2,... のときは2行目をヘッダーとして使用（テンプレートCSV対応）
  */
@@ -57,18 +94,25 @@ export function parseCSV(content: string): ParseResult {
       content = lines.slice(1).join('\n');
     }
 
-    const result = Papa.parse(content, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (header: string) => {
-        const trimmed = header.replace(/^\uFEFF/, '').trim();
-        const key = trimmed.toLowerCase();
-        const count = (headerCount.get(key) ?? 0) + 1;
-        headerCount.set(key, count);
-        return count === 1 ? trimmed : `${trimmed}_${count}`;
-      },
-      transform: (value: string) => value.trim(),
-    });
+    // 区切り文字の自動検出: カンマ → タブ → セミコロンの順で試行し、
+    // 必須列「テストケース名」が含まれる区切りを採用（Excel のロケール依存に対応）
+    const delimiters = [',', '\t', ';'] as const;
+    let result: Papa.ParseResult<ParsedRow> | null = null;
+
+    for (const delim of delimiters) {
+      const trialCount = new Map<string, number>();
+      const trial = parseWithDelimiter(content, delim, trialCount);
+      const headers = trial.meta?.fields ?? (trial.data?.[0] ? Object.keys(trial.data[0]) : []);
+      if (hasRequiredTitleColumn(headers)) {
+        result = trial;
+        break;
+      }
+    }
+
+    // どの区切りでも必須列が見つからない場合はカンマ区切りでパース（従来動作）
+    if (!result) {
+      result = parseWithDelimiter(content, ',', headerCount);
+    }
 
     if (result.errors && result.errors.length > 0) {
       result.errors.forEach((error) => {

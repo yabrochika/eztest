@@ -1,3 +1,4 @@
 -- AlterTable
-ALTER TABLE "TestCase" ADD COLUMN "executionType" TEXT;
-ALTER TABLE "TestCase" ADD COLUMN "automationStatus" TEXT;
+-- AlterTable (use IF NOT EXISTS to avoid conflicts)
+ALTER TABLE "TestCase" ADD COLUMN IF NOT EXISTS "executionType" TEXT;
+ALTER TABLE "TestCase" ADD COLUMN IF NOT EXISTS "automationStatus" TEXT;

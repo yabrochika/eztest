@@ -206,7 +206,7 @@ model TestCase {
   expectedResult String?  // Overall expected result for the test case
   priority      String   @default("MEDIUM") // Dynamic dropdown value
   status        String   @default("ACTIVE") // Dynamic dropdown value
-  estimatedTime Int?     // in minutes
+  estimatedTime Int?     // in seconds
   preconditions String?
   postconditions String?
   testData      String?  // Test data/input values for the test case
@@ -221,7 +221,7 @@ model TestCase {
   platform      String?   // プラットフォーム: Web, Web(SP), iOS Native, Android Native（単一選択）
   device        String?   // 端末: iPhone, Android, PC
   domain        String?   // ドメイン
-  functionName  String?   // 機能（DB予約語のため functionName）
+  functionName  String?   @map("function") // 機能（DB予約語のため functionName）
   executionType String?   // 実行方式: 手動 / 自動
   automationStatus String? // 自動化状況: 自動化済 / 自動化対象 / 自動化対象外 / 検討中
   createdById   String
@@ -288,6 +288,8 @@ model TestRun {
   status      String   @default("PLANNED") // Dynamic dropdown value
   assignedToId String?
   environment String?  // Dynamic dropdown value e.g., "Production", "Staging", "QA"
+  platform    String?  // Web, Web(SP), iOS Native, Android Native
+  device      String?  // iPhone, Android, PC
   startedAt   DateTime?
   completedAt DateTime?
   createdById String

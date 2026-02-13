@@ -1,7 +1,7 @@
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
-import { Play, Square } from 'lucide-react';
+import { Play, Square, RotateCcw, User, Timer } from 'lucide-react';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
@@ -11,6 +11,13 @@ interface TestRunHeaderProps {
     description?: string;
     status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
     environment?: string;
+    platform?: string;
+    device?: string;
+    assignedTo?: {
+      id: string;
+      name: string;
+      email: string;
+    } | null;
     project: {
       id: string;
     };
@@ -20,6 +27,8 @@ interface TestRunHeaderProps {
   canUpdate?: boolean;
   onStartTestRun: () => void;
   onCompleteTestRun: () => void;
+  onReopenTestRun?: () => void;
+  totalExecutionTime?: number; // 秒単位の総計
 }
 
 export function TestRunHeader({
@@ -29,6 +38,8 @@ export function TestRunHeader({
   canUpdate = true,
   onStartTestRun,
   onCompleteTestRun,
+  onReopenTestRun,
+  totalExecutionTime = 0,
 }: TestRunHeaderProps) {
   const { options: statusOptions } = useDropdownOptions('TestRun', 'status');
   const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
@@ -103,6 +114,42 @@ export function TestRunHeader({
               </Badge>
             </div>
           )}
+          {testRun.platform && (
+            <div className="flex items-center gap-2">
+              <span className="text-white/60">プラットフォーム:</span>
+              <Badge variant="outline" className="bg-cyan-500/10 text-cyan-500 border-cyan-500/20">
+                {testRun.platform}
+              </Badge>
+            </div>
+          )}
+          {testRun.device && (
+            <div className="flex items-center gap-2">
+              <span className="text-white/60">端末:</span>
+              <Badge variant="outline" className="bg-teal-500/10 text-teal-500 border-teal-500/20">
+                {testRun.device}
+              </Badge>
+            </div>
+          )}
+          {testRun.assignedTo && (
+            <div className="flex items-center gap-2">
+              <span className="text-white/60">テスター:</span>
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
+                <User className="w-3 h-3 mr-1" />
+                {testRun.assignedTo.name}
+              </Badge>
+            </div>
+          )}
+          {testRun.status === 'COMPLETED' && totalExecutionTime > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-white/60">テスト実行時間（総計）:</span>
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                <Timer className="w-3 h-3 mr-1" />
+                {String(Math.floor(totalExecutionTime / 3600)).padStart(2, '0')}:
+                {String(Math.floor((totalExecutionTime % 3600) / 60)).padStart(2, '0')}:
+                {String(totalExecutionTime % 60).padStart(2, '0')}
+              </Badge>
+            </div>
+          )}
         </div>
 
         {canUpdate && (
@@ -123,6 +170,14 @@ export function TestRunHeader({
                 variant: 'primary',
                 show: testRun.status === 'IN_PROGRESS',
                 loading: actionLoading && testRun.status === 'IN_PROGRESS',
+              },
+              {
+                label: 'テストランを再開',
+                icon: RotateCcw,
+                onClick: onReopenTestRun || (() => {}),
+                variant: 'secondary',
+                show: testRun.status === 'COMPLETED' && !!onReopenTestRun,
+                loading: actionLoading && testRun.status === 'COMPLETED',
               },
             ]}
           />

@@ -49,7 +49,7 @@ export class ImportService {
       '状態': 'status',
       '不具合id': 'defectId',
       '説明': 'description',
-      '想定時間（分）': 'estimatedTime',
+      'テスト実行時間（秒）': 'estimatedTime',
       '事後条件': 'postconditions',
       'テストスイート': 'testsuite',
       // English (backward compatibility)
@@ -737,42 +737,41 @@ export class ImportService {
           ? notes.toString().trim()
           : null;
 
-        // Test Type (テスト種別) - convert to standard values
-        // Valid values: NORMAL, ABNORMAL, NON_FUNCTIONAL, REGRESSION, DATA_INTEGRITY, STATE_TRANSITION, OPERATIONAL, FAILURE
+        // Test Type (テスト種別) - preserve Japanese labels, normalize English to Japanese
         let testTypeValue: string | null = null;
         if (testType && typeof testType === 'string' && testType.toString().trim()) {
           const testTypeStr = testType.toString().trim();
           const testTypeUpper = testTypeStr.toUpperCase();
           
-          // Map Japanese labels and variations to standard values
+          // Map to Japanese labels (CSV の日本語値はそのまま保持)
           const testTypeMap: Record<string, string> = {
-            // English values
-            'NORMAL': 'NORMAL',
-            'ABNORMAL': 'ABNORMAL',
-            'NON_FUNCTIONAL': 'NON_FUNCTIONAL',
-            'NONFUNCTIONAL': 'NON_FUNCTIONAL',
-            'NON-FUNCTIONAL': 'NON_FUNCTIONAL',
-            'REGRESSION': 'REGRESSION',
-            'DATA_INTEGRITY': 'DATA_INTEGRITY',
-            'DATAINTEGRITY': 'DATA_INTEGRITY',
-            'DATA-INTEGRITY': 'DATA_INTEGRITY',
-            'STATE_TRANSITION': 'STATE_TRANSITION',
-            'STATETRANSITION': 'STATE_TRANSITION',
-            'STATE-TRANSITION': 'STATE_TRANSITION',
-            'OPERATIONAL': 'OPERATIONAL',
-            'FAILURE': 'FAILURE',
-            // Japanese labels
-            '正常系': 'NORMAL',
-            '異常系': 'ABNORMAL',
-            '非機能': 'NON_FUNCTIONAL',
-            '回帰': 'REGRESSION',
-            'データ整合性確認': 'DATA_INTEGRITY',
-            '状態遷移確認': 'STATE_TRANSITION',
-            '運用確認': 'OPERATIONAL',
-            '障害時確認': 'FAILURE',
+            // English values → Japanese labels
+            'NORMAL': '正常系',
+            'ABNORMAL': '異常系',
+            'NON_FUNCTIONAL': '非機能',
+            'NONFUNCTIONAL': '非機能',
+            'NON-FUNCTIONAL': '非機能',
+            'REGRESSION': '回帰',
+            'DATA_INTEGRITY': 'データ整合性確認',
+            'DATAINTEGRITY': 'データ整合性確認',
+            'DATA-INTEGRITY': 'データ整合性確認',
+            'STATE_TRANSITION': '状態遷移確認',
+            'STATETRANSITION': '状態遷移確認',
+            'STATE-TRANSITION': '状態遷移確認',
+            'OPERATIONAL': '運用確認',
+            'FAILURE': '障害時確認',
+            // Japanese labels → そのまま保持
+            '正常系': '正常系',
+            '異常系': '異常系',
+            '非機能': '非機能',
+            '回帰': '回帰',
+            'データ整合性確認': 'データ整合性確認',
+            '状態遷移確認': '状態遷移確認',
+            '運用確認': '運用確認',
+            '障害時確認': '障害時確認',
           };
           
-          // Try direct match first
+          // Try direct match first (English uppercase)
           if (testTypeMap[testTypeUpper]) {
             testTypeValue = testTypeMap[testTypeUpper];
           } else if (testTypeMap[testTypeStr]) {
@@ -804,12 +803,16 @@ export class ImportService {
         }
 
         // Domain (ドメイン) and Function (機能) - free text
-        const domainValue = domainCol != null && typeof domainCol === 'string' && domainCol.toString().trim()
-          ? domainCol.toString().trim()
+        console.log(`[Import Row ${rowNumber}] domainCol raw:`, JSON.stringify(domainCol), `type: ${typeof domainCol}`);
+        console.log(`[Import Row ${rowNumber}] functionNameCol raw:`, JSON.stringify(functionNameCol), `type: ${typeof functionNameCol}`);
+        console.log(`[Import Row ${rowNumber}] Row keys:`, Object.keys(row).join(', '));
+        const domainValue = domainCol != null && String(domainCol).trim()
+          ? String(domainCol).trim()
           : null;
-        const functionNameValue = functionNameCol != null && typeof functionNameCol === 'string' && functionNameCol.toString().trim()
-          ? functionNameCol.toString().trim()
+        const functionNameValue = functionNameCol != null && String(functionNameCol).trim()
+          ? String(functionNameCol).trim()
           : null;
+        console.log(`[Import Row ${rowNumber}] domainValue:`, JSON.stringify(domainValue), `functionNameValue:`, JSON.stringify(functionNameValue));
 
         // 実行方式: 手動 / 自動
         let executionTypeValue: '手動' | '自動' | null = null;
@@ -865,40 +868,66 @@ export class ImportService {
                 }))
             : [];
 
+        // DB の一意制約 (testCaseId, stepNumber) に抵触しないよう、
+        // 取り込み時は空行除去後の順序で手順番号を連番に正規化する
+        const normalizedSteps = filteredSteps.map((step, index) => ({
+          stepNumber: index + 1,
+          action: step.action,
+          expectedResult: step.expectedResult,
+        }));
+
+        const baseUpdateData = {
+          title: testCaseTitle,
+          description: description ? description.toString().trim() : null,
+          expectedResult: finalExpectedResult,
+          priority: priorityValue,
+          status: statusValue,
+          estimatedTime: estimatedTimeValue,
+          preconditions: preconditions ? preconditions.toString().trim() : null,
+          postconditions: postconditions ? postconditions.toString().trim() : null,
+          testData: testDataValue,
+          pendingDefectIds: pendingDefectIds.length > 0 ? pendingDefectIds.join(', ') : null,
+          moduleId: moduleId ?? null,
+          suiteId: suiteId ?? null,
+          rtcId: rtcIdValue,
+          flowId: flowIdValue,
+          layer: layerValue,
+          testType: testTypeValue,
+          evidence: evidenceValue,
+          notes: notesValue,
+          domain: domainValue,
+          functionName: functionNameValue,
+        };
+        const extendedUpdateData = {
+          platform: platformValue,
+          device: deviceValue,
+          executionType: executionTypeValue,
+          automationStatus: automationStatusValue,
+        };
+
         if (existingTestCaseToUpdate) {
-          await prisma.testCase.update({
-            where: { id: existingTestCaseToUpdate.id },
-            data: {
-              title: testCaseTitle,
-              description: description ? description.toString().trim() : null,
-              expectedResult: finalExpectedResult,
-              priority: priorityValue,
-              status: statusValue,
-              estimatedTime: estimatedTimeValue,
-              preconditions: preconditions ? preconditions.toString().trim() : null,
-              postconditions: postconditions ? postconditions.toString().trim() : null,
-              testData: testDataValue,
-              pendingDefectIds: pendingDefectIds.length > 0 ? pendingDefectIds.join(', ') : null,
-              moduleId: moduleId ?? null,
-              suiteId: suiteId ?? null,
-              rtcId: rtcIdValue,
-              flowId: flowIdValue,
-              layer: layerValue,
-              testType: testTypeValue,
-              evidence: evidenceValue,
-              notes: notesValue,
-              platform: platformValue,
-              device: deviceValue,
-              domain: domainValue,
-              functionName: functionNameValue,
-              executionType: executionTypeValue,
-              automationStatus: automationStatusValue,
-            },
-          });
+          try {
+            await prisma.testCase.update({
+              where: { id: existingTestCaseToUpdate.id },
+              data: { ...baseUpdateData, ...extendedUpdateData },
+            });
+          } catch (extendedErr) {
+            const errMsg = extendedErr instanceof Error ? extendedErr.message : '';
+            console.warn(`Failed to update test case with extended fields:`, errMsg);
+            if (errMsg.includes('Unknown argument')) {
+              console.warn('Retrying update without extended fields...');
+              await prisma.testCase.update({
+                where: { id: existingTestCaseToUpdate.id },
+                data: baseUpdateData,
+              });
+            } else {
+              throw extendedErr;
+            }
+          }
           await prisma.testStep.deleteMany({ where: { testCaseId: existingTestCaseToUpdate.id } });
-          if (filteredSteps.length > 0) {
+          if (normalizedSteps.length > 0) {
             await prisma.testStep.createMany({
-              data: filteredSteps.map((step) => ({
+              data: normalizedSteps.map((step) => ({
                 testCaseId: existingTestCaseToUpdate!.id,
                 stepNumber: step.stepNumber,
                 action: step.action,
@@ -933,9 +962,7 @@ export class ImportService {
           existingTcIds.add(tcId);
 
           // Create test case
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const testCase = await (prisma.testCase.create as any)({
-          data: {
+          const baseCreateData = {
             tcId,
             projectId,
             title: testCaseTitle,
@@ -957,22 +984,39 @@ export class ImportService {
             moduleId,
             suiteId,
             createdById: userId,
-            // New fields for enhanced test case management
             rtcId: rtcIdValue,
             flowId: flowIdValue,
             layer: layerValue,
             testType: testTypeValue,
             evidence: evidenceValue,
             notes: notesValue,
-            platform: platformValue,
-            device: deviceValue,
             domain: domainValue,
             functionName: functionNameValue,
+            steps: normalizedSteps.length > 0 ? { create: normalizedSteps } : undefined,
+          };
+          // platform, device 等は Prisma クライアントが未対応の環境で
+          // Unknown argument エラーになるため、まず基本フィールドのみで作成し、
+          // 続けて update で拡張フィールドを反映する（両方とも Unknown argument 時はスキップ）
+          let testCase = await prisma.testCase.create({ data: baseCreateData });
+
+          const extendedUpdateData = {
+            platform: platformValue,
+            device: deviceValue,
             executionType: executionTypeValue,
             automationStatus: automationStatusValue,
-            steps: filteredSteps.length > 0 ? { create: filteredSteps } : undefined,
-          },
-        });
+          };
+          const hasExtended = Object.values(extendedUpdateData).some((v) => v != null);
+          if (hasExtended) {
+            try {
+              await prisma.testCase.update({
+                where: { id: testCase.id },
+                data: extendedUpdateData,
+              });
+              console.log(`[Import Row ${rowNumber}] Extended fields updated successfully for test case ${testCase.id}`);
+            } catch (updateErr) {
+              console.error(`[Import Row ${rowNumber}] Failed to update extended fields for test case ${testCase.id}:`, updateErr);
+            }
+          }
 
           if (suiteId) {
             await prisma.testCaseSuite.create({
@@ -1004,6 +1048,28 @@ export class ImportService {
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
+    }
+
+    // Cleanup: Delete modules that have no test cases
+    try {
+      const emptyModules = await prisma.module.findMany({
+        where: {
+          projectId,
+          testCases: { none: {} },
+        },
+        select: { id: true, name: true },
+      });
+
+      if (emptyModules.length > 0) {
+        await prisma.module.deleteMany({
+          where: {
+            id: { in: emptyModules.map((m) => m.id) },
+          },
+        });
+        console.log(`[Import] Deleted ${emptyModules.length} empty module(s):`, emptyModules.map((m) => m.name));
+      }
+    } catch (error) {
+      console.warn('[Import] Failed to clean up empty modules:', error instanceof Error ? error.message : error);
     }
 
     // Debug: Log the test case import result before returning

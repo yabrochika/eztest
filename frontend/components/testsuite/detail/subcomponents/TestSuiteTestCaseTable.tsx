@@ -7,7 +7,6 @@ import {
   HoverCardTrigger,
 } from '@/frontend/reusable-elements/hover-cards/HoverCard';
 import { Trash2, Bug } from 'lucide-react';
-import { PriorityBadge } from '@/frontend/reusable-components/badges/PriorityBadge';
 import { GroupedDataTable, ColumnDef, GroupConfig, ActionConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
 import { TestCase, Module } from '@/frontend/components/testcase/types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
@@ -32,22 +31,14 @@ export function TestSuiteTestCaseTable({
   onClick,
   canDelete = true,
 }: TestSuiteTestCaseTableProps) {
-  const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
 
   // Define columns
   const columns: ColumnDef<TestCase>[] = [
     {
-      key: 'tcId',
-      label: 'ID',
-      width: '70px',
-      render: (row) => (
-        <p className="text-xs font-mono text-white/70 truncate">{row.tcId}</p>
-      ),
-    },
-    {
       key: 'title',
       label: 'TITLE',
+      width: '90px',
       className: 'min-w-0',
       render: (row) => (
         <div className="min-w-0 flex items-center gap-2">
@@ -85,27 +76,8 @@ export function TestSuiteTestCaseTable({
       ),
     },
     {
-      key: 'priority',
-      label: 'PRIORITY',
-      width: '100px',
-      render: (row) => {
-        const badgeProps = getDynamicBadgeProps(row.priority, priorityOptions);
-        const priorityLabel = priorityOptions.find(opt => opt.value === row.priority)?.label || row.priority;
-        return (
-          <PriorityBadge
-            priority={row.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'critical'}
-            dynamicClassName={badgeProps.className}
-            dynamicStyle={badgeProps.style}
-          >
-            {priorityLabel}
-          </PriorityBadge>
-        );
-      },
-    },
-    {
       key: 'status',
       label: 'STATUS',
-      width: '90px',
       render: (row) => {
         const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
         const label = statusOptions.find(opt => opt.value === row.status)?.label || row.status;
@@ -119,30 +91,6 @@ export function TestSuiteTestCaseTable({
           </Badge>
         );
       },
-    },
-    {
-      key: 'owner',
-      label: 'OWNER',
-      width: '140px',
-      render: (row) => (
-        <div className="min-w-0">
-          <HoverCard openDelay={200}>
-            <HoverCardTrigger asChild>
-              <span className="text-xs text-white/70 truncate block cursor-pointer">
-                {row.createdBy.name}
-              </span>
-            </HoverCardTrigger>
-            {row.createdBy.name && row.createdBy.name.length > 20 && (
-              <HoverCardContent side="top" className="w-60">
-                <div className="space-y-1">
-                  <h4 className="text-xs font-semibold text-white/60">Owner</h4>
-                  <p className="text-sm text-white/90">{row.createdBy.name}</p>
-                </div>
-              </HoverCardContent>
-            )}
-          </HoverCard>
-        </div>
-      ),
     },
     {
       key: 'runs',
@@ -199,7 +147,7 @@ export function TestSuiteTestCaseTable({
       grouped={true}
       groupConfig={groupConfig}
       actions={actions}
-      gridTemplateColumns="70px 1fr 100px 90px 140px 70px 40px"
+      gridTemplateColumns="70px 90px 100px 3fr 140px 70px 40px"
       emptyMessage="No test cases available"
     />
   );

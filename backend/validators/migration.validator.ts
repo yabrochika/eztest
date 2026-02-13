@@ -63,7 +63,7 @@ export const TEST_CASE_IMPORT_COLUMNS = {
   'Description': { normalized: 'description', required: false },
   'description': { normalized: 'description', required: false },
   
-  '想定時間（分）': { normalized: 'estimatedTime', required: false },
+  'テスト実行時間（秒）': { normalized: 'estimatedTime', required: false },
   'Estimated Time (minutes)': { normalized: 'estimatedTime', required: false },
   'estimated time (minutes)': { normalized: 'estimatedTime', required: false },
   'estimated time': { normalized: 'estimatedTime', required: false },
@@ -101,8 +101,18 @@ export const TEST_CASE_IMPORT_COLUMNS = {
   '備考': { normalized: 'notes', required: false },
   'Notes': { normalized: 'notes', required: false },
   'notes': { normalized: 'notes', required: false },
-  
-  
+
+  // プラットフォーム・端末・ドメイン・機能
+  'プラットフォーム': { normalized: 'platform', required: false },
+  'platform': { normalized: 'platform', required: false },
+  '端末': { normalized: 'device', required: false },
+  'device': { normalized: 'device', required: false },
+  'ドメイン': { normalized: 'domain', required: false },
+  'domain': { normalized: 'domain', required: false },
+  '機能': { normalized: 'functionName', required: false },
+  'functionName': { normalized: 'functionName', required: false },
+  'function': { normalized: 'functionName', required: false },
+
   // Test Type (テスト種別)
   'テスト種別': { normalized: 'testType', required: false },
   'Test Type': { normalized: 'testType', required: false },

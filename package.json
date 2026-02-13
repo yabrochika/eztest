@@ -23,6 +23,7 @@
     "start": "next start",
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
+    "db:migrate": "prisma migrate deploy",
     "export:titles": "tsx scripts/export-testcase-titles.ts",
     "seed:testcases": "tsx scripts/seed-testcases.ts",
     "verify:smoke": "tsx scripts/verify-smoke-import-count.ts"

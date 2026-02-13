@@ -311,7 +311,7 @@ export default function ProjectTestCases({ projectId }: ProjectTestCasesProps) {
               </div>
 
               <div>
-                <Label htmlFor="estimatedTime">想定時間（分）</Label>
+                <Label htmlFor="estimatedTime">テスト実行時間（秒）</Label>
                 <Input
                   id="estimatedTime"
                   type="number"

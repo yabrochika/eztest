@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
 import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
@@ -43,6 +43,9 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
     searchQuery: '',
     statusFilter: 'all',
     environmentFilter: 'all',
+    platformFilter: 'all',
+    deviceFilter: 'all',
+    assignedToFilter: 'all',
   });
 
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
@@ -116,6 +119,31 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
       );
     }
 
+    // Platform filter
+    if (filters.platformFilter !== 'all') {
+      filtered = filtered.filter(
+        (tr) => tr.platform === filters.platformFilter
+      );
+    }
+
+    // Device filter
+    if (filters.deviceFilter !== 'all') {
+      filtered = filtered.filter(
+        (tr) => tr.device === filters.deviceFilter
+      );
+    }
+
+    // Assigned tester filter
+    if (filters.assignedToFilter !== 'all') {
+      if (filters.assignedToFilter === 'unassigned') {
+        filtered = filtered.filter((tr) => !tr.assignedTo);
+      } else {
+        filtered = filtered.filter(
+          (tr) => tr.assignedTo?.id === filters.assignedToFilter
+        );
+      }
+    }
+
     setFilteredTestRuns(filtered);
   };
 
@@ -166,6 +194,25 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
       console.error('Error deleting test run:', error);
     }
   };
+
+  // Build tester filter options dynamically from test runs data
+  const testerFilterOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = [
+      { value: 'all', label: 'すべてのテスター' },
+      { value: 'unassigned', label: '未割り当て' },
+    ];
+    const seen = new Set<string>();
+    testRuns.forEach((tr) => {
+      if (tr.assignedTo && !seen.has(tr.assignedTo.id)) {
+        seen.add(tr.assignedTo.id);
+        options.push({
+          value: tr.assignedTo.id,
+          label: tr.assignedTo.name || tr.assignedTo.email,
+        });
+      }
+    });
+    return options;
+  }, [testRuns]);
 
   if (loading || permissionsLoading) {
     return <Loader fullScreen text="テストランを読み込み中..." />;
@@ -237,6 +284,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
           filters={
             <TestRunsFilterCard
               filters={filters}
+              testerOptions={testerFilterOptions}
               onSearchChange={(searchQuery) =>
                 setFilters({ ...filters, searchQuery })
               }
@@ -245,6 +293,15 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
               }
               onEnvironmentFilterChange={(environmentFilter) =>
                 setFilters({ ...filters, environmentFilter })
+              }
+              onPlatformFilterChange={(platformFilter) =>
+                setFilters({ ...filters, platformFilter })
+              }
+              onDeviceFilterChange={(deviceFilter) =>
+                setFilters({ ...filters, deviceFilter })
+              }
+              onAssignedToFilterChange={(assignedToFilter) =>
+                setFilters({ ...filters, assignedToFilter })
               }
             />
           }

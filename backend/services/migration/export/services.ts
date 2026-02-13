@@ -238,7 +238,7 @@ export class ExportService {
         '自動化状況': tc.automationStatus || '',
         // Older fields (for backward compatibility)
         '説明': tc.description || '',
-        '想定時間（分）': tc.estimatedTime || '',
+        'テスト実行時間（秒）': tc.estimatedTime || '',
         '事後条件': tc.postconditions || '',
         'テストスイート': suites,
       };

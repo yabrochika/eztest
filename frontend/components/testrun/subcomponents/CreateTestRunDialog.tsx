@@ -1,8 +1,17 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
 import { TestRun } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+
+interface ProjectMember {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
 
 interface CreateTestRunDialogProps {
   projectId: string;
@@ -19,6 +28,32 @@ export function CreateTestRunDialog({
 }: CreateTestRunDialogProps) {
   // Fetch dynamic dropdown options
   const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
+
+  // Fetch project members for tester assignment
+  const [memberOptions, setMemberOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const response = await fetch(`/api/projects/${projectId}/members`);
+        if (response.ok) {
+          const data = await response.json();
+          const members: ProjectMember[] = data.data || [];
+          setMemberOptions(
+            members.map((m) => ({
+              value: m.user.id,
+              label: m.user.name || m.user.email,
+            }))
+          );
+        }
+      } catch {
+        // Failed to fetch members - select will only show placeholder
+      }
+    };
+    if (projectId) {
+      fetchMembers();
+    }
+  }, [projectId]);
 
   const fields: BaseDialogField[] = [
     {
@@ -43,6 +78,47 @@ export function CreateTestRunDialog({
         ...environmentOptions.map(opt => ({ value: opt.value, label: opt.label })),
       ],
       cols: 2,
+    },
+    {
+      name: 'assignedToId',
+      label: 'テスター割り当て',
+      type: 'select',
+      placeholder: 'テスターを選択',
+      defaultValue: 'none',
+      options: [
+        { value: 'none', label: '未割り当て' },
+        ...memberOptions,
+      ],
+      cols: 2,
+    },
+    {
+      name: 'platform',
+      label: 'プラットフォーム',
+      type: 'select',
+      placeholder: 'プラットフォームを選択',
+      defaultValue: 'none',
+      options: [
+        { value: 'none', label: 'プラットフォームを選択' },
+        { value: 'Web', label: 'Web' },
+        { value: 'Web(SP)', label: 'Web(SP)' },
+        { value: 'iOS Native', label: 'iOS Native' },
+        { value: 'Android Native', label: 'Android Native' },
+      ],
+      cols: 1,
+    },
+    {
+      name: 'device',
+      label: '端末',
+      type: 'select',
+      placeholder: '端末を選択',
+      defaultValue: 'none',
+      options: [
+        { value: 'none', label: '端末を選択' },
+        { value: 'iPhone', label: 'iPhone' },
+        { value: 'Android', label: 'Android' },
+        { value: 'PC', label: 'PC' },
+      ],
+      cols: 1,
     },
     {
       name: 'description',
@@ -70,6 +146,9 @@ export function CreateTestRunDialog({
         name: formData.name,
         description: formData.description || undefined,
         environment: formData.environment,
+        assignedToId: formData.assignedToId && formData.assignedToId !== 'none' ? formData.assignedToId : undefined,
+        platform: formData.platform && formData.platform !== 'none' ? formData.platform : undefined,
+        device: formData.device && formData.device !== 'none' ? formData.device : undefined,
         executionType: 'MANUAL',
       }),
     });

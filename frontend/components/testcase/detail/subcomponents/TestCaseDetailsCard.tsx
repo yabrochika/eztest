@@ -329,7 +329,7 @@ export function TestCaseDetailsCard({
 
           {/* Estimated Time */}
           <div className="space-y-2 pt-6 mt-6 border-t border-white/10">
-            <Label htmlFor="estimatedTime">想定時間（分）</Label>
+            <Label htmlFor="estimatedTime">テスト実行時間（秒）</Label>
             <Input
               id="estimatedTime"
               variant="glass"
@@ -499,30 +499,24 @@ export function TestCaseDetailsCard({
                     <p className="text-sm text-white/90">{testCase.device}</p>
                   </div>
                 )}
-                {testCase.domain && (
-                  <div>
-                    <span className="text-xs text-white/50">ドメイン</span>
-                    <p className="text-sm text-white/90">{testCase.domain}</p>
-                  </div>
-                )}
-                {testCase.functionName && (
-                  <div>
-                    <span className="text-xs text-white/50">機能</span>
-                    <p className="text-sm text-white/90">{testCase.functionName}</p>
-                  </div>
-                )}
-                {testCase.executionType && (
-                  <div>
-                    <span className="text-xs text-white/50">実行方式</span>
-                    <p className="text-sm text-white/90">{testCase.executionType}</p>
-                  </div>
-                )}
-                {testCase.automationStatus && (
-                  <div>
-                    <span className="text-xs text-white/50">自動化状況</span>
-                    <p className="text-sm text-white/90">{testCase.automationStatus}</p>
-                  </div>
-                )}
+                {/* ドメインと機能は常に表示 */}
+                <div>
+                  <span className="text-xs text-white/50">ドメイン</span>
+                  <p className="text-sm text-white/90">{testCase.domain || '（未設定）'}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-white/50">機能</span>
+                  <p className="text-sm text-white/90">{testCase.functionName || '（未設定）'}</p>
+                </div>
+                {/* 実行方式と自動化状況は常に表示 */}
+                <div>
+                  <span className="text-xs text-white/50">実行方式</span>
+                  <p className="text-sm text-white/90">{testCase.executionType || '（未設定）'}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-white/50">自動化状況</span>
+                  <p className="text-sm text-white/90">{testCase.automationStatus || '（未設定）'}</p>
+                </div>
               </div>
             </div>
           )}
@@ -571,11 +565,15 @@ export function TestCaseDetailsCard({
           {testCase.estimatedTime && (
             <div className="border-t border-white/10 pt-6">
               <h4 className="text-sm font-medium text-white/60 mb-1">
-                想定時間
+                テスト実行時間
               </h4>
               <div className="flex items-center gap-2 text-white/90">
                 <Clock className="w-4 h-4" />
-                <span>{testCase.estimatedTime} minutes</span>
+                <span className="font-mono">
+                  {String(Math.floor(testCase.estimatedTime / 3600)).padStart(2, '0')}:
+                  {String(Math.floor((testCase.estimatedTime % 3600) / 60)).padStart(2, '0')}:
+                  {String(testCase.estimatedTime % 60).padStart(2, '0')}
+                </span>
               </div>
             </div>
           )}

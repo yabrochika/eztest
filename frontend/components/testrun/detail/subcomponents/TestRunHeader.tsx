@@ -139,7 +139,7 @@ export function TestRunHeader({
               </Badge>
             </div>
           )}
-          {testRun.status === 'COMPLETED' && totalExecutionTime > 0 && (
+          {totalExecutionTime > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-white/60">テスト実行時間（総計）:</span>
               <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">

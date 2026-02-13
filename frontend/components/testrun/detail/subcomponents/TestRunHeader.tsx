@@ -1,7 +1,7 @@
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
-import { Play, Square } from 'lucide-react';
+import { Play, Square, User } from 'lucide-react';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
@@ -13,6 +13,11 @@ interface TestRunHeaderProps {
     environment?: string;
     platform?: string;
     device?: string;
+    assignedTo?: {
+      id: string;
+      name: string;
+      email: string;
+    } | null;
     project: {
       id: string;
     };
@@ -118,6 +123,15 @@ export function TestRunHeader({
               <span className="text-white/60">端末:</span>
               <Badge variant="outline" className="bg-teal-500/10 text-teal-500 border-teal-500/20">
                 {testRun.device}
+              </Badge>
+            </div>
+          )}
+          {testRun.assignedTo && (
+            <div className="flex items-center gap-2">
+              <span className="text-white/60">テスター:</span>
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
+                <User className="w-3 h-3 mr-1" />
+                {testRun.assignedTo.name}
               </Badge>
             </div>
           )}

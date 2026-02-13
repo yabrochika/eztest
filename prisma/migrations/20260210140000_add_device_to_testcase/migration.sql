@@ -1,2 +1,2 @@
--- AlterTable
-ALTER TABLE "TestCase" ADD COLUMN "device" TEXT;
+-- AlterTable (use IF NOT EXISTS to avoid conflicts)
+ALTER TABLE "TestCase" ADD COLUMN IF NOT EXISTS "device" TEXT;

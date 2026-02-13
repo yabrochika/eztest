@@ -213,7 +213,7 @@ export function CreateDefectDialog({
     },
     {
       name: 'description',
-      label: '説明',
+      label: '説明（画像・動画を添付可能）',
       type: 'textarea-with-attachments',
       placeholder: '欠陥の詳細を入力...',
       rows: 3,
@@ -222,6 +222,7 @@ export function CreateDefectDialog({
       attachments: descriptionAttachments,
       onAttachmentsChange: setDescriptionAttachments,
       entityType: 'defect',
+      forceShowAttachments: true,
     },
   ];
 

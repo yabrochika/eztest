@@ -30,6 +30,7 @@ type TextareaWithAttachmentsProps = Omit<React.ComponentProps<"textarea">, 'valu
   projectId?: string;
   entityType?: 'testcase' | 'defect' | 'comment' | 'testresult' | 'teststep' | 'unassigned';
   showAttachments?: boolean;
+  forceShowAttachments?: boolean;
 }
 
 function TextareaWithAttachments({ 
@@ -46,11 +47,12 @@ function TextareaWithAttachments({
   projectId,
   entityType = 'testcase',
   showAttachments = true,
+  forceShowAttachments = false,
   ...props 
 }: TextareaWithAttachmentsProps) {
   // Check if attachments feature is enabled
   const [attachmentsEnabled, setAttachmentsEnabled] = React.useState(false);
-  const shouldShowAttachments = showAttachments && attachmentsEnabled;
+  const shouldShowAttachments = showAttachments && (attachmentsEnabled || forceShowAttachments);
   
   const [charCount, setCharCount] = React.useState(0);
   const [isOverLimit, setIsOverLimit] = React.useState(false);

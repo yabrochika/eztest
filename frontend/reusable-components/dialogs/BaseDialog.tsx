@@ -42,6 +42,7 @@ export interface BaseDialogField {
   attachments?: Attachment[];
   onAttachmentsChange?: (attachments: Attachment[]) => void;
   entityType?: 'testcase' | 'teststep' | 'defect' | 'comment' | 'testresult' | 'unassigned';
+  forceShowAttachments?: boolean;
 }
 
 export interface BaseDialogConfig<T = unknown> {
@@ -382,6 +383,7 @@ export const BaseDialog = <T = unknown,>({
           maxLength={field.maxLength}
           rows={field.rows || 3}
           showCharCount={true}
+          forceShowAttachments={field.forceShowAttachments}
           className={errorBorderClass}
         />
       );

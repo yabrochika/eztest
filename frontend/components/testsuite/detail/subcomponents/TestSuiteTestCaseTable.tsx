@@ -38,7 +38,7 @@ export function TestSuiteTestCaseTable({
     {
       key: 'title',
       label: 'TITLE',
-      width: '90px',
+      width: '360px',
       className: 'min-w-0',
       render: (row) => (
         <div className="min-w-0 flex items-center gap-2">
@@ -147,7 +147,7 @@ export function TestSuiteTestCaseTable({
       grouped={true}
       groupConfig={groupConfig}
       actions={actions}
-      gridTemplateColumns="70px 90px 100px 3fr 140px 70px 40px"
+      gridTemplateColumns="360px 1fr 70px 40px"
       emptyMessage="No test cases available"
     />
   );

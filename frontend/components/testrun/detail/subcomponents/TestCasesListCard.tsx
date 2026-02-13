@@ -303,9 +303,14 @@ export function TestCasesListCard({
   const isInProgress = testRunStatus === 'IN_PROGRESS';
 
   const tableDataSorted = isInProgress
-    ? [...tableData].sort((a, b) =>
-        (a.testCase.rtcId || '').localeCompare(b.testCase.rtcId || '', undefined, { numeric: true })
-      )
+    ? [...tableData].sort((a, b) => {
+        const aId = a.testCase.rtcId || '';
+        const bId = b.testCase.rtcId || '';
+        // RTC-IDがない行は末尾に
+        if (!aId && bId) return 1;
+        if (aId && !bId) return -1;
+        return aId.localeCompare(bId, undefined, { numeric: true });
+      })
     : [...tableData].sort((a, b) => {
         const keyA = getModuleSortKey(a);
         const keyB = getModuleSortKey(b);

@@ -7,7 +7,6 @@ import {
   HoverCardTrigger,
 } from '@/frontend/reusable-elements/hover-cards/HoverCard';
 import { Trash2, Bug } from 'lucide-react';
-import { PriorityBadge } from '@/frontend/reusable-components/badges/PriorityBadge';
 import { GroupedDataTable, ColumnDef, GroupConfig, ActionConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
 import { TestCase, Module } from '../types';
 import { useRouter } from 'next/navigation';
@@ -60,7 +59,6 @@ export function TestCaseTable({
   enableModuleLink = false,
 }: TestCaseTableProps) {
   const router = useRouter();
-  const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -79,14 +77,6 @@ export function TestCaseTable({
 
   // Define columns
   const columns: ColumnDef<TestCase>[] = [
-    {
-      key: 'tcId',
-      label: 'ID',
-      width: '70px',
-      render: (row) => (
-        <p className="text-xs font-mono text-white/70 truncate">{row.tcId}</p>
-      ),
-    },
     {
       key: 'title',
       label: 'TITLE',
@@ -127,27 +117,9 @@ export function TestCaseTable({
       ),
     },
     {
-      key: 'priority',
-      label: 'PRIORITY',
-      width: '100px',
-      render: (row) => {
-        const badgeProps = getDynamicBadgeProps(row.priority, priorityOptions);
-        const priorityLabel = priorityOptions.find(opt => opt.value === row.priority)?.label || row.priority;
-        return (
-          <PriorityBadge
-            priority={row.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'critical'}
-            dynamicClassName={badgeProps.className}
-            dynamicStyle={badgeProps.style}
-          >
-            {priorityLabel}
-          </PriorityBadge>
-        );
-      },
-    },
-    {
       key: 'status',
       label: 'STATUS',
-      width: '90px',
+      width: '70px',
       render: (row) => {
         const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
         const label = statusOptions.find(opt => opt.value === row.status)?.label || row.status;
@@ -171,44 +143,11 @@ export function TestCaseTable({
       ),
     },
     {
-      key: 'layer',
-      label: 'LAYER',
-      width: '80px',
-      render: (row) => (
-        row.layer ? (
-          <Badge
-            variant="outline"
-            className="w-fit text-xs px-2 py-0.5 bg-purple-500/10 text-purple-400 border-purple-500/20"
-          >
-            {row.layer}
-          </Badge>
-        ) : (
-          <span className="text-xs text-white/40">-</span>
-        )
-      ),
-    },
-    {
       key: 'platform',
       label: 'プラットフォーム',
       width: '100px',
       render: (row) => (
         <span className="text-xs text-white/70 truncate">{row.platform || '-'}</span>
-      ),
-    },
-    {
-      key: 'domain',
-      label: 'ドメイン',
-      width: '100px',
-      render: (row) => (
-        <span className="text-xs text-white/70 truncate">{row.domain || '-'}</span>
-      ),
-    },
-    {
-      key: 'functionName',
-      label: '機能',
-      width: '100px',
-      render: (row) => (
-        <span className="text-xs text-white/70 truncate">{row.functionName || '-'}</span>
       ),
     },
     {
@@ -233,30 +172,6 @@ export function TestCaseTable({
       width: '80px',
       render: (row) => (
         <span className="text-xs text-white/70 truncate">{row.device || '-'}</span>
-      ),
-    },
-    {
-      key: 'owner',
-      label: 'OWNER',
-      width: '140px',
-      render: (row) => (
-        <div className="min-w-0">
-          <HoverCard openDelay={200}>
-            <HoverCardTrigger asChild>
-              <span className="text-xs text-white/70 truncate block cursor-pointer">
-                {row.createdBy.name}
-              </span>
-            </HoverCardTrigger>
-            {row.createdBy.name && row.createdBy.name.length > 20 && (
-              <HoverCardContent side="top" className="w-60">
-                <div className="space-y-1">
-                  <h4 className="text-xs font-semibold text-white/60">Owner</h4>
-                  <p className="text-sm text-white/90">{row.createdBy.name}</p>
-                </div>
-              </HoverCardContent>
-            )}
-          </HoverCard>
-        </div>
       ),
     },
     {
@@ -323,7 +238,7 @@ export function TestCaseTable({
       grouped={groupedByModule}
       groupConfig={groupConfig}
       actions={actions}
-      gridTemplateColumns="70px 1fr 100px 90px 80px 80px 80px 120px 60px 40px"
+      gridTemplateColumns="minmax(900px, 6fr) 70px 80px 100px 80px 100px 80px 70px 40px"
       emptyMessage="No test cases available"
     />
   );

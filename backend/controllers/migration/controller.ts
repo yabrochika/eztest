@@ -12,7 +12,7 @@ export class MigrationController {
     try {
       const formData = await req.formData();
       const file = formData.get('file') as File;
-      const updateExisting = formData.get('updateExisting') === 'true' || formData.get('updateExisting') === true;
+      const updateExisting = formData.get('updateExisting') === 'true';
 
       if (!file) {
         throw new ValidationException('No file uploaded');
@@ -121,6 +121,10 @@ export class MigrationController {
         '期待結果': '1. Login page displays\n2. Credentials accepted\n3. User redirected to dashboard\n4. Dashboard page loads successfully\n5. User profile information is visible',
         '状態': 'ACTIVE',
         '不具合ID': 'DEF-1, DEF-LOGIN-001',
+        'プラットフォーム': 'Web',
+        '端末': '',
+        'ドメイン': '認証',
+        '機能': 'ログイン',
         '実行方式': '手動',
         '自動化状況': '',
       },
@@ -136,6 +140,10 @@ export class MigrationController {
           '期待結果': '1. Login page displays\n2. Credentials accepted\n3. User redirected to dashboard\n4. Dashboard page loads successfully\n5. User profile information is visible',
           '状態': 'ACTIVE',
           '不具合ID': 'DEF-1, DEF-LOGIN-001',
+          'プラットフォーム': 'Web',
+          '端末': '',
+          'ドメイン': '認証',
+          '機能': 'ログイン',
           '実行方式': '手動',
           '自動化状況': '',
         },
@@ -150,7 +158,11 @@ export class MigrationController {
           '期待結果': '1. Checkout page loads\n2. Payment method selected\n3. Details accepted\n4. Payment processed successfully',
           '状態': 'ACTIVE',
           '不具合ID': 'DEF-PAYMENT-001, BUG-456, DEF-LOGIN-123',
-          '実行方式': '',
+          'プラットフォーム': 'iOS Native',
+          '端末': 'iPhone',
+          'ドメイン': '決済',
+          '機能': 'Stripe決済',
+          '実行方式': '手動',
           '自動化状況': '',
         },
         {
@@ -162,6 +174,10 @@ export class MigrationController {
           '期待結果': 'Login page displays\nLogin form is visible\nRemember me option is available\nPassword input shows dots or asterisks',
           '状態': 'ACTIVE',
           '不具合ID': 'BUG-123, DEF-UI-456',
+          'プラットフォーム': 'Web',
+          '端末': 'PC',
+          'ドメイン': '認証',
+          '機能': 'ログイン',
           '実行方式': '',
           '自動化状況': '',
         },
@@ -173,6 +189,10 @@ export class MigrationController {
           'テスト手順': 'Click logout button\nConfirm logout action\nVerify redirect to login page',
           '期待結果': 'User successfully logs out',
           '状態': 'ACTIVE',
+          'プラットフォーム': 'Web',
+          '端末': '',
+          'ドメイン': '認証',
+          '機能': 'ログイン',
           '実行方式': '',
           '自動化状況': '',
         },

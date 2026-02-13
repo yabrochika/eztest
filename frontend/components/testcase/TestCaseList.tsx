@@ -46,14 +46,13 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [domainFilter, setDomainFilter] = useState<string>('');
   const [functionNameFilter, setFunctionNameFilter] = useState<string>('');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const [totalPagesCount, setTotalPagesCount] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [isPaginationChange, setIsPaginationChange] = useState(false);
@@ -75,7 +74,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
   useEffect(() => {
     fetchTestCases();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, currentPage, itemsPerPage, searchQuery, priorityFilter, statusFilter, domainFilter, functionNameFilter]);
+  }, [projectId, currentPage, itemsPerPage, searchQuery, statusFilter, domainFilter, functionNameFilter]);
 
   useEffect(() => {
     if (project) {
@@ -112,7 +111,6 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
       });
       
       if (searchQuery) params.append('search', searchQuery);
-      if (priorityFilter !== 'all') params.append('priority', priorityFilter);
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (domainFilter) params.append('domain', domainFilter);
       if (functionNameFilter) params.append('functionName', functionNameFilter);
@@ -162,6 +160,13 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
     setItemsPerPage(items);
     setCurrentPage(1); // Reset to first page when items per page changes
   };
+
+  // Check if any filters are active
+  const hasActiveFilters = 
+    searchQuery !== '' ||
+    statusFilter !== 'all' ||
+    domainFilter !== '' ||
+    functionNameFilter !== '';
 
   // Show modules that have test cases in the current page OR are truly empty (on last page only)
   const modulesForTable = testCases.length === 0 
@@ -324,12 +329,10 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
             mounted ? (
               <TestCaseFilters
                 searchQuery={searchQuery}
-                priorityFilter={priorityFilter}
                 statusFilter={statusFilter}
                 domainFilter={domainFilter}
                 functionNameFilter={functionNameFilter}
                 onSearchChange={setSearchQuery}
-                onPriorityChange={setPriorityFilter}
                 onStatusChange={setStatusFilter}
                 onDomainChange={setDomainFilter}
                 onFunctionNameChange={setFunctionNameFilter}
@@ -354,7 +357,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
           <>
             <TestCaseTable
               testCases={testCases}
-              groupedByModule={true}
+              groupedByModule={!hasActiveFilters}
               modules={modulesForTable}
               onDelete={handleDeleteClick}
               onClick={handleCardClick}
@@ -434,7 +437,6 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
               moduleId: undefined,
               suiteId: undefined,
               status: statusFilter !== 'all' ? statusFilter : undefined,
-              priority: priorityFilter !== 'all' ? priorityFilter : undefined,
             },
           }}
           itemName="test cases"

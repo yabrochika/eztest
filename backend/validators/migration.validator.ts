@@ -101,8 +101,18 @@ export const TEST_CASE_IMPORT_COLUMNS = {
   '備考': { normalized: 'notes', required: false },
   'Notes': { normalized: 'notes', required: false },
   'notes': { normalized: 'notes', required: false },
-  
-  
+
+  // プラットフォーム・端末・ドメイン・機能
+  'プラットフォーム': { normalized: 'platform', required: false },
+  'platform': { normalized: 'platform', required: false },
+  '端末': { normalized: 'device', required: false },
+  'device': { normalized: 'device', required: false },
+  'ドメイン': { normalized: 'domain', required: false },
+  'domain': { normalized: 'domain', required: false },
+  '機能': { normalized: 'functionName', required: false },
+  'functionName': { normalized: 'functionName', required: false },
+  'function': { normalized: 'functionName', required: false },
+
   // Test Type (テスト種別)
   'テスト種別': { normalized: 'testType', required: false },
   'Test Type': { normalized: 'testType', required: false },

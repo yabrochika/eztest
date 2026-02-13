@@ -130,7 +130,7 @@ export class TestSuiteService {
               },
             },
           },
-          orderBy: { addedAt: 'desc' },
+          orderBy: { testCase: { module: { name: 'asc' } } },
         },
         _count: {
           select: { 
@@ -359,7 +359,7 @@ export class TestSuiteService {
       where: { projectId: suite.projectId },
       include: {
         testCases: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { flowId: 'asc' },
         },
         _count: {
           select: { testCases: true },
@@ -374,7 +374,7 @@ export class TestSuiteService {
         projectId: suite.projectId,
         moduleId: null,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { flowId: 'asc' },
     });
 
     // Filter out test cases already in this suite

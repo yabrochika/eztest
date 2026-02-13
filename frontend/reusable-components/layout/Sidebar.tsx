@@ -475,14 +475,14 @@ export function Sidebar({ items, projectId, className }: SidebarProps) {
             isMounted && isCollapsed ? 'justify-center' : 'justify-start',
             'text-white/70 hover:text-white hover:bg-white/[0.05]'
           )}
-          title={isMounted && isCollapsed ? 'Account' : ''}
+          title={isMounted && isCollapsed ? 'アカウント' : ''}
         >
           {isMounted && isCollapsed ? (
             <Settings className="w-5 h-5" />
           ) : (
             <>
               <Settings className="w-5 h-5" />
-              <span className="text-sm font-normal">Account</span>
+              <span className="text-sm font-normal">アカウント</span>
             </>
           )}
         </Link>

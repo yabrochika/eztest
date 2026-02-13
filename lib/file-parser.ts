@@ -103,8 +103,9 @@ export function parseCSV(content: string): ParseResult {
       });
     }
 
+    const parsedData = result.data as ParsedRow[];
     return {
-      data: result.data as ParsedRow[],
+      data: normalizeRowKeys(parsedData),
       errors,
     };
   } catch (error) {
@@ -153,7 +154,7 @@ export function parseExcel(buffer: Buffer): ParseResult {
     });
 
     return {
-      data: cleanedData,
+      data: normalizeRowKeys(cleanedData),
       errors,
     };
   } catch (error) {

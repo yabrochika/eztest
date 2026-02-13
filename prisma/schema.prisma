@@ -221,7 +221,7 @@ model TestCase {
   platform      String?   // プラットフォーム: Web, Web(SP), iOS Native, Android Native（単一選択）
   device        String?   // 端末: iPhone, Android, PC
   domain        String?   // ドメイン
-  functionName  String?   // 機能（DB予約語のため functionName）
+  functionName  String?   @map("function") // 機能（DB予約語のため functionName）
   executionType String?   // 実行方式: 手動 / 自動
   automationStatus String? // 自動化状況: 自動化済 / 自動化対象 / 自動化対象外 / 検討中
   createdById   String

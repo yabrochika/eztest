@@ -38,7 +38,8 @@ async function main() {
 async function seedAdminUser() {
   console.log('👤 Creating admin user...');
 
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@eztest.local';
+  const rawEmail = process.env.ADMIN_EMAIL || 'admin@eztest.local';
+  const adminEmail = rawEmail.replace(/@@/g, '@'); // @@ を @ に正規化
   const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123456';
   const adminName = process.env.ADMIN_NAME || 'System Administrator';
 

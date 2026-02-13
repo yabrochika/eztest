@@ -53,6 +53,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [addingTestSuites, setAddingTestSuites] = useState(false);
   const [loadingSuites, setLoadingSuites] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [executionStartTime, setExecutionStartTime] = useState<number | null>(null);
 
   const [resultForm, setResultForm, clearResultForm] = useFormPersistence<ResultFormData>(
     `testrun-result-${testRunId}`,
@@ -285,6 +286,9 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       comment: existingResult?.comment || '',
     });
 
+    // 計測開始: 「実行」ボタン押下時刻を記録
+    setExecutionStartTime(Date.now());
+
     setResultDialogOpen(true);
   };
 
@@ -303,6 +307,13 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           projectId = pathSegments[projectIndex + 1];
         }
       }
+
+      // 計測終了: 経過時間を秒単位で算出
+      let duration: number | undefined;
+      if (executionStartTime) {
+        duration = Math.round((Date.now() - executionStartTime) / 1000);
+      }
+
       const response = await fetch(`/api/projects/${projectId}/testruns/${testRunId}/results`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -310,6 +321,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           testCaseId: selectedTestCase.testCaseId,
           status: resultForm.status,
           comment: resultForm.comment,
+          duration,
         }),
       });
 
@@ -318,6 +330,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       if (data.data) {
         setResultDialogOpen(false);
         setSelectedTestCase(null);
+        setExecutionStartTime(null);
         clearResultForm(); // Clear persisted form data after successful submission
         fetchTestRun();
       } else {
@@ -751,7 +764,12 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           projectId={testRun.project?.id || ''}
           testRunEnvironment={testRun.environment}
           formData={resultForm}
-          onOpenChange={setResultDialogOpen}
+          onOpenChange={(open) => {
+            setResultDialogOpen(open);
+            if (!open) {
+              setExecutionStartTime(null);
+            }
+          }}
           onFormChange={(data) => {
             const filteredData = Object.fromEntries(
               Object.entries(data).filter(([, value]) => value !== undefined)
@@ -760,6 +778,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           }}
           onSubmit={handleSubmitResult}
           refreshTrigger={defectRefreshTrigger}
+          executionStartTime={executionStartTime}
         />
 
         <AddTestCasesDialog

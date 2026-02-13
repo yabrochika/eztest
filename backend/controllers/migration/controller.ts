@@ -94,7 +94,7 @@ export class MigrationController {
         { name: '不具合ID', required: false, description: '不具合参照。複数はカンマまたはセミコロン区切り（例: DEF-1, BUG-123）。未作成のIDも指定可。' },
         // Older fields (kept for backward compatibility)
         { name: '説明', required: false, description: '詳細説明' },
-        { name: '想定時間（分）', required: false, description: '想定時間（分）' },
+        { name: 'テスト実行時間（分）', required: false, description: 'テスト実行時間（分）' },
         { name: '事後条件', required: false, description: '事後条件' },
         { name: 'テストスイート', required: false, description: 'テストスイート名（存在しなければ作成）' },
         // New fields for enhanced test case management (EZ Test UI labels)

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,10 +21,35 @@ import {
   SelectValue,
 } from '@/frontend/reusable-elements/selects/Select';
 import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
-import { CheckCircle, XCircle, AlertCircle, Circle, Bug } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Circle, Bug, Timer, ChevronDown, ChevronUp } from 'lucide-react';
 import { ResultFormData } from '../types';
 import { CreateDefectDialog } from '@/frontend/components/defect/subcomponents/CreateDefectDialog';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+
+interface TestStep {
+  id: string;
+  stepNumber: number;
+  action: string;
+  expectedResult: string;
+}
+
+interface TestCaseDetail {
+  id: string;
+  tcId: string;
+  rtcId?: string | null;
+  title: string;
+  description?: string;
+  expectedResult?: string;
+  preconditions?: string;
+  postconditions?: string;
+  testData?: string;
+  priority: string;
+  status: string;
+  estimatedTime?: number | null;
+  steps?: TestStep[];
+  module?: { id: string; name: string } | null;
+  testCaseSuites?: Array<{ testSuite: { id: string; name: string } }>;
+}
 
 interface Defect {
   id: string;
@@ -45,6 +70,7 @@ interface RecordResultDialogProps {
   onFormChange: (data: Partial<ResultFormData>) => void;
   onSubmit: () => void;
   refreshTrigger?: number; // Trigger to refresh defects after creation
+  executionStartTime?: number | null; // タイマー開始時刻 (Date.now())
 }
 
 export function RecordResultDialog({
@@ -58,6 +84,7 @@ export function RecordResultDialog({
   onFormChange,
   onSubmit,
   refreshTrigger,
+  executionStartTime,
 }: RecordResultDialogProps) {
   const [existingDefects, setExistingDefects] = useState<Defect[]>([]);
   const [otherDefects, setOtherDefects] = useState<Defect[]>([]);
@@ -66,6 +93,73 @@ export function RecordResultDialog({
   const [loadingDefects, setLoadingDefects] = useState(false);
   const [defectFilter, setDefectFilter] = useState<'all' | 'existing' | 'other'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // テストケース詳細
+  const [testCaseDetail, setTestCaseDetail] = useState<TestCaseDetail | null>(null);
+  const [loadingTestCase, setLoadingTestCase] = useState(false);
+  const [testCaseExpanded, setTestCaseExpanded] = useState(true);
+
+  // 経過時間タイマー
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ダイアログが開いたらテストケース詳細を取得
+  useEffect(() => {
+    if (open && testCaseId) {
+      const fetchTestCaseDetail = async () => {
+        setLoadingTestCase(true);
+        try {
+          const response = await fetch(`/api/testcases/${testCaseId}`);
+          const data = await response.json();
+          if (data.data) {
+            setTestCaseDetail(data.data);
+          }
+        } catch (error) {
+          console.error('Error fetching test case detail:', error);
+        } finally {
+          setLoadingTestCase(false);
+        }
+      };
+      fetchTestCaseDetail();
+      setTestCaseExpanded(true);
+    } else {
+      setTestCaseDetail(null);
+    }
+  }, [open, testCaseId]);
+
+  useEffect(() => {
+    if (open && executionStartTime) {
+      // タイマー開始
+      const updateElapsed = () => {
+        setElapsedSeconds(Math.floor((Date.now() - executionStartTime) / 1000));
+      };
+      updateElapsed();
+      timerRef.current = setInterval(updateElapsed, 1000);
+    } else {
+      // タイマー停止・リセット
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setElapsedSeconds(0);
+    }
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [open, executionStartTime]);
+
+  const formatElapsedTime = (totalSeconds: number): string => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
 
   // Fetch dynamic dropdown options
   const { options: statusOptions } = useDropdownOptions('TestResult', 'status');
@@ -202,8 +296,164 @@ export function RecordResultDialog({
         <DialogHeader className="mb-4">
           <DialogTitle>テスト結果を記録</DialogTitle>
           <DialogDescription>{testCaseName}</DialogDescription>
+          {executionStartTime && (
+            <div className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <Timer className="w-4 h-4 text-blue-400" />
+              <span className="text-sm text-blue-300">経過時間:</span>
+              <span className="text-sm font-mono font-semibold text-blue-200">
+                {formatElapsedTime(elapsedSeconds)}
+              </span>
+            </div>
+          )}
         </DialogHeader>
 
+        {/* テストケース詳細表示 */}
+        {loadingTestCase ? (
+          <div className="mb-4 p-4 rounded-lg bg-white/5 border border-white/10">
+            <p className="text-sm text-white/50">テストケースを読み込み中...</p>
+          </div>
+        ) : testCaseDetail && (
+          <div className="mb-4 rounded-lg bg-white/5 border border-white/10 overflow-hidden">
+            <button
+              type="button"
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
+              onClick={() => setTestCaseExpanded(!testCaseExpanded)}
+            >
+              <span className="text-sm font-medium text-white/90">テストケース内容</span>
+              {testCaseExpanded ? (
+                <ChevronUp className="w-4 h-4 text-white/50" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-white/50" />
+              )}
+            </button>
+            {testCaseExpanded && (
+              <div className="px-4 pb-4 space-y-3 max-h-[40vh] overflow-y-auto custom-scrollbar">
+                {/* 基本情報 */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div>
+                    <span className="text-white/40">TC-ID:</span>{' '}
+                    <span className="text-white/80 font-mono">{testCaseDetail.tcId}</span>
+                  </div>
+                  {testCaseDetail.rtcId && (
+                    <div>
+                      <span className="text-white/40">RTC-ID:</span>{' '}
+                      <span className="text-white/80 font-mono">{testCaseDetail.rtcId}</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-white/40">優先度:</span>{' '}
+                    <span className="text-white/80">{testCaseDetail.priority}</span>
+                  </div>
+                  <div>
+                    <span className="text-white/40">ステータス:</span>{' '}
+                    <span className="text-white/80">{testCaseDetail.status}</span>
+                  </div>
+                  {testCaseDetail.module && (
+                    <div>
+                      <span className="text-white/40">モジュール:</span>{' '}
+                      <span className="text-white/80">{testCaseDetail.module.name}</span>
+                    </div>
+                  )}
+                  {testCaseDetail.testCaseSuites && testCaseDetail.testCaseSuites.length > 0 && (
+                    <div>
+                      <span className="text-white/40">スイート:</span>{' '}
+                      <span className="text-white/80">
+                        {testCaseDetail.testCaseSuites.map(s => s.testSuite.name).join(', ')}
+                      </span>
+                    </div>
+                  )}
+                  {testCaseDetail.estimatedTime != null && (
+                    <div>
+                      <span className="text-white/40">テスト実行時間:</span>{' '}
+                      <span className="text-white/80">{testCaseDetail.estimatedTime}分</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 説明 */}
+                {testCaseDetail.description && (
+                  <div>
+                    <p className="text-xs font-medium text-white/40 mb-1">説明</p>
+                    <p className="text-sm text-white/80 whitespace-pre-wrap bg-white/5 rounded p-2">
+                      {testCaseDetail.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* 前提条件 */}
+                {testCaseDetail.preconditions && (
+                  <div>
+                    <p className="text-xs font-medium text-white/40 mb-1">前提条件</p>
+                    <p className="text-sm text-white/80 whitespace-pre-wrap bg-white/5 rounded p-2">
+                      {testCaseDetail.preconditions}
+                    </p>
+                  </div>
+                )}
+
+                {/* テストデータ */}
+                {testCaseDetail.testData && (
+                  <div>
+                    <p className="text-xs font-medium text-white/40 mb-1">テストデータ</p>
+                    <p className="text-sm text-white/80 whitespace-pre-wrap bg-white/5 rounded p-2">
+                      {testCaseDetail.testData}
+                    </p>
+                  </div>
+                )}
+
+                {/* テストステップ */}
+                {testCaseDetail.steps && testCaseDetail.steps.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-white/40 mb-2">テストステップ</p>
+                    <div className="space-y-2">
+                      {testCaseDetail.steps.map((step) => (
+                        <div
+                          key={step.id}
+                          className="flex gap-3 p-2 rounded bg-white/5 text-sm"
+                        >
+                          <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-blue-500/20 text-blue-300 text-xs font-medium">
+                            {step.stepNumber}
+                          </span>
+                          <div className="flex-1 space-y-1">
+                            <p className="text-white/80">
+                              <span className="text-white/40 text-xs">操作: </span>
+                              {step.action}
+                            </p>
+                            <p className="text-white/60">
+                              <span className="text-white/40 text-xs">期待結果: </span>
+                              {step.expectedResult}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 期待結果（全体） */}
+                {testCaseDetail.expectedResult && (
+                  <div>
+                    <p className="text-xs font-medium text-white/40 mb-1">期待結果</p>
+                    <p className="text-sm text-white/80 whitespace-pre-wrap bg-white/5 rounded p-2">
+                      {testCaseDetail.expectedResult}
+                    </p>
+                  </div>
+                )}
+
+                {/* 事後条件 */}
+                {testCaseDetail.postconditions && (
+                  <div>
+                    <p className="text-xs font-medium text-white/40 mb-1">事後条件</p>
+                    <p className="text-sm text-white/80 whitespace-pre-wrap bg-white/5 rounded p-2">
+                      {testCaseDetail.postconditions}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* テスト結果を記録 */}
         <div className="space-y-4 mb-4">
           <div className="space-y-2">
             <Label htmlFor="status">結果ステータス *</Label>

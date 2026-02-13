@@ -63,7 +63,7 @@ export const TEST_CASE_IMPORT_COLUMNS = {
   'Description': { normalized: 'description', required: false },
   'description': { normalized: 'description', required: false },
   
-  '想定時間（分）': { normalized: 'estimatedTime', required: false },
+  'テスト実行時間（分）': { normalized: 'estimatedTime', required: false },
   'Estimated Time (minutes)': { normalized: 'estimatedTime', required: false },
   'estimated time (minutes)': { normalized: 'estimatedTime', required: false },
   'estimated time': { normalized: 'estimatedTime', required: false },

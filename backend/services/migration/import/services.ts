@@ -49,7 +49,7 @@ export class ImportService {
       '状態': 'status',
       '不具合id': 'defectId',
       '説明': 'description',
-      '想定時間（分）': 'estimatedTime',
+      'テスト実行時間（分）': 'estimatedTime',
       '事後条件': 'postconditions',
       'テストスイート': 'testsuite',
       // English (backward compatibility)

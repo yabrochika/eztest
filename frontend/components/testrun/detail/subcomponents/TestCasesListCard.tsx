@@ -114,7 +114,7 @@ export function TestCasesListCard({
     },
     {
       key: 'estimatedTime',
-      label: '想定時間',
+      label: 'テスト実行時間',
       width: '100px',
       render: (row: ResultRow) => (
         <span className="text-white/70 text-sm">

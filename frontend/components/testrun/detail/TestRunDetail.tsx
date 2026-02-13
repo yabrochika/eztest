@@ -215,6 +215,36 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     }
   };
 
+  const handleReopenTestRun = async () => {
+    try {
+      setActionLoading(true);
+      let projectId = testRun?.project?.id;
+      if (!projectId && typeof window !== 'undefined') {
+        const pathSegments = window.location.pathname.split('/');
+        const projectIndex = pathSegments.indexOf('projects');
+        if (projectIndex !== -1 && projectIndex + 1 < pathSegments.length) {
+          projectId = pathSegments[projectIndex + 1];
+        }
+      }
+      const response = await fetch(`/api/projects/${projectId}/testruns/${testRunId}/reopen`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (data.data) {
+        fetchTestRun();
+      } else {
+        alert(data.error || 'テストランの再開に失敗しました');
+      }
+    } catch (error) {
+      console.error('Error reopening test run:', error);
+      alert('テストランの再開に失敗しました');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleSendReportYes = async () => {
     let projectId = testRun?.project?.id;
     if (!projectId && typeof window !== 'undefined') {
@@ -728,6 +758,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           canUpdate={canUpdateTestRun}
           onStartTestRun={handleStartTestRun}
           onCompleteTestRun={handleCompleteTestRun}
+          onReopenTestRun={handleReopenTestRun}
         />
 
         <TestRunStatsCards

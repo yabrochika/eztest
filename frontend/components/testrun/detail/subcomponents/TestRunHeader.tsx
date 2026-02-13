@@ -1,7 +1,7 @@
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
-import { Play, Square, User } from 'lucide-react';
+import { Play, Square, RotateCcw, User } from 'lucide-react';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
@@ -27,6 +27,7 @@ interface TestRunHeaderProps {
   canUpdate?: boolean;
   onStartTestRun: () => void;
   onCompleteTestRun: () => void;
+  onReopenTestRun?: () => void;
 }
 
 export function TestRunHeader({
@@ -36,6 +37,7 @@ export function TestRunHeader({
   canUpdate = true,
   onStartTestRun,
   onCompleteTestRun,
+  onReopenTestRun,
 }: TestRunHeaderProps) {
   const { options: statusOptions } = useDropdownOptions('TestRun', 'status');
   const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
@@ -155,6 +157,14 @@ export function TestRunHeader({
                 variant: 'primary',
                 show: testRun.status === 'IN_PROGRESS',
                 loading: actionLoading && testRun.status === 'IN_PROGRESS',
+              },
+              {
+                label: 'テストランを再開',
+                icon: RotateCcw,
+                onClick: onReopenTestRun || (() => {}),
+                variant: 'secondary',
+                show: testRun.status === 'COMPLETED' && !!onReopenTestRun,
+                loading: actionLoading && testRun.status === 'COMPLETED',
               },
             ]}
           />

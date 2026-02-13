@@ -156,6 +156,15 @@ export class TestRunController {
   }
 
   /**
+   * Reopen a completed test run
+   */
+  async reopenTestRun(testRunId: string) {
+    const testRun = await testRunService.reopenTestRun(testRunId);
+
+    return { data: testRun };
+  }
+
+  /**
    * Add test result to test run
    */
   async addTestResult(

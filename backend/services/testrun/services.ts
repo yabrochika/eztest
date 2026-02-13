@@ -720,6 +720,19 @@ export class TestRunService {
   }
 
   /**
+   * Reopen a completed test run
+   */
+  async reopenTestRun(testRunId: string) {
+    return await prisma.testRun.update({
+      where: { id: testRunId },
+      data: {
+        status: 'IN_PROGRESS',
+        completedAt: null,
+      },
+    });
+  }
+
+  /**
    * Cancel a test run
    */
   async cancelTestRun(testRunId: string) {

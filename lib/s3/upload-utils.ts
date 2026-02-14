@@ -50,7 +50,56 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
 }
 
 /**
+ * Uploads a file to local storage as fallback when S3 is not configured
+ */
+async function uploadFileLocal(
+  file: File,
+  fieldName: string,
+  entityType: string,
+  projectId?: string,
+  onProgress?: (progress: number) => void,
+): Promise<UploadResult> {
+  try {
+    onProgress?.(10);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('fieldName', fieldName);
+    formData.append('entityType', entityType);
+    if (projectId) formData.append('projectId', projectId);
+
+    onProgress?.(30);
+
+    const response = await fetch('/api/attachments/upload-local', {
+      method: 'POST',
+      body: formData,
+    });
+
+    onProgress?.(80);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to upload file locally');
+    }
+
+    const data = await response.json();
+    onProgress?.(100);
+
+    return {
+      success: true,
+      attachment: data.attachment,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Local upload failed',
+    };
+  }
+}
+
+/**
  * Uploads a file directly to S3 using chunked multipart upload with presigned URLs
+ * Falls back to local storage if S3 is not configured
  */
 export async function uploadFileToS3({
   file,
@@ -77,8 +126,9 @@ export async function uploadFileToS3({
     });
 
     if (!initResponse.ok) {
-      const error = await initResponse.json();
-      throw new Error(error.error || 'Failed to initialize upload');
+      // S3が利用できない場合はローカルストレージにフォールバック
+      console.warn('S3 upload initialization failed, falling back to local storage');
+      return uploadFileLocal(file, fieldName, entityType, projectId, onProgress);
     }
 
     const { uploadId, s3Key, presignedUrls, totalParts } = await initResponse.json();

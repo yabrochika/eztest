@@ -25,6 +25,8 @@ const ALLOWED_MIME_TYPES = [
   'application/x-rar-compressed', 'application/x-7z-compressed',
   // Code files
   'application/json', 'application/xml', 'text/javascript', 'text/css',
+  // Videos
+  'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo',
 ];
 
 export class AttachmentService {
@@ -59,11 +61,6 @@ export class AttachmentService {
     // Validate file type (security - don't trust client)
     if (!fileType || !this.validateFileType(fileType)) {
       throw new Error(`File type "${fileType}" is not allowed`);
-    }
-
-    // Block video files explicitly
-    if (fileType.startsWith('video/')) {
-      throw new Error('Video files are not supported');
     }
 
     // Generate unique S3 key with hierarchical folder structure

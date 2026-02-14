@@ -660,12 +660,7 @@ export function RecordResultDialog({
             onClick={handleSubmitWithDefects}
             buttonName="Record Test Result Dialog - Save Result"
           >
-            結果を保存
-            {formData.status === 'FAILED' && selectedDefectIds.length > 0 && (
-              <span className="ml-2 text-xs">
-                （{selectedDefectIds.length} 件の欠陥）
-              </span>
-            )}
+            {formData.status === 'FAILED' ? '欠陥レポートを作成' : '結果を保存'}
           </ButtonPrimary>
         </DialogFooter>
       </DialogContent>

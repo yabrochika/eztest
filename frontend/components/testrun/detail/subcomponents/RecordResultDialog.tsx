@@ -110,6 +110,7 @@ export function RecordResultDialog({
   // 経過時間タイマー（テストケース読み込み完了後に開始）
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [timerStartTime, setTimerStartTime] = useState<number | null>(null);
+  const [timerOffset, setTimerOffset] = useState(0); // 既存の実行時間からの継続用オフセット（秒）
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ダイアログが開いたらテストケース詳細を取得し、読み込み完了後にタイマー開始
@@ -117,6 +118,7 @@ export function RecordResultDialog({
     if (open && testCaseId) {
       // タイマーをリセット
       setTimerStartTime(null);
+      setTimerOffset(0);
       setElapsedSeconds(0);
 
       const fetchTestCaseDetail = async () => {
@@ -126,6 +128,12 @@ export function RecordResultDialog({
           const data = await response.json();
           if (data.data) {
             setTestCaseDetail(data.data);
+            // 既存のテスト実行時間があればオフセットとして設定（続きから計測）
+            const existingTime = data.data.estimatedTime;
+            if (existingTime && existingTime > 0) {
+              setTimerOffset(existingTime);
+              setElapsedSeconds(existingTime);
+            }
           }
         } catch (error) {
           console.error('Error fetching test case detail:', error);
@@ -140,6 +148,7 @@ export function RecordResultDialog({
     } else {
       setTestCaseDetail(null);
       setTimerStartTime(null);
+      setTimerOffset(0);
       setElapsedSeconds(0);
     }
   }, [open, testCaseId]);
@@ -147,7 +156,7 @@ export function RecordResultDialog({
   useEffect(() => {
     if (open && timerStartTime) {
       const updateElapsed = () => {
-        setElapsedSeconds(Math.floor((Date.now() - timerStartTime) / 1000));
+        setElapsedSeconds(timerOffset + Math.floor((Date.now() - timerStartTime) / 1000));
       };
       updateElapsed();
       timerRef.current = setInterval(updateElapsed, 1000);
@@ -163,7 +172,7 @@ export function RecordResultDialog({
         timerRef.current = null;
       }
     };
-  }, [open, timerStartTime]);
+  }, [open, timerStartTime, timerOffset]);
 
   const formatElapsedTime = (totalSeconds: number): string => {
     const hours = Math.floor(totalSeconds / 3600);
@@ -263,8 +272,8 @@ export function RecordResultDialog({
           console.error('Error linking defects:', error);
         }
       }
-      // 計測した経過秒数を渡して保存
-      const duration = timerStartTime ? Math.round((Date.now() - timerStartTime) / 1000) : undefined;
+      // 計測した経過秒数（既存の実行時間 + 今回の計測時間）を渡して保存
+      const duration = timerStartTime ? timerOffset + Math.round((Date.now() - timerStartTime) / 1000) : undefined;
       await onSubmit(duration);
     } catch (error) {
       throw error;

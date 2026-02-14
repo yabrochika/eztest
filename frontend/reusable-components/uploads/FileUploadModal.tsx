@@ -162,12 +162,13 @@ export function FileUploadModal({
     if (!files || files.length === 0) return;
 
     setFileError('');
+    const nextAttachments = [...attachments];
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       
       // Check max files limit
-      if (attachments.length + i >= maxFiles) {
+      if (nextAttachments.length >= maxFiles) {
         setFileError(`Maximum ${maxFiles} files allowed`);
         break;
       }
@@ -190,7 +191,7 @@ export function FileUploadModal({
             onProgress: () => {},
           });
           if (result.success && result.attachment) {
-            onAttachmentsChange([...attachments, result.attachment]);
+            nextAttachments.push(result.attachment);
           } else {
             setFileError(result.error || 'アップロードに失敗しました');
           }
@@ -211,9 +212,11 @@ export function FileUploadModal({
           // @ts-expect-error - Add file object for later upload
           _pendingFile: file,
         };
-        onAttachmentsChange([...attachments, pendingAttachment]);
+        nextAttachments.push(pendingAttachment);
       }
     }
+
+    onAttachmentsChange(nextAttachments);
     
     if (fileInputRef.current) fileInputRef.current.value = '';
   };

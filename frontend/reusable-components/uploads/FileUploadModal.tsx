@@ -36,6 +36,7 @@ interface FileUploadModalProps {
   maxFiles?: number;
   onDeleteMarked?: (deletedIds: string[]) => void;
   forceShow?: boolean;
+  uploadOnSave?: boolean;
 }
 
 export function FileUploadModal({
@@ -51,6 +52,7 @@ export function FileUploadModal({
   maxFiles = 20,
   onDeleteMarked,
   forceShow = false,
+  uploadOnSave = false,
 }: FileUploadModalProps) {
   const [attachmentsEnabled, setAttachmentsEnabled] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -176,7 +178,7 @@ export function FileUploadModal({
         continue;
       }
 
-      if (forceShow || entityId) {
+      if (!uploadOnSave && (forceShow || entityId)) {
         // 即座にアップロード（ローカルフォールバック含む）
         try {
           const result = await uploadFileToS3({

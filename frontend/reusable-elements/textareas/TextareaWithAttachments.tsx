@@ -31,6 +31,7 @@ type TextareaWithAttachmentsProps = Omit<React.ComponentProps<"textarea">, 'valu
   entityType?: 'testcase' | 'defect' | 'comment' | 'testresult' | 'teststep' | 'unassigned';
   showAttachments?: boolean;
   forceShowAttachments?: boolean;
+  uploadOnSave?: boolean;
 }
 
 function TextareaWithAttachments({ 
@@ -48,6 +49,7 @@ function TextareaWithAttachments({
   entityType = 'testcase',
   showAttachments = true,
   forceShowAttachments = false,
+  uploadOnSave = false,
   ...props 
 }: TextareaWithAttachmentsProps) {
   // Check if attachments feature is enabled
@@ -223,9 +225,10 @@ function TextareaWithAttachments({
       return;
     }
 
-    // Upload file
-    if (entityId || forceShowAttachments) {
-      // entityIdがある場合またはforceShowAttachments時は即座にアップロード
+    // Upload behavior:
+    // - uploadOnSave=true: keep as pending and upload on parent form save
+    // - uploadOnSave=false: upload immediately when entityId/forceShowAttachments is available
+    if (!uploadOnSave && (entityId || forceShowAttachments)) {
       await handleUpload(file);
     } else {
       // Creating new entity - store in memory, upload on save
@@ -587,6 +590,7 @@ function TextareaWithAttachments({
           entityType={entityType}
           title={`Manage Files - ${fieldName}`}
           forceShow={forceShowAttachments}
+          uploadOnSave={uploadOnSave}
         />
       )}
     </div>

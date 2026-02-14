@@ -43,6 +43,7 @@ export function DefectDescriptionAttachmentField({
       projectId={projectId}
       showAttachments={true}
       forceShowAttachments={true}
+      uploadOnSave={true}
     />
   );
 }

@@ -212,9 +212,9 @@ function TextareaWithAttachments({
       return;
     }
 
-    // Store file in browser memory as "pending" instead of uploading immediately
-    if (entityId) {
-      // Editing existing entity - upload immediately
+    // Upload file
+    if (entityId || forceShowAttachments) {
+      // entityIdがある場合またはforceShowAttachments時は即座にアップロード
       await handleUpload(file);
     } else {
       // Creating new entity - store in memory, upload on save
@@ -225,7 +225,7 @@ function TextareaWithAttachments({
         size: file.size,
         mimeType: file.type,
         uploadedAt: new Date().toISOString(),
-        fieldName: fieldName, // Track which field this attachment belongs to
+        fieldName: fieldName,
         // @ts-expect-error - Add file object for later upload
         _pendingFile: file,
       };

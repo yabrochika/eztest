@@ -6,7 +6,7 @@ import { X, FileIcon, Image as ImageIcon, File, FileText, Video, Archive, Downlo
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { ButtonDestructive } from '@/frontend/reusable-elements/buttons/ButtonDestructive';
-import { type Attachment, validateFile, downloadFile, formatFileSize, getFileIconType } from '@/lib/s3';
+import { type Attachment, validateFile, downloadFile, formatFileSize, getFileIconType, uploadFileToS3 } from '@/lib/s3';
 import { cn } from '@/lib/utils';
 import { isAttachmentsEnabledClient } from '@/lib/attachment-config';
 
@@ -146,14 +146,12 @@ export function FileUploadModal({
     if (!files || files.length === 0) return;
 
     setFileError('');
-
-    const newAttachments: Attachment[] = [];
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       
       // Check max files limit
-      if (attachments.length + newAttachments.length >= maxFiles) {
+      if (attachments.length + i >= maxFiles) {
         setFileError(`Maximum ${maxFiles} files allowed`);
         break;
       }
@@ -164,24 +162,41 @@ export function FileUploadModal({
         continue;
       }
 
-      // Create pending attachment (will be uploaded on save)
-      const pendingAttachment: Attachment = {
-        id: `pending-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-        filename: file.name,
-        originalName: file.name,
-        size: file.size,
-        mimeType: file.type,
-        uploadedAt: new Date().toISOString(),
-        fieldName: fieldName,
-        // @ts-expect-error - Add file object for later upload
-        _pendingFile: file,
-      };
-      
-      newAttachments.push(pendingAttachment);
-    }
-
-    if (newAttachments.length > 0) {
-      onAttachmentsChange([...attachments, ...newAttachments]);
+      if (forceShow || entityId) {
+        // 即座にアップロード（ローカルフォールバック含む）
+        try {
+          const result = await uploadFileToS3({
+            file,
+            fieldName,
+            entityId,
+            projectId,
+            entityType,
+            onProgress: () => {},
+          });
+          if (result.success && result.attachment) {
+            onAttachmentsChange([...attachments, result.attachment]);
+          } else {
+            setFileError(result.error || 'アップロードに失敗しました');
+          }
+        } catch (error) {
+          console.error('Upload failed:', error);
+          setFileError('アップロードに失敗しました');
+        }
+      } else {
+        // Creating new entity - store in memory, upload on save
+        const pendingAttachment: Attachment = {
+          id: `pending-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          filename: file.name,
+          originalName: file.name,
+          size: file.size,
+          mimeType: file.type,
+          uploadedAt: new Date().toISOString(),
+          fieldName: fieldName,
+          // @ts-expect-error - Add file object for later upload
+          _pendingFile: file,
+        };
+        onAttachmentsChange([...attachments, pendingAttachment]);
+      }
     }
     
     if (fileInputRef.current) fileInputRef.current.value = '';

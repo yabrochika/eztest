@@ -107,7 +107,6 @@ export function CreateDefectDialog({
       placeholder: '欠陥タイトルを入力',
       type: 'text',
       required: true,
-      minLength: 5,
       maxLength: 200,
       cols: 1,
     },

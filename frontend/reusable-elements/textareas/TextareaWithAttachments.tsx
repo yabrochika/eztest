@@ -355,7 +355,7 @@ function TextareaWithAttachments({
         </div>
       )}
 
-      {showAttachments && (
+      {shouldShowAttachments && (
         <>
           {/* Hidden File Input */}
           <input
@@ -413,7 +413,7 @@ function TextareaWithAttachments({
       )}
 
       {/* Hover Preview Card */}
-      {showAttachments && hoveredId && attachments.find(a => a.id === hoveredId) && (
+      {shouldShowAttachments && hoveredId && attachments.find(a => a.id === hoveredId) && (
         <div 
           className="absolute bottom-16 left-2 z-50 w-80 bg-[#1a2332] border border-white/20 rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200" 
         >

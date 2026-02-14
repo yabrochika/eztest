@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { s3Client, getS3Bucket } from '@/lib/s3-client';
+import { s3Client, getS3Bucket, isS3Configured } from '@/lib/s3-client';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 interface CreateDefectInput {
@@ -553,8 +553,8 @@ export class DefectService {
       ...commentAttachments.map(a => a.path),
     ];
 
-    // Delete files from S3 (fire and forget)
-    if (allAttachments.length > 0) {
+    // Delete files from storage (fire and forget)
+    if (allAttachments.length > 0 && isS3Configured()) {
       Promise.all([
         import('@/lib/s3-client'),
         import('@aws-sdk/client-s3')
@@ -838,7 +838,7 @@ export class DefectService {
     });
 
     // Delete file from S3 (fire and forget to avoid blocking)
-    if (attachment.path) {
+    if (attachment.path && isS3Configured()) {
       Promise.all([
         import('@/lib/s3-client'),
         import('@aws-sdk/client-s3')
@@ -875,32 +875,27 @@ export class DefectService {
       throw new Error('Defect attachment not found');
     }
 
-    const bucket = getS3Bucket();
-
-    console.log('[DefectAttachment] Generating URL for:', {
-      id: attachment.id,
-      path: attachment.path,
-      bucket: bucket,
-      mimeType: attachment.mimeType,
-    });
-
     // Determine if file should be previewed or downloaded
     const isPreviewable =
       attachment.mimeType.startsWith('image/') ||
       attachment.mimeType === 'application/pdf';
 
-    // Generate presigned URL for secure access (valid for 1 hour)
-    const { GetObjectCommand } = await import('@aws-sdk/client-s3');
-    const command = new GetObjectCommand({
-      Bucket: bucket,
-      Key: attachment.path,
-      ResponseContentDisposition: isPreviewable
-        ? 'inline'
-        : `attachment; filename="${encodeURIComponent(attachment.originalName)}"`,
-      ResponseContentType: attachment.mimeType,
-    });
-
-    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    let signedUrl: string;
+    if (isS3Configured()) {
+      const bucket = getS3Bucket();
+      const { GetObjectCommand } = await import('@aws-sdk/client-s3');
+      const command = new GetObjectCommand({
+        Bucket: bucket,
+        Key: attachment.path,
+        ResponseContentDisposition: isPreviewable
+          ? 'inline'
+          : `attachment; filename="${encodeURIComponent(attachment.originalName)}"`,
+        ResponseContentType: attachment.mimeType,
+      });
+      signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    } else {
+      signedUrl = `/api/attachments/local/${attachment.path}`;
+    }
 
     return {
       url: signedUrl,
@@ -922,16 +917,17 @@ export class DefectService {
     }
 
     if (step === 'prepare') {
-      // Step 1: Generate presigned DELETE URL for S3
-      const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
-      const command = new DeleteObjectCommand({
-        Bucket: getS3Bucket(),
-        Key: attachment.path,
-      });
-
-      const deleteUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-
-      return { deleteUrl };
+      if (isS3Configured()) {
+        const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
+        const command = new DeleteObjectCommand({
+          Bucket: getS3Bucket(),
+          Key: attachment.path,
+        });
+        const deleteUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+        return { deleteUrl };
+      } else {
+        return { deleteUrl: null };
+      }
     } else if (step === 'confirm') {
       // Step 2: Remove from database after S3 deletion
       await prisma.defectAttachment.delete({

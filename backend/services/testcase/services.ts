@@ -843,7 +843,8 @@ export class TestCaseService {
       Promise.all([
         import('@/lib/s3-client'),
         import('@aws-sdk/client-s3')
-      ]).then(([{ s3Client, getS3Bucket }, { DeleteObjectCommand }]) => {
+      ]).then(([{ s3Client, getS3Bucket, isS3Configured }, { DeleteObjectCommand }]) => {
+        if (!isS3Configured()) return;
         const bucket = getS3Bucket();
         Promise.all(
           attachments.map(attachment =>
@@ -1400,7 +1401,8 @@ export class TestCaseService {
       Promise.all([
         import('@/lib/s3-client'),
         import('@aws-sdk/client-s3')
-      ]).then(([{ s3Client, getS3Bucket }, { DeleteObjectCommand }]) => {
+      ]).then(([{ s3Client, getS3Bucket, isS3Configured }, { DeleteObjectCommand }]) => {
+        if (!isS3Configured()) return;
         const bucket = getS3Bucket();
         s3Client.send(
           new DeleteObjectCommand({

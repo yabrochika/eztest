@@ -333,6 +333,9 @@ export const DefectCommentsCard: React.FC<DefectCommentsCardProps> = ({
               attachments={commentAttachments}
               onAttachmentsChange={setCommentAttachments}
               entityType="comment"
+              projectId={projectId}
+              forceShowAttachments={true}
+              uploadOnSave={true}
               placeholder="コメントを入力..."
               rows={2}
               disabled={submitting}
@@ -345,7 +348,7 @@ export const DefectCommentsCard: React.FC<DefectCommentsCardProps> = ({
                 className="min-w-[120px]"
               >
                 <Send className="w-4 h-4 mr-2" />
-                {submitting ? '投稿中...' : 'コメントする'}
+                {submitting ? '保存中...' : '保存する'}
               </ButtonPrimary>
             </div>
             {submitError && (

@@ -59,6 +59,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     {
       status: '',
       comment: '',
+      duration: '0',
     },
     {
       expiryMs: 30 * 60 * 1000, // 30 minutes
@@ -283,6 +284,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setResultForm({
       status: existingResult?.status || '',
       comment: existingResult?.comment || '',
+      duration: String(existingResult?.duration || 0),
     });
 
     setResultDialogOpen(true);
@@ -309,6 +311,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         body: JSON.stringify({
           testCaseId: selectedTestCase.testCaseId,
           status: resultForm.status,
+          duration: Number(resultForm.duration || '0'),
           comment: resultForm.comment,
         }),
       });

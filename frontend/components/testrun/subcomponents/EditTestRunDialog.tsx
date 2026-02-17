@@ -47,6 +47,15 @@ export function EditTestRunDialog({
       cols: 2,
     },
     {
+      name: 'version',
+      label: 'バージョン',
+      placeholder: '例: v1.2.3',
+      type: 'text',
+      cols: 2,
+      maxLength: 100,
+      defaultValue: testRun.version || '',
+    },
+    {
       name: 'description',
       label: '説明',
       placeholder: 'テストランの説明を入力',
@@ -70,6 +79,7 @@ export function EditTestRunDialog({
       },
       body: JSON.stringify({
         name: formData.name,
+        version: formData.version || undefined,
         description: formData.description || undefined,
         environment: formData.environment,
       }),

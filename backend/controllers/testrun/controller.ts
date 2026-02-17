@@ -81,6 +81,7 @@ export class TestRunController {
     const testRun = await testRunService.createTestRun({
       projectId,
       name: validatedData.name,
+      version: validatedData.version,
       description: validatedData.description,
       executionType: validatedData.executionType,
       assignedToId,

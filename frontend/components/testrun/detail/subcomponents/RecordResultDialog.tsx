@@ -59,6 +59,7 @@ export function RecordResultDialog({
   onSubmit,
   refreshTrigger,
 }: RecordResultDialogProps) {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [existingDefects, setExistingDefects] = useState<Defect[]>([]);
   const [otherDefects, setOtherDefects] = useState<Defect[]>([]);
   const [selectedDefectIds, setSelectedDefectIds] = useState<string[]>([]);
@@ -124,6 +125,43 @@ export function RecordResultDialog({
       setSelectedDefectIds([]);
     }
   }, [open, formData.status, testCaseId, refreshTrigger, fetchDefects]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const parsed = Number(formData.duration || '0');
+    const baseDuration = Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 0;
+    setElapsedSeconds(baseDuration);
+  }, [open, testCaseId]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [open, testCaseId]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    onFormChange({ duration: String(elapsedSeconds) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elapsedSeconds, open]);
+
+  const formatDuration = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return [hours, minutes, seconds].map((n) => String(n).padStart(2, '0')).join(':');
+  };
 
   const handleDefectToggle = (defectId: string) => {
     setSelectedDefectIds((prev) =>
@@ -205,6 +243,11 @@ export function RecordResultDialog({
         </DialogHeader>
 
         <div className="space-y-4 mb-4">
+          <div className="rounded-md border border-white/10 bg-white/5 p-3">
+            <p className="text-xs text-white/60 mb-1">経過時間</p>
+            <p className="font-mono text-lg text-white">{formatDuration(elapsedSeconds)}</p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="status">結果ステータス *</Label>
             <Select

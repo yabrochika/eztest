@@ -298,6 +298,7 @@ class TestNGXMLParser {
 interface CreateTestRunInput {
   projectId: string;
   name: string;
+  version?: string;
   description?: string;
   executionType?: 'MANUAL' | 'AUTOMATION';
   assignedToId?: string;
@@ -310,6 +311,7 @@ interface CreateTestRunInput {
 
 interface UpdateTestRunInput {
   name?: string;
+  version?: string;
   description?: string;
   executionType?: 'MANUAL' | 'AUTOMATION';
   status?: string;
@@ -487,6 +489,7 @@ export class TestRunService {
       data: {
         projectId: data.projectId,
         name: data.name,
+        version: data.version,
         description: data.description,
         executionType: data.executionType || 'MANUAL',
         assignedToId: data.assignedToId || null,

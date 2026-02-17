@@ -1,6 +1,7 @@
 export interface TestRun {
   id: string;
   name: string;
+  version?: string;
   description?: string;
   executionType?: 'MANUAL' | 'AUTOMATION' | string;
   status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';

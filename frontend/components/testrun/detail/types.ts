@@ -40,6 +40,7 @@ export interface TestCase {
 export interface TestRun {
   id: string;
   name: string;
+  version?: string;
   description?: string;
   executionType?: 'MANUAL' | 'AUTOMATION' | string;
   status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
@@ -67,6 +68,7 @@ export interface TestRun {
 export interface ResultFormData extends Record<string, string> {
   status: string;
   comment: string;
+  duration: string;
 }
 
 export interface TestSuite {

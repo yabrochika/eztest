@@ -4,24 +4,28 @@ import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
 import { ProgressBarWithLabel } from '@/frontend/reusable-components/data/ProgressBarWithLabel';
 import { CompactStatsGrid } from '@/frontend/reusable-components/data/CompactStatsGrid';
 import { CardFooter } from '@/frontend/reusable-components/layout/CardFooter';
-import { Calendar, Play, Trash2, User } from 'lucide-react';
+import { Calendar, Pencil, Play, Trash2, User } from 'lucide-react';
 import { TestRun } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface TestRunCardProps {
   testRun: TestRun;
+  canEdit?: boolean;
   canDelete?: boolean;
   onCardClick: () => void;
   onViewDetails: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
 export function TestRunCard({
   testRun,
+  canEdit = true,
   canDelete = true,
   onCardClick,
   onViewDetails,
+  onEdit,
   onDelete,
 }: TestRunCardProps) {
   const { options: statusOptions } = useDropdownOptions('TestRun', 'status');
@@ -135,6 +139,13 @@ export function TestRunCard({
           icon: Play,
           onClick: onViewDetails,
           buttonName: `Test Run Card - View Details (${testRun.name})`,
+        },
+        {
+          label: '編集',
+          icon: Pencil,
+          onClick: onEdit,
+          show: canEdit,
+          buttonName: `Test Run Card - Edit (${testRun.name})`,
         },
         {
           label: '削除',

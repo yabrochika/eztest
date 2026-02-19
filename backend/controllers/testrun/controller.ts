@@ -85,6 +85,7 @@ export class TestRunController {
       executionType: validatedData.executionType,
       assignedToId,
       environment: validatedData.environment,
+      version: validatedData.version,
       platform: validatedData.platform,
       device: validatedData.device,
       status: validatedData.status,

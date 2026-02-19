@@ -1,7 +1,7 @@
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
-import { Play, Square, RotateCcw, User, Timer } from 'lucide-react';
+import { Play, Square, RotateCcw, User, Timer, Pencil } from 'lucide-react';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
@@ -11,6 +11,7 @@ interface TestRunHeaderProps {
     description?: string;
     status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
     environment?: string;
+    version?: string;
     platform?: string;
     device?: string;
     assignedTo?: {
@@ -25,6 +26,7 @@ interface TestRunHeaderProps {
   executionTypeLabel?: string;
   actionLoading: boolean;
   canUpdate?: boolean;
+  onEditTestRun?: () => void;
   onStartTestRun: () => void;
   onCompleteTestRun: () => void;
   onReopenTestRun?: () => void;
@@ -36,6 +38,7 @@ export function TestRunHeader({
   executionTypeLabel,
   actionLoading,
   canUpdate = true,
+  onEditTestRun,
   onStartTestRun,
   onCompleteTestRun,
   onReopenTestRun,
@@ -70,6 +73,7 @@ export function TestRunHeader({
   const environmentLabel = testRun.environment 
     ? (environmentOptions.find(opt => opt.value === testRun.environment)?.label || testRun.environment.toUpperCase())
     : null;
+  const versionLabel = testRun.version?.trim() || '未設定';
 
   // Determine execution type badge color based on label
   const executionTypeBadgeClassName = executionTypeLabel === 'AUTOMATION'
@@ -114,6 +118,19 @@ export function TestRunHeader({
               </Badge>
             </div>
           )}
+          <div className="flex items-center gap-2">
+            <span className="text-white/60">バージョン:</span>
+            <Badge
+              variant="outline"
+              className={
+                testRun.version
+                  ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                  : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+              }
+            >
+              {versionLabel}
+            </Badge>
+          </div>
           {testRun.platform && (
             <div className="flex items-center gap-2">
               <span className="text-white/60">プラットフォーム:</span>
@@ -155,6 +172,14 @@ export function TestRunHeader({
         {canUpdate && (
           <ActionButtonGroup
             buttons={[
+              {
+                label: 'テストランを編集',
+                icon: Pencil,
+                onClick: onEditTestRun || (() => {}),
+                variant: 'secondary',
+                show: !!onEditTestRun,
+                loading: false,
+              },
               {
                 label: 'テストランを開始',
                 icon: Play,

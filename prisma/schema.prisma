@@ -288,6 +288,7 @@ model TestRun {
   status      String   @default("PLANNED") // Dynamic dropdown value
   assignedToId String?
   environment String?  // Dynamic dropdown value e.g., "Production", "Staging", "QA"
+  version     String?  // Arbitrary version label (e.g., v1.2.3, build-2026.02)
   platform    String?  // Web, Web(SP), iOS Native, Android Native
   device      String?  // iPhone, Android, PC
   startedAt   DateTime?

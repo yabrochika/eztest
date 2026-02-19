@@ -22,6 +22,7 @@ import { TestRun, TestCase, ResultFormData, TestRunStats, TestSuite } from './ty
 import { usePermissions } from '@/hooks/usePermissions';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
+import { EditTestRunDialog } from '@/frontend/components/testrun/subcomponents/EditTestRunDialog';
 
 interface TestRunDetailProps {
   testRunId: string;
@@ -53,6 +54,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [addingTestSuites, setAddingTestSuites] = useState(false);
   const [loadingSuites, setLoadingSuites] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const [resultForm, setResultForm, clearResultForm] = useFormPersistence<ResultFormData>(
     `testrun-result-${testRunId}`,
@@ -242,6 +244,16 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleTestRunUpdated = async () => {
+    setEditDialogOpen(false);
+    await fetchTestRun();
+    setFloatingAlert({
+      type: 'success',
+      title: 'テストランを更新しました',
+      message: 'テストラン情報を更新しました。',
+    });
   };
 
   const handleSendReportYes = async () => {
@@ -812,6 +824,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           executionTypeLabel={executionTypeLabel}
           actionLoading={actionLoading}
           canUpdate={canUpdateTestRun}
+          onEditTestRun={() => setEditDialogOpen(true)}
           onStartTestRun={handleStartTestRun}
           onCompleteTestRun={handleCompleteTestRun}
           onReopenTestRun={handleReopenTestRun}
@@ -956,6 +969,14 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             itemName="テストランレポート"
           />
         )}
+
+        <EditTestRunDialog
+          projectId={testRun.project?.id || ''}
+          testRun={testRun}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onTestRunUpdated={handleTestRunUpdated}
+        />
       </div>
 
       <FloatingAlert

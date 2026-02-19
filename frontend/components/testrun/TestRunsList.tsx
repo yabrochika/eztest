@@ -15,6 +15,7 @@ import { TestRunsFilterCard } from './subcomponents/TestRunsFilterCard';
 import { TestRunCard } from './subcomponents/TestRunCard';
 import { TestRunsEmptyState } from './subcomponents/TestRunsEmptyState';
 import { CreateTestRunDialog } from './subcomponents/CreateTestRunDialog';
+import { EditTestRunDialog } from './subcomponents/EditTestRunDialog';
 import { DeleteTestRunDialog } from './subcomponents/DeleteTestRunDialog';
 import { UploadTestNGXMLDialog } from './subcomponents/UploadTestNGXMLDialog';
 import { TestRun, Project, TestRunFilters } from './types';
@@ -34,6 +35,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
   const [filteredTestRuns, setFilteredTestRuns] = useState<TestRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [uploadXMLDialogOpen, setUploadXMLDialogOpen] = useState(false);
@@ -195,6 +197,18 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
     }
   };
 
+  const handleTestRunUpdated = (updatedTestRun: TestRun) => {
+    setEditDialogOpen(false);
+    setSelectedTestRun(null);
+    setAlert({
+      type: 'success',
+      title: '成功',
+      message: `テストラン「${updatedTestRun.name}」を更新しました`,
+    });
+    setTimeout(() => setAlert(null), 5000);
+    fetchTestRuns();
+  };
+
   // Build tester filter options dynamically from test runs data
   const testerFilterOptions = useMemo(() => {
     const options: Array<{ value: string; label: string }> = [
@@ -219,6 +233,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
   }
 
   const canCreateTestRun = hasPermissionCheck('testruns:create');
+  const canUpdateTestRun = hasPermissionCheck('testruns:update');
   const canDeleteTestRun = hasPermissionCheck('testruns:delete');
   const canReadTestRun = hasPermissionCheck('testruns:read');
 
@@ -326,6 +341,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
               <TestRunCard
                 key={testRun.id}
                 testRun={testRun}
+                canUpdate={canUpdateTestRun}
                 canDelete={canDeleteTestRun}
                 onCardClick={() =>
                   router.push(`/projects/${projectId}/testruns/${testRun.id}`)
@@ -333,6 +349,10 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
                 onViewDetails={() =>
                   router.push(`/projects/${projectId}/testruns/${testRun.id}`)
                 }
+                onEdit={() => {
+                  setSelectedTestRun(testRun);
+                  setEditDialogOpen(true);
+                }}
                 onDelete={() => {
                   setSelectedTestRun(testRun);
                   setDeleteDialogOpen(true);
@@ -348,6 +368,15 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
           triggerOpen={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
           onTestRunCreated={handleTestRunCreated}
+        />
+
+        {/* Edit Dialog */}
+        <EditTestRunDialog
+          projectId={projectId}
+          testRun={selectedTestRun}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onTestRunUpdated={handleTestRunUpdated}
         />
 
         {/* Delete Dialog */}

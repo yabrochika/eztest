@@ -4,24 +4,28 @@ import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
 import { ProgressBarWithLabel } from '@/frontend/reusable-components/data/ProgressBarWithLabel';
 import { CompactStatsGrid } from '@/frontend/reusable-components/data/CompactStatsGrid';
 import { CardFooter } from '@/frontend/reusable-components/layout/CardFooter';
-import { Calendar, Play, Trash2, User } from 'lucide-react';
+import { Calendar, Play, Trash2, User, Pencil } from 'lucide-react';
 import { TestRun } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface TestRunCardProps {
   testRun: TestRun;
+  canUpdate?: boolean;
   canDelete?: boolean;
   onCardClick: () => void;
   onViewDetails: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
 export function TestRunCard({
   testRun,
+  canUpdate = true,
   canDelete = true,
   onCardClick,
   onViewDetails,
+  onEdit,
   onDelete,
 }: TestRunCardProps) {
   const { options: statusOptions } = useDropdownOptions('TestRun', 'status');
@@ -124,6 +128,11 @@ export function TestRunCard({
           {environmentLabel}
         </Badge>
       )}
+      {testRun.version && (
+        <Badge variant="outline" className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
+          {testRun.version}
+        </Badge>
+      )}
       {testRun.platform && (
         <Badge variant="outline" className="bg-cyan-500/10 text-cyan-500 border-cyan-500/20">
           {testRun.platform}
@@ -145,6 +154,13 @@ export function TestRunCard({
           icon: Play,
           onClick: onViewDetails,
           buttonName: `Test Run Card - View Details (${testRun.name})`,
+        },
+        {
+          label: '編集',
+          icon: Pencil,
+          onClick: onEdit,
+          show: canUpdate,
+          buttonName: `Test Run Card - Edit (${testRun.name})`,
         },
         {
           label: '削除',

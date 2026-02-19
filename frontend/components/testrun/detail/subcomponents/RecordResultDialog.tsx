@@ -112,14 +112,78 @@ export function RecordResultDialog({
   const [timerStartTime, setTimerStartTime] = useState<number | null>(null);
   const [timerOffset, setTimerOffset] = useState(0); // 既存の実行時間からの継続用オフセット（秒）
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerCacheRef = useRef<Record<string, number>>({});
+  const activeTestCaseIdRef = useRef<string | null>(null);
+  const loadedTestCaseIdRef = useRef<string | null>(null);
+  const fetchInFlightTestCaseIdRef = useRef<string | null>(null);
+  const testCaseDetailRef = useRef<TestCaseDetail | null>(null);
+  const elapsedSecondsRef = useRef(0);
+  const timerStartTimeRef = useRef<number | null>(null);
+  const timerOffsetRef = useRef(0);
+
+  useEffect(() => {
+    elapsedSecondsRef.current = elapsedSeconds;
+  }, [elapsedSeconds]);
+
+  useEffect(() => {
+    timerStartTimeRef.current = timerStartTime;
+  }, [timerStartTime]);
+
+  useEffect(() => {
+    timerOffsetRef.current = timerOffset;
+  }, [timerOffset]);
+
+  useEffect(() => {
+    testCaseDetailRef.current = testCaseDetail;
+  }, [testCaseDetail]);
+
+  const getCurrentElapsedSeconds = () => {
+    if (timerStartTimeRef.current) {
+      return timerOffsetRef.current + Math.floor((Date.now() - timerStartTimeRef.current) / 1000);
+    }
+    return elapsedSecondsRef.current;
+  };
+
+  const persistElapsedForTestCase = (targetTestCaseId?: string) => {
+    const id = targetTestCaseId || activeTestCaseIdRef.current;
+    if (!id) return;
+    timerCacheRef.current[id] = getCurrentElapsedSeconds();
+  };
 
   // ダイアログが開いたらテストケース詳細を取得し、読み込み完了後にタイマー開始
   useEffect(() => {
     if (open && testCaseId) {
-      // タイマーをリセット
-      setTimerStartTime(null);
-      setTimerOffset(0);
-      setElapsedSeconds(0);
+      // 取得済みの同一テストケースは再取得しない
+      if (loadedTestCaseIdRef.current === testCaseId && testCaseDetailRef.current?.id === testCaseId) {
+        setLoadingTestCase(false);
+        setTestCaseExpanded(true);
+        return;
+      }
+
+      // 同じテストケースのリクエストが進行中なら重複実行しない
+      if (fetchInFlightTestCaseIdRef.current === testCaseId) {
+        return;
+      }
+      fetchInFlightTestCaseIdRef.current = testCaseId;
+
+      // 別テストケースへ遷移したら、前のテストケースの経過時間を保存
+      if (activeTestCaseIdRef.current && activeTestCaseIdRef.current !== testCaseId) {
+        persistElapsedForTestCase(activeTestCaseIdRef.current);
+      }
+      activeTestCaseIdRef.current = testCaseId;
+
+      const cachedElapsed = timerCacheRef.current[testCaseId];
+      if (cachedElapsed !== undefined) {
+        // 一度計測したテストケースは保存済み時間から継続
+        setTimerOffset(cachedElapsed);
+        setElapsedSeconds(cachedElapsed);
+        setTimerStartTime(Date.now());
+      } else {
+        // 初回表示時のみ既存実行時間を初期値として利用
+        setTimerStartTime(null);
+        setTimerOffset(0);
+        setElapsedSeconds(0);
+      }
 
       const fetchTestCaseDetail = async () => {
         setLoadingTestCase(true);
@@ -128,28 +192,34 @@ export function RecordResultDialog({
           const data = await response.json();
           if (data.data) {
             setTestCaseDetail(data.data);
-            // 既存のテスト実行時間があればオフセットとして設定（続きから計測）
-            const existingTime = data.data.estimatedTime;
-            if (existingTime && existingTime > 0) {
-              setTimerOffset(existingTime);
-              setElapsedSeconds(existingTime);
+            // キャッシュがない場合のみ既存実行時間をオフセットに採用
+            if (cachedElapsed === undefined) {
+              const existingTime = data.data.estimatedTime;
+              if (existingTime && existingTime > 0) {
+                setTimerOffset(existingTime);
+                setElapsedSeconds(existingTime);
+              }
             }
           }
         } catch (error) {
           console.error('Error fetching test case detail:', error);
         } finally {
+          loadedTestCaseIdRef.current = testCaseId;
+          fetchInFlightTestCaseIdRef.current = null;
           setLoadingTestCase(false);
-          // テストケース読み込み完了後にタイマー開始
-          setTimerStartTime(Date.now());
+          if (!timerRef.current) {
+            setTimerStartTime(Date.now());
+          }
         }
       };
       fetchTestCaseDetail();
       setTestCaseExpanded(true);
-    } else {
-      setTestCaseDetail(null);
+    } else if (!open) {
+      // ダイアログが閉じても経過時間は保持し、次回同じテストケースで継続
+      persistElapsedForTestCase();
+      fetchInFlightTestCaseIdRef.current = null;
       setTimerStartTime(null);
-      setTimerOffset(0);
-      setElapsedSeconds(0);
+      setTestCaseDetail(null);
     }
   }, [open, testCaseId]);
 
@@ -273,7 +343,10 @@ export function RecordResultDialog({
         }
       }
       // 計測した経過秒数（既存の実行時間 + 今回の計測時間）を渡して保存
-      const duration = timerStartTime ? timerOffset + Math.round((Date.now() - timerStartTime) / 1000) : undefined;
+      const duration = Math.round(getCurrentElapsedSeconds());
+      if (testCaseId) {
+        timerCacheRef.current[testCaseId] = duration;
+      }
       await onSubmit(duration);
     } catch (error) {
       throw error;

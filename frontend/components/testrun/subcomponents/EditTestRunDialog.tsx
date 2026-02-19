@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
-import { TestRun } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 
 interface ProjectMember {
@@ -13,24 +12,41 @@ interface ProjectMember {
   };
 }
 
-interface CreateTestRunDialogProps {
+interface EditTestRunDialogProps {
   projectId: string;
-  triggerOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onTestRunCreated: (testRun: TestRun) => void;
+  testRun: {
+    id: string;
+    name: string;
+    description?: string;
+    environment?: string;
+    version?: string;
+    platform?: string;
+    device?: string;
+    assignedTo?: {
+      id: string;
+    };
+  } | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onTestRunUpdated: () => void;
 }
 
-export function CreateTestRunDialog({
+export function EditTestRunDialog({
   projectId,
-  triggerOpen,
+  testRun,
+  open,
   onOpenChange,
-  onTestRunCreated,
-}: CreateTestRunDialogProps) {
-  // Fetch dynamic dropdown options
+  onTestRunUpdated,
+}: EditTestRunDialogProps) {
+  const [key, setKey] = useState(0);
   const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
-
-  // Fetch project members for tester assignment
   const [memberOptions, setMemberOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    if (open && testRun) {
+      setKey((prev) => prev + 1);
+    }
+  }, [open, testRun]);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -50,6 +66,7 @@ export function CreateTestRunDialog({
         // Failed to fetch members - select will only show placeholder
       }
     };
+
     if (projectId) {
       fetchMembers();
     }
@@ -65,17 +82,17 @@ export function CreateTestRunDialog({
       minLength: 3,
       maxLength: 50,
       cols: 2,
+      defaultValue: testRun?.name || '',
     },
     {
       name: 'environment',
       label: '環境',
       type: 'select',
       placeholder: '環境を選択',
-      required: true,
-      defaultValue: 'none',
+      defaultValue: testRun?.environment || 'none',
       options: [
         { value: 'none', label: '環境を選択' },
-        ...environmentOptions.map(opt => ({ value: opt.value, label: opt.label })),
+        ...environmentOptions.map((opt) => ({ value: opt.value, label: opt.label })),
       ],
       cols: 2,
     },
@@ -84,7 +101,7 @@ export function CreateTestRunDialog({
       label: 'テスター割り当て',
       type: 'select',
       placeholder: 'テスターを選択',
-      defaultValue: 'none',
+      defaultValue: testRun?.assignedTo?.id || 'none',
       options: [
         { value: 'none', label: '未割り当て' },
         ...memberOptions,
@@ -96,7 +113,7 @@ export function CreateTestRunDialog({
       label: 'プラットフォーム',
       type: 'select',
       placeholder: 'プラットフォームを選択',
-      defaultValue: 'none',
+      defaultValue: testRun?.platform || 'none',
       options: [
         { value: 'none', label: 'プラットフォームを選択' },
         { value: 'Web', label: 'Web' },
@@ -111,7 +128,7 @@ export function CreateTestRunDialog({
       label: '端末',
       type: 'select',
       placeholder: '端末を選択',
-      defaultValue: 'none',
+      defaultValue: testRun?.device || 'none',
       options: [
         { value: 'none', label: '端末を選択' },
         { value: 'iPhone', label: 'iPhone' },
@@ -127,6 +144,7 @@ export function CreateTestRunDialog({
       type: 'text',
       maxLength: 100,
       cols: 2,
+      defaultValue: testRun?.version || '',
     },
     {
       name: 'description',
@@ -136,60 +154,58 @@ export function CreateTestRunDialog({
       rows: 3,
       cols: 2,
       maxLength: 250,
+      defaultValue: testRun?.description || '',
     },
   ];
 
   const handleSubmit = async (formData: Record<string, string>) => {
-    // Validate environment is selected
-    if (formData.environment === 'none' || !formData.environment) {
-      throw new Error('環境を選択してください');
+    if (!testRun) {
+      throw new Error('編集対象のテストランが見つかりません');
     }
 
-    const response = await fetch(`/api/projects/${projectId}/testruns`, {
-      method: 'POST',
+    const response = await fetch(`/api/projects/${projectId}/testruns/${testRun.id}`, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         name: formData.name,
         description: formData.description || undefined,
-        environment: formData.environment,
+        environment: formData.environment && formData.environment !== 'none' ? formData.environment : undefined,
         version: formData.version || undefined,
         assignedToId: formData.assignedToId && formData.assignedToId !== 'none' ? formData.assignedToId : undefined,
         platform: formData.platform && formData.platform !== 'none' ? formData.platform : undefined,
         device: formData.device && formData.device !== 'none' ? formData.device : undefined,
-        executionType: 'MANUAL',
       }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || data.error || 'テストランの作成に失敗しました');
+      throw new Error(data.message || data.error || 'テストランの更新に失敗しました');
     }
 
     return data.data;
   };
 
-  const config: BaseDialogConfig<TestRun> = {
-    title: 'テストランを作成',
-    description: 'テストケースを実行し、結果を記録するための新しいテストランを作成します。',
+  const config: BaseDialogConfig = {
+    title: 'テストランを編集',
+    description: 'テストラン情報を更新します。',
     fields,
-    submitLabel: 'テストランを作成',
+    submitLabel: '更新する',
     cancelLabel: 'キャンセル',
-    triggerOpen,
+    triggerOpen: open,
     onOpenChange,
     onSubmit: handleSubmit,
-    onSuccess: (testRun) => {
-      if (testRun) {
-        onTestRunCreated(testRun);
-      }
+    onSuccess: (updatedTestRun) => {
+      if (updatedTestRun) onTestRunUpdated();
     },
-    submitButtonName: 'Create Test Run Dialog - Create Test Run',
-    cancelButtonName: 'Create Test Run Dialog - Cancel',
+    disablePersistence: true,
+    submitButtonName: 'Edit Test Run Dialog - Update',
+    cancelButtonName: 'Edit Test Run Dialog - Cancel',
   };
 
-  return <BaseDialog {...config} />;
+  return <BaseDialog key={key} {...config} />;
 }
 
-export type { CreateTestRunDialogProps };
+export type { EditTestRunDialogProps };

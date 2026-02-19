@@ -7,7 +7,7 @@ import {
   HoverCardTrigger,
 } from '@/frontend/reusable-elements/hover-cards/HoverCard';
 import { Trash2, Bug } from 'lucide-react';
-import { GroupedDataTable, ColumnDef, GroupConfig, ActionConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
+import { GroupedDataTable, ColumnDef, ActionConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
 import { TestCase, Module } from '@/frontend/components/testcase/types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
@@ -26,12 +26,29 @@ interface TestSuiteTestCaseTableProps {
  */
 export function TestSuiteTestCaseTable({
   testCases,
-  modules = [],
+  modules: _modules = [],
   onDelete,
   onClick,
   canDelete = true,
 }: TestSuiteTestCaseTableProps) {
   const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
+  const sortedTestCases = [...testCases].sort((a, b) => {
+    const aRtc = (a.rtcId || '').trim();
+    const bRtc = (b.rtcId || '').trim();
+
+    // RTC-ID があるものを先にし、同士は数値考慮で昇順
+    if (aRtc && bRtc) {
+      const rtcCompare = aRtc.localeCompare(bRtc, undefined, { numeric: true, sensitivity: 'base' });
+      if (rtcCompare !== 0) return rtcCompare;
+    } else if (aRtc && !bRtc) {
+      return -1;
+    } else if (!aRtc && bRtc) {
+      return 1;
+    }
+
+    // RTC-ID が同値/空の場合は安定化のため tcId で比較
+    return (a.tcId || '').localeCompare(b.tcId || '', undefined, { numeric: true, sensitivity: 'base' });
+  });
 
   // Define columns
   const columns: ColumnDef<TestCase>[] = [
@@ -102,25 +119,6 @@ export function TestSuiteTestCaseTable({
     },
   ];
 
-  // Group configuration
-  const groupConfig: GroupConfig<TestCase> = {
-    getGroupId: (row) => row.moduleId || 'no-module',
-    getGroupName: (groupId) => {
-      if (groupId === 'no-module') return 'Ungrouped';
-      const moduleItem = modules.find((m) => m.id === groupId);
-      return moduleItem?.name || 'Ungrouped';
-    },
-    getGroupCount: (groupId) => {
-      const moduleItem = modules.find((m) => m.id === groupId);
-      return moduleItem?._count?.testCases;
-    },
-    emptyGroups: modules.map((moduleItem) => ({
-      id: moduleItem.id,
-      name: moduleItem.name,
-      count: moduleItem._count?.testCases,
-    })),
-  };
-
   // Action configuration
   const actions: ActionConfig<TestCase> | undefined =
     onDelete && canDelete
@@ -141,11 +139,10 @@ export function TestSuiteTestCaseTable({
 
   return (
     <GroupedDataTable
-      data={testCases}
+      data={sortedTestCases}
       columns={columns}
       onRowClick={(row) => onClick(row.id)}
-      grouped={true}
-      groupConfig={groupConfig}
+      grouped={false}
       actions={actions}
       gridTemplateColumns="360px 1fr 70px 40px"
       emptyMessage="No test cases available"

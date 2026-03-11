@@ -2,6 +2,7 @@ import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
+import { useState } from 'react';
 import { formatDateTime } from '@/lib/date-utils';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { GroupedDataTable, type ColumnDef, type GroupConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
@@ -41,6 +42,17 @@ interface ResultRow {
   executedAt?: string;
 }
 
+type SortField =
+  | 'tcId'
+  | 'rtcId'
+  | 'testCase'
+  | 'estimatedTime'
+  | 'priority'
+  | 'status'
+  | 'executedBy'
+  | 'executedAt';
+type SortDirection = 'asc' | 'desc';
+
 export function TestCasesListCard({
   results,
   testRunStatus,
@@ -58,6 +70,8 @@ export function TestCasesListCard({
   const { options: priorityOptions, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptions, loading: loadingStatus } = useDropdownOptions('TestResult', 'status');
   const { hasPermission: hasPermissionCheck } = usePermissions();
+  const [sortField, setSortField] = useState<SortField>('rtcId');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
   // Check if user can create defects
   const canCreateDefect = hasPermissionCheck('defects:create');
@@ -80,10 +94,36 @@ export function TestCasesListCard({
     }
   };
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    setSortField(field);
+    setSortDirection('asc');
+  };
+
+  const renderSortableLabel = (field: SortField, title: string) => {
+    const indicator = sortField === field ? (sortDirection === 'asc' ? '△' : '▽') : '▽△';
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleSort(field);
+        }}
+        className="inline-flex items-center gap-1 hover:text-white transition-colors"
+      >
+        <span>{title}</span>
+        <span className="text-[10px]">{indicator}</span>
+      </button>
+    );
+  };
+
   const columns: ColumnDef<ResultRow>[] = [
     {
       key: 'tcId',
-      label: 'ID',
+      label: renderSortableLabel('tcId', 'ID'),
       width: '70px',
       render: (row: ResultRow) => (
         <p className="text-xs font-mono text-white/70 truncate">{row.testCase.tcId || '-'}</p>
@@ -91,7 +131,7 @@ export function TestCasesListCard({
     },
     {
       key: 'rtcId',
-      label: 'RTC-ID',
+      label: renderSortableLabel('rtcId', 'RTC-ID'),
       width: '160px',
       render: (row: ResultRow) => (
         <p className="text-xs font-mono text-white/70 truncate">{row.testCase.rtcId || '-'}</p>
@@ -99,7 +139,7 @@ export function TestCasesListCard({
     },
     {
       key: 'testCase',
-      label: 'テストケース',
+      label: renderSortableLabel('testCase', 'テストケース'),
       className: 'min-w-0',
       render: (row: ResultRow) => (
         <div className="min-w-0 overflow-hidden">
@@ -114,7 +154,7 @@ export function TestCasesListCard({
     },
     {
       key: 'estimatedTime',
-      label: 'テスト実行時間',
+      label: renderSortableLabel('estimatedTime', 'テスト実行時間'),
       width: '100px',
       render: (row: ResultRow) => {
         const t = row.testCase.estimatedTime;
@@ -131,7 +171,7 @@ export function TestCasesListCard({
     },
     {
       key: 'priority',
-      label: '優先度',
+      label: renderSortableLabel('priority', '優先度'),
       width: '90px',
       render: (row: ResultRow) => {
         const badgeProps = getDynamicBadgeProps(row.testCase.priority, priorityOptions);
@@ -151,7 +191,7 @@ export function TestCasesListCard({
     },
     {
       key: 'status',
-      label: 'ステータス',
+      label: renderSortableLabel('status', 'ステータス'),
       width: '120px',
       render: (row: ResultRow) => {
         const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
@@ -174,7 +214,7 @@ export function TestCasesListCard({
     },
     {
       key: 'executedBy',
-      label: '実行者',
+      label: renderSortableLabel('executedBy', '実行者'),
       width: '120px',
       render: (row: ResultRow) => (
         <span className="text-white/70 text-sm truncate block">
@@ -184,7 +224,7 @@ export function TestCasesListCard({
     },
     {
       key: 'executedAt',
-      label: '日時',
+      label: renderSortableLabel('executedAt', '日時'),
       width: '140px',
       render: (row: ResultRow) => (
         <span className="text-white/70 text-sm">
@@ -197,10 +237,10 @@ export function TestCasesListCard({
     {
       key: 'actions',
       label: 'アクション',
-      width: '140px',
+      width: '220px',
       align: 'right',
       render: (row: ResultRow) => (
-        <div className="flex items-center gap-2 justify-end">
+        <div className="flex items-center gap-2 justify-end whitespace-nowrap min-w-[220px]">
           {(testRunStatus === 'IN_PROGRESS' || forceShowDefectActions) && (
             <>
               {testRunStatus === 'IN_PROGRESS' && canUpdate && (
@@ -227,7 +267,7 @@ export function TestCasesListCard({
                   >
                     <ButtonSecondary
                       size="sm"
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 whitespace-nowrap"
                       buttonName={`Test Cases List Card - Defect Actions (${row.testCase.title || row.testCase.id})`}
                     >
                       Defect
@@ -302,20 +342,54 @@ export function TestCasesListCard({
   // IN_PROGRESS時はRTC-ID昇順のフラットリスト、それ以外はモジュールグループ表示
   const isInProgress = testRunStatus === 'IN_PROGRESS';
 
+  const getSortValue = (row: ResultRow, field: SortField): string | number => {
+    switch (field) {
+      case 'tcId':
+        return row.testCase.tcId || '';
+      case 'rtcId':
+        return row.testCase.rtcId || '';
+      case 'testCase':
+        return row.testCase.title || '';
+      case 'estimatedTime':
+        return row.testCase.estimatedTime ?? Number.NEGATIVE_INFINITY;
+      case 'priority':
+        return row.testCase.priority || '';
+      case 'status':
+        return row.status || '';
+      case 'executedBy':
+        return row.executedBy?.name || '';
+      case 'executedAt':
+        return row.executedAt ? new Date(row.executedAt).getTime() : Number.NEGATIVE_INFINITY;
+      default:
+        return '';
+    }
+  };
+
+  const compareRows = (a: ResultRow, b: ResultRow): number => {
+    const aValue = getSortValue(a, sortField);
+    const bValue = getSortValue(b, sortField);
+    let result = 0;
+
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      result = aValue - bValue;
+    } else {
+      result = String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' });
+    }
+
+    if (result === 0) {
+      result = (a.testCase.rtcId || '').localeCompare(b.testCase.rtcId || '', undefined, { numeric: true, sensitivity: 'base' });
+    }
+
+    return sortDirection === 'desc' ? -result : result;
+  };
+
   const tableDataSorted = isInProgress
-    ? [...tableData].sort((a, b) => {
-        const aId = a.testCase.rtcId || '';
-        const bId = b.testCase.rtcId || '';
-        // RTC-IDがない行は末尾に
-        if (!aId && bId) return 1;
-        if (aId && !bId) return -1;
-        return aId.localeCompare(bId, undefined, { numeric: true });
-      })
+    ? [...tableData].sort(compareRows)
     : [...tableData].sort((a, b) => {
         const keyA = getModuleSortKey(a);
         const keyB = getModuleSortKey(b);
         if (keyA !== keyB) return keyA - keyB;
-        return (a.testCase.rtcId || '').localeCompare(b.testCase.rtcId || '', undefined, { numeric: true });
+        return compareRows(a, b);
       });
 
   return (
@@ -381,7 +455,7 @@ export function TestCasesListCard({
           groupConfig={groupConfig}
           defaultExpanded={true}
           onRowClick={(row) => router.push(`/projects/${projectId}/testcases/${row.testCase.id}`)}
-          gridTemplateColumns="70px 160px 1fr 100px 90px 120px 120px 140px 140px"
+          gridTemplateColumns="70px 160px 1fr 100px 90px 120px 120px 140px 220px"
           emptyMessage="テストケースはありません"
         />
       )}

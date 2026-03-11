@@ -11,10 +11,14 @@ interface TestCaseFiltersProps {
   statusFilter: string;
   domainFilter: string;
   functionNameFilter: string;
+  sortField: string;
+  sortDirection: string;
   onSearchChange: (value: string) => void;
   onStatusChange: (value: string) => void;
   onDomainChange: (value: string) => void;
   onFunctionNameChange: (value: string) => void;
+  onSortFieldChange: (value: string) => void;
+  onSortDirectionChange: (value: string) => void;
 }
 
 export function TestCaseFilters({
@@ -22,10 +26,14 @@ export function TestCaseFilters({
   statusFilter,
   domainFilter,
   functionNameFilter,
+  sortField,
+  sortDirection,
   onSearchChange,
   onStatusChange,
   onDomainChange,
   onFunctionNameChange,
+  onSortFieldChange,
+  onSortDirectionChange,
 }: TestCaseFiltersProps) {
   // Fetch dynamic dropdown options
   const { options: statusOptionsData } = useDropdownOptions('TestCase', 'status');
@@ -36,9 +44,26 @@ export function TestCaseFilters({
     ...statusOptionsData.map(opt => ({ value: opt.value, label: opt.label })),
   ];
 
+  const sortFieldOptions: FilterOption[] = [
+    { value: 'tcId', label: 'TC-ID' },
+    { value: 'title', label: 'タイトル' },
+    { value: 'status', label: 'ステータス' },
+    { value: 'flowId', label: 'FLOW-ID' },
+    { value: 'platform', label: 'プラットフォーム' },
+    { value: 'executionType', label: '実行方式' },
+    { value: 'automationStatus', label: '自動化状況' },
+    { value: 'device', label: '端末' },
+    { value: 'runs', label: 'RUNS' },
+  ];
+
+  const sortDirectionOptions: FilterOption[] = [
+    { value: 'asc', label: '昇順' },
+    { value: 'desc', label: '降順' },
+  ];
+
   return (
     <div className="mb-6 w-full min-w-0">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4 w-full min-w-0">
         <div className="sm:col-span-2 min-w-0">
           <SearchInput
             value={searchQuery}
@@ -75,6 +100,24 @@ export function TestCaseFilters({
             placeholder="機能"
             allLabel="すべての機能"
             searchPlaceholder="機能を検索..."
+          />
+        </div>
+
+        <div className="min-w-0 w-full">
+          <FilterDropdown
+            value={sortField}
+            onValueChange={onSortFieldChange}
+            placeholder="ソート項目"
+            options={sortFieldOptions}
+          />
+        </div>
+
+        <div className="min-w-0 w-full">
+          <FilterDropdown
+            value={sortDirection}
+            onValueChange={onSortDirectionChange}
+            placeholder="並び順"
+            options={sortDirectionOptions}
           />
         </div>
       </div>

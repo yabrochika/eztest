@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, FolderPlus, Import, Upload, Trash2 } from 'lucide-react';
 import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
 import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
@@ -53,6 +53,8 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [domainFilter, setDomainFilter] = useState<string>('');
   const [functionNameFilter, setFunctionNameFilter] = useState<string>('');
+  const [sortField, setSortField] = useState<string>('tcId');
+  const [sortDirection, setSortDirection] = useState<string>('asc');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -252,7 +254,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
       setSelectedTestCaseIds(new Set());
       return;
     }
-    setSelectedTestCaseIds(new Set(testCases.map((testCase) => testCase.id)));
+    setSelectedTestCaseIds(new Set(sortedTestCases.map((testCase) => testCase.id)));
   };
 
   const handleBulkDeleteTestCases = async () => {
@@ -297,6 +299,51 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
     }
   };
 
+
+  const sortedTestCases = useMemo(() => {
+    const sorted = [...testCases];
+
+    const getSortValue = (testCase: TestCase): string | number => {
+      switch (sortField) {
+        case 'tcId':
+          return testCase.tcId || '';
+        case 'title':
+          return testCase.title || '';
+        case 'status':
+          return testCase.status || '';
+        case 'flowId':
+          return testCase.flowId || '';
+        case 'platform':
+          return testCase.platform || '';
+        case 'executionType':
+          return testCase.executionType || '';
+        case 'automationStatus':
+          return testCase.automationStatus || '';
+        case 'device':
+          return testCase.device || '';
+        case 'runs':
+          return testCase._count?.results || 0;
+        default:
+          return testCase.tcId || '';
+      }
+    };
+
+    sorted.sort((a, b) => {
+      const aValue = getSortValue(a);
+      const bValue = getSortValue(b);
+
+      let result = 0;
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        result = aValue - bValue;
+      } else {
+        result = String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' });
+      }
+
+      return sortDirection === 'desc' ? -result : result;
+    });
+
+    return sorted;
+  }, [testCases, sortField, sortDirection]);
 
   if (loading || permissionsLoading) {
     return <Loader fullScreen text="テストケースを読み込み中..." />;
@@ -378,10 +425,14 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
                 statusFilter={statusFilter}
                 domainFilter={domainFilter}
                 functionNameFilter={functionNameFilter}
+                sortField={sortField}
+                sortDirection={sortDirection}
                 onSearchChange={setSearchQuery}
                 onStatusChange={setStatusFilter}
                 onDomainChange={setDomainFilter}
                 onFunctionNameChange={setFunctionNameFilter}
+                onSortFieldChange={setSortField}
+                onSortDirectionChange={setSortDirection}
               />
             ) : null
           }
@@ -419,7 +470,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
             )}
 
             <TestCaseTable
-              testCases={testCases}
+              testCases={sortedTestCases}
               groupedByModule={false}
               modules={[]}
               onDelete={handleDeleteClick}

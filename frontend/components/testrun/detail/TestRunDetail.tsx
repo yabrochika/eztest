@@ -59,7 +59,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [resultForm, setResultForm, clearResultForm] = useFormPersistence<ResultFormData>(
     `testrun-result-${testRunId}`,
     {
-      status: '',
+      status: 'NOT_STARTED',
       comment: '',
     },
     {
@@ -339,7 +339,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       testCaseName: newTestCase.title || newTestCase.name || '',
     });
     setResultForm({
-      status: existingResult?.status || '',
+      status: existingResult?.status || 'NOT_STARTED',
       comment: existingResult?.comment || '',
     });
   }, [selectedTestCase, sortedTestCases, testRun?.results, setResultForm]);
@@ -360,7 +360,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         testCaseName: nextTestCase.title || nextTestCase.name || '',
       });
       setResultForm({
-        status: nextResult?.status || '',
+        status: nextResult?.status || 'NOT_STARTED',
         comment: nextResult?.comment || '',
       });
       setResultDialogOpen(true);

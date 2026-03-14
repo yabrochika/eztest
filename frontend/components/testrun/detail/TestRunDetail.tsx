@@ -333,13 +333,18 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
 
     const newTestCase = sortedTestCases[newIndex];
     const existingResult = testRun?.results.find((r) => r.testCaseId === newTestCase.id);
+    const resolvedStatus = !existingResult
+      ? 'NOT_STARTED'
+      : existingResult.status === 'SKIPPED' && !existingResult.comment
+        ? 'NOT_STARTED'
+        : existingResult.status;
 
     setSelectedTestCase({
       testCaseId: newTestCase.id,
       testCaseName: newTestCase.title || newTestCase.name || '',
     });
     setResultForm({
-      status: existingResult?.status || 'NOT_STARTED',
+      status: resolvedStatus,
       comment: existingResult?.comment || '',
     });
   }, [selectedTestCase, sortedTestCases, testRun?.results, setResultForm]);
@@ -355,12 +360,17 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     if (currentIndex >= 0 && currentIndex < sortedTestCases.length - 1) {
       const nextTestCase = sortedTestCases[currentIndex + 1];
       const nextResult = testRun?.results.find((r) => r.testCaseId === nextTestCase.id);
+      const resolvedStatus = !nextResult
+        ? 'NOT_STARTED'
+        : nextResult.status === 'SKIPPED' && !nextResult.comment
+          ? 'NOT_STARTED'
+          : nextResult.status;
       setSelectedTestCase({
         testCaseId: nextTestCase.id,
         testCaseName: nextTestCase.title || nextTestCase.name || '',
       });
       setResultForm({
-        status: nextResult?.status || 'NOT_STARTED',
+        status: resolvedStatus,
         comment: nextResult?.comment || '',
       });
       setResultDialogOpen(true);
@@ -380,8 +390,15 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       testCaseName: testCase.title || testCase.name || '',
     });
 
+    // NOT_STARTED をデフォルトに。古い SKIPPED プレースホルダー（コメントなし）も NOT_STARTED として表示
+    const resolvedStatus = (() => {
+      if (!existingResult) return 'NOT_STARTED';
+      if (existingResult.status === 'SKIPPED' && !existingResult.comment) return 'NOT_STARTED';
+      return existingResult.status;
+    })();
+
     setResultForm({
-      status: existingResult?.status || '',
+      status: resolvedStatus,
       comment: existingResult?.comment || '',
     });
 

@@ -42,6 +42,36 @@ export class TestCaseController {
   }
 
   /**
+   * Get all test case IDs for a project with optional filters (idsOnly mode)
+   */
+  async getProjectTestCaseIds(
+    req: CustomRequest,
+    projectId: string
+  ) {
+    const searchParams = req.nextUrl.searchParams;
+    const queryData = {
+      suiteId: searchParams.get('suiteId') || undefined,
+      priority: searchParams.get('priority') || undefined,
+      status: searchParams.get('status') || undefined,
+      search: searchParams.get('search') || undefined,
+      domain: searchParams.get('domain') || undefined,
+      functionName: searchParams.get('functionName') || undefined,
+    };
+
+    const validationResult = testCaseQuerySchema.safeParse(queryData);
+    if (!validationResult.success) {
+      throw new ValidationException(
+        'Invalid query parameters',
+        validationResult.error.issues
+      );
+    }
+
+    const filters = validationResult.data;
+    const ids = await testCaseService.getProjectTestCaseIds(projectId, filters);
+    return { data: { ids } };
+  }
+
+  /**
    * Get distinct domain and functionName values for filter dropdowns
    * Access already checked by route wrapper
    */

@@ -17,12 +17,12 @@ import { TestCaseTable } from './subcomponents/TestCaseTable';
 import { CreateTestCaseDialog } from './subcomponents/CreateTestCaseDialog';
 import { CreateModuleDialog } from './subcomponents/CreateModuleDialog';
 import { DeleteTestCaseDialog } from './subcomponents/DeleteTestCaseDialog';
+import { BaseConfirmDialog } from '@/frontend/reusable-components/dialogs/BaseConfirmDialog';
 import { TestCaseFilters } from './subcomponents/TestCaseFilters';
 import { EmptyTestCaseState } from './subcomponents/EmptyTestCaseState';
 import { usePermissions } from '@/hooks/usePermissions';
 import { FileImportDialog } from '@/frontend/reusable-components/dialogs/FileImportDialog';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
-import { BaseConfirmDialog } from '@/frontend/reusable-components/dialogs/BaseConfirmDialog';
 
 interface TestCaseListProps {
   projectId: string;
@@ -42,12 +42,12 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createModuleDialogOpen, setCreateModuleDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null);
   const [selectedTestCaseIds, setSelectedTestCaseIds] = useState<Set<string>>(new Set());
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  
+
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -108,30 +108,30 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
       } else if (isPaginationChange) {
         setLoading(true);
       }
-      
+
       // Build query parameters for pagination and filtering
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
       });
-      
+
       if (searchQuery) params.append('search', searchQuery);
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (domainFilter) params.append('domain', domainFilter);
       if (functionNameFilter) params.append('functionName', functionNameFilter);
-      
+
       const response = await fetch(`/api/projects/${projectId}/testcases?${params}`);
       const data = await response.json();
-      
+
       if (data.data) {
         setTestCases(data.data);
         setSelectedTestCaseIds(new Set());
       }
-      
+
       if (data.modules) {
         setModules(data.modules);
       }
-      
+
       if (data.pagination) {
         setTotalPagesCount(data.pagination.totalPages);
         setTotalItems(data.pagination.totalItems);
@@ -159,12 +159,14 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
   const handlePageChange = (page: number) => {
     setIsPaginationChange(true);
     setCurrentPage(page);
+    setSelectedTestCaseIds(new Set());
   };
 
   const handleItemsPerPageChange = (items: number) => {
     setIsPaginationChange(true);
     setItemsPerPage(items);
-    setCurrentPage(1); // Reset to first page when items per page changes
+    setCurrentPage(1);
+    setSelectedTestCaseIds(new Set());
   };
 
   const handleTestCaseCreated = (newTestCase: TestCase) => {
@@ -174,7 +176,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
       message: `Test case "${newTestCase.title}" created successfully`,
     });
     setTimeout(() => setAlert(null), 5000);
-    setCurrentPage(1); // Navigate to page 1 to see the newly created test case
+    setCurrentPage(1);
     fetchTestCases();
   };
 
@@ -186,8 +188,8 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
     });
     setTimeout(() => setAlert(null), 5000);
     setCreateModuleDialogOpen(false);
-    setCurrentPage(1); // Navigate to page 1 to see the newly created module
-    fetchTestCases(); // Refresh test cases and modules (modules are now fetched with pagination)
+    setCurrentPage(1);
+    fetchTestCases();
   };
 
   const handleDeleteTestCase = async () => {
@@ -299,7 +301,6 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
     }
   };
 
-
   const sortedTestCases = useMemo(() => {
     const sorted = [...testCases];
 
@@ -360,7 +361,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
       {/* Alert Messages */}
       <FloatingAlert alert={alert} onClose={() => setAlert(null)} />
 
-      <TopBar 
+      <TopBar
         breadcrumbs={[
           { label: 'プロジェクト', href: '/projects' },
           { label: project?.name || '読み込み中...', href: `/projects/${projectId}` },
@@ -375,8 +376,8 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
                     <Import className="w-4 h-4 mr-2" />
                     インポート
                   </ButtonSecondary>
-                  <ButtonSecondary 
-                    onClick={() => setExportDialogOpen(true)} 
+                  <ButtonSecondary
+                    onClick={() => setExportDialogOpen(true)}
                     className="cursor-pointer flex-shrink-0"
                     title="テストケースをエクスポート"
                   >
@@ -407,7 +408,7 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
           ) : undefined
         }
       />
-      
+
       <div className="px-4 sm:px-6 lg:px-8 pt-4 w-full min-w-0 overflow-hidden">
         {/* Header and Filters Section */}
         <HeaderWithFilters

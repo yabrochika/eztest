@@ -208,6 +208,50 @@ export class TestCaseService {
   }
 
   /**
+   * Get all test case IDs for a project with optional filters (for bulk selection)
+   * Max 10,000 IDs to prevent excessive memory usage
+   */
+  async getProjectTestCaseIds(
+    projectId: string,
+    filters?: TestCaseFilters
+  ): Promise<string[]> {
+    const where: Record<string, unknown> = { projectId };
+
+    if (filters?.suiteId) {
+      where.suiteId = filters.suiteId;
+    }
+    if (filters?.priority) {
+      where.priority = filters.priority;
+    }
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+    if (filters?.domain) {
+      where.domain = filters.domain;
+    }
+    if (filters?.functionName) {
+      where.functionName = filters.functionName;
+    }
+    if (filters?.search) {
+      where.OR = [
+        { title: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const rows = await prisma.testCase.findMany({
+      where,
+      select: { id: true },
+      take: 10_000,
+      orderBy: [
+        { module: { name: 'asc' } },
+        { flowId: 'asc' },
+      ],
+    });
+    return rows.map((r) => r.id);
+  }
+
+  /**
    * Get project test cases with pagination and module grouping
    */
   async getProjectTestCasesWithPagination(

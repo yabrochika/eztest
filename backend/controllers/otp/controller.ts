@@ -84,11 +84,18 @@ export class OtpController {
       return result;
     } catch (error) {
       console.error('Error in sendOtp controller:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error details:', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : '';
+      // Never expose low-level error details (stack trace, DB internals) to clients.
+      const isDatabaseConnectionError =
+        errorMessage.includes('Can`t reach database server') ||
+        errorMessage.includes("Can't reach database server") ||
+        errorMessage.includes('Environment variable not found: DATABASE_URL');
+
       return {
         success: false,
-        message: `Failed to send OTP. Please try again. (${errorMessage})`,
+        message: isDatabaseConnectionError
+          ? 'Database connection is unavailable. Please start the database and try again.'
+          : 'Failed to send OTP. Please try again.',
       };
     }
   }

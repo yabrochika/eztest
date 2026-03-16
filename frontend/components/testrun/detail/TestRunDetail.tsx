@@ -741,6 +741,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       case 'BLOCKED':
         return <AlertCircle className="w-5 h-5 text-orange-500" />;
       case 'SKIPPED':
+      case 'NOT_STARTED':
         return <Circle className="w-5 h-5 text-gray-500" />;
       case 'RETEST':
         return <AlertCircle className="w-5 h-5 text-purple-500" />;
@@ -776,6 +777,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             stats.blocked++;
             break;
           case 'SKIPPED':
+          case 'NOT_STARTED':
             stats.skipped++;
             break;
           case 'NOT_STARTED':

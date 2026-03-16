@@ -6,7 +6,7 @@ import { ChevronDown, LucideIcon } from 'lucide-react';
 
 export interface ColumnDef<T> {
   key: string;
-  label: string;
+  label: ReactNode;
   width?: string;
   render?: (row: T, index: number) => ReactNode;
   className?: string;

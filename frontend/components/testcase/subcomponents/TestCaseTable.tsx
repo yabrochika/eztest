@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
+import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import {
   HoverCard,
   HoverCardContent,
@@ -22,6 +23,9 @@ interface TestCaseTableProps {
   canDelete?: boolean;
   projectId?: string;
   enableModuleLink?: boolean;
+  selectedTestCaseIds?: Set<string>;
+  onToggleTestCaseSelection?: (testCaseId: string) => void;
+  onToggleAllTestCaseSelection?: (checked: boolean) => void;
 }
 
 /**
@@ -57,6 +61,9 @@ export function TestCaseTable({
   canDelete = true,
   projectId,
   enableModuleLink = false,
+  selectedTestCaseIds = new Set<string>(),
+  onToggleTestCaseSelection,
+  onToggleAllTestCaseSelection,
 }: TestCaseTableProps) {
   const router = useRouter();
   const { options: statusOptions } = useDropdownOptions('TestCase', 'status');
@@ -75,8 +82,37 @@ export function TestCaseTable({
     }
   };
 
+  const allSelected =
+    testCases.length > 0 &&
+    testCases.every((testCase) => selectedTestCaseIds.has(testCase.id));
+  const someSelected =
+    testCases.some((testCase) => selectedTestCaseIds.has(testCase.id)) && !allSelected;
+
   // Define columns
   const columns: ColumnDef<TestCase>[] = [
+    {
+      key: 'select',
+      label: (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+            onCheckedChange={(checked) => onToggleAllTestCaseSelection?.(checked === true)}
+            aria-label="すべてのテストケースを選択"
+          />
+        </div>
+      ),
+      width: '40px',
+      align: 'center',
+      render: (row) => (
+        <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={selectedTestCaseIds.has(row.id)}
+            onCheckedChange={() => onToggleTestCaseSelection?.(row.id)}
+            aria-label={`${row.title} を選択`}
+          />
+        </div>
+      ),
+    },
     {
       key: 'title',
       label: 'TITLE',
@@ -238,7 +274,7 @@ export function TestCaseTable({
       grouped={groupedByModule}
       groupConfig={groupConfig}
       actions={actions}
-      gridTemplateColumns="minmax(900px, 6fr) 70px 80px 100px 80px 100px 80px 70px 40px"
+      gridTemplateColumns="40px minmax(900px, 6fr) 70px 80px 100px 80px 100px 80px 70px 40px"
       emptyMessage="No test cases available"
     />
   );

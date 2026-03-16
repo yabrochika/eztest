@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Plus, FolderPlus, Import, Upload } from 'lucide-react';
+import { Plus, FolderPlus, Import, Upload, Trash2 } from 'lucide-react';
 import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
 import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
 import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
@@ -21,6 +21,7 @@ import { EmptyTestCaseState } from './subcomponents/EmptyTestCaseState';
 import { usePermissions } from '@/hooks/usePermissions';
 import { FileImportDialog } from '@/frontend/reusable-components/dialogs/FileImportDialog';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
+import { Button } from '@/frontend/reusable-elements/buttons/Button';
 
 interface TestCaseListProps {
   projectId: string;
@@ -43,6 +44,8 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null);
+  const [selectedTestCaseIds, setSelectedTestCaseIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -228,6 +231,82 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
     }
   };
 
+  const handleToggleTestCaseSelection = (testCaseId: string) => {
+    setSelectedTestCaseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(testCaseId)) {
+        next.delete(testCaseId);
+      } else {
+        next.add(testCaseId);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleAllTestCaseSelection = (checked: boolean) => {
+    if (checked) {
+      setSelectedTestCaseIds(new Set(testCases.map((testCase) => testCase.id)));
+    } else {
+      setSelectedTestCaseIds(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedIds = Array.from(selectedTestCaseIds);
+    if (selectedIds.length === 0) return;
+
+    const confirmed = window.confirm(
+      `選択した ${selectedIds.length} 件のテストケースを削除します。この操作は取り消せません。`
+    );
+    if (!confirmed) return;
+
+    setBulkDeleting(true);
+    try {
+      const results = await Promise.allSettled(
+        selectedIds.map((id) =>
+          fetch(`/api/testcases/${id}`, {
+            method: 'DELETE',
+          })
+        )
+      );
+
+      const failed = results.filter((result) => {
+        if (result.status !== 'fulfilled') return true;
+        return !result.value.ok;
+      }).length;
+      const succeeded = selectedIds.length - failed;
+
+      if (succeeded > 0) {
+        setAlert({
+          type: failed > 0 ? 'error' : 'success',
+          title: failed > 0 ? '一部削除に失敗しました' : 'Success',
+          message:
+            failed > 0
+              ? `${succeeded} 件を削除し、${failed} 件の削除に失敗しました`
+              : `${succeeded} 件のテストケースを削除しました`,
+        });
+      } else {
+        setAlert({
+          type: 'error',
+          title: 'テストケースの削除に失敗しました',
+          message: '選択したテストケースを削除できませんでした',
+        });
+      }
+      setTimeout(() => setAlert(null), 5000);
+      setSelectedTestCaseIds(new Set());
+      fetchTestCases();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setAlert({
+        type: 'error',
+        title: 'Connection Error',
+        message: errorMessage,
+      });
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const handleCardClick = (testCaseId: string) => {
     router.push(`/projects/${projectId}/testcases/${testCaseId}`);
   };
@@ -236,6 +315,14 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
     setSelectedTestCase(testCase);
     setDeleteDialogOpen(true);
   };
+
+  useEffect(() => {
+    setSelectedTestCaseIds((prev) => {
+      const visibleIds = new Set(testCases.map((testCase) => testCase.id));
+      const next = new Set(Array.from(prev).filter((id) => visibleIds.has(id)));
+      return next;
+    });
+  }, [testCases]);
 
 
   if (loading || permissionsLoading) {
@@ -340,6 +427,19 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
           />
         ) : (
           <>
+            {canDeleteTestCase && selectedTestCaseIds.size > 0 && (
+              <div className="mb-3 flex justify-end">
+                <Button
+                  variant="glass-destructive"
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleting}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {bulkDeleting ? '削除中...' : `選択したテストケースを削除 (${selectedTestCaseIds.size})`}
+                </Button>
+              </div>
+            )}
+
             <TestCaseTable
               testCases={testCases}
               groupedByModule={false}
@@ -349,6 +449,9 @@ export default function TestCaseList({ projectId }: TestCaseListProps) {
               canDelete={canDeleteTestCase}
               projectId={projectId}
               enableModuleLink={true}
+              selectedTestCaseIds={selectedTestCaseIds}
+              onToggleTestCaseSelection={handleToggleTestCaseSelection}
+              onToggleAllTestCaseSelection={handleToggleAllTestCaseSelection}
             />
 
             {/* Pagination */}

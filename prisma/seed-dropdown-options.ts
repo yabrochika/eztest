@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -28,11 +29,12 @@ export async function seedDropdownOptions() {
     { entity: 'TestRun', field: 'status', value: 'CANCELLED', label: 'CANCELLED', order: 4 },
 
     // TestResultStatus options (used in TestResult)
-    { entity: 'TestResult', field: 'status', value: 'PASSED', label: 'PASSED', order: 1 },
-    { entity: 'TestResult', field: 'status', value: 'FAILED', label: 'FAILED', order: 2 },
-    { entity: 'TestResult', field: 'status', value: 'BLOCKED', label: 'BLOCKED', order: 3 },
-    { entity: 'TestResult', field: 'status', value: 'SKIPPED', label: 'SKIPPED', order: 4 },
-    { entity: 'TestResult', field: 'status', value: 'RETEST', label: 'RETEST', order: 5 },
+    { entity: 'TestResult', field: 'status', value: 'NOT_STARTED', label: 'Not Started', order: 1 },
+    { entity: 'TestResult', field: 'status', value: 'PASSED', label: 'PASSED', order: 2 },
+    { entity: 'TestResult', field: 'status', value: 'FAILED', label: 'FAILED', order: 3 },
+    { entity: 'TestResult', field: 'status', value: 'BLOCKED', label: 'BLOCKED', order: 4 },
+    { entity: 'TestResult', field: 'status', value: 'SKIPPED', label: 'SKIPPED', order: 5 },
+    { entity: 'TestResult', field: 'status', value: 'RETEST', label: 'RETEST', order: 6 },
 
     // RequirementStatus options (used in Requirement)
     { entity: 'Requirement', field: 'status', value: 'DRAFT', label: 'DRAFT', order: 1 },

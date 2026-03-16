@@ -72,6 +72,7 @@ export function TestCasesListCard({
       case 'BLOCKED':
         return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
       case 'SKIPPED':
+      case 'NOT_STARTED':
         return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
       case 'RETEST':
         return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
@@ -212,9 +213,9 @@ export function TestCasesListCard({
                     onExecuteTestCase(row.testCase);
                   }}
                   className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-                  buttonName={`Test Cases List Card - ${row.status && row.status !== 'SKIPPED' ? 'Update' : 'Execute'} (${row.testCase.title || row.testCase.id})`}
+                  buttonName={`Test Cases List Card - ${row.status && !['SKIPPED', 'NOT_STARTED'].includes(row.status) ? 'Update' : 'Execute'} (${row.testCase.title || row.testCase.id})`}
                 >
-                  {row.status && row.status !== 'SKIPPED' ? '更新' : '実行'}
+                  {row.status && !['SKIPPED', 'NOT_STARTED'].includes(row.status) ? '更新' : '実行'}
                 </Button>
               )}
               {row.status === 'FAILED' && canCreateDefect && (

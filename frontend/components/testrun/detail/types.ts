@@ -1,6 +1,6 @@
 export interface TestResult {
   id: string;
-  status: 'PASSED' | 'FAILED' | 'BLOCKED' | 'SKIPPED' | 'RETEST';
+  status: 'PASSED' | 'FAILED' | 'BLOCKED' | 'SKIPPED' | 'NOT_STARTED' | 'RETEST';
   testCaseId: string;
   testCase: TestCase;
   comment?: string;

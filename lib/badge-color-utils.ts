@@ -47,6 +47,7 @@ const STATIC_BADGE_COLORS: Record<string, { bg: string; text: string; border: st
   'FAILED': { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
   'BLOCKED': { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/20' },
   'SKIPPED': { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' },
+  'NOT_STARTED': { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' },
   'RETEST': { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20' },
   
   // Requirement Status

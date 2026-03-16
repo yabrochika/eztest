@@ -46,7 +46,7 @@ export const updateTestRunSchema = z.object({
  */
 export const addTestResultSchema = z.object({
   testCaseId: z.string().min(1, 'Test case ID is required'),
-  status: z.enum(['PASSED', 'FAILED', 'BLOCKED', 'SKIPPED', 'RETEST']),
+  status: z.enum(['PASSED', 'FAILED', 'BLOCKED', 'SKIPPED', 'NOT_STARTED', 'RETEST']),
   duration: z.number().optional(),
   comment: z.string().optional(),
   errorMessage: z.string().optional(),

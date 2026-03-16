@@ -268,6 +268,7 @@ export function RecordResultDialog({
       case 'BLOCKED':
         return <AlertCircle className="w-4 h-4 text-orange-500" />;
       case 'SKIPPED':
+      case 'NOT_STARTED':
         return <Circle className="w-4 h-4 text-gray-500" />;
       case 'RETEST':
         return <AlertCircle className="w-4 h-4 text-purple-500" />;

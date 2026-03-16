@@ -581,7 +581,7 @@ export class TestRunService {
         data: testCaseIds.map((testCaseId) => ({
           testRunId: testRun.id,
           testCaseId,
-          status: 'SKIPPED',
+          status: 'NOT_STARTED',
           executedById: data.assignedToId || '', // Will be updated when actually executed
         })),
         skipDuplicates: true,
@@ -900,6 +900,7 @@ export class TestRunService {
           stats.blocked = result._count.status;
           break;
         case 'SKIPPED':
+        case 'NOT_STARTED':
           stats.skipped = result._count.status;
           break;
         case 'RETEST':
@@ -1080,7 +1081,7 @@ export class TestRunService {
         } else {
           // Check if status is valid even though name doesn't match
           const statusUpper = String(testMethod.status || '').trim().toUpperCase();
-          const isValidStatus = ['PASS', 'FAIL', 'SKIP', 'PASSED', 'FAILED', 'SKIPPED', 'BLOCKED', 'RETEST'].includes(statusUpper) ||
+          const isValidStatus = ['PASS', 'FAIL', 'SKIP', 'PASSED', 'FAILED', 'SKIPPED', 'NOT_STARTED', 'BLOCKED', 'RETEST'].includes(statusUpper) ||
             (statusOptions.length > 0 && statusOptions.some(opt => opt.value.toUpperCase() === statusUpper));
           
           if (!isValidStatus) {
@@ -1093,7 +1094,7 @@ export class TestRunService {
                 }
               });
             } else {
-              validStatuses.push('PASSED', 'FAILED', 'SKIPPED', 'BLOCKED', 'RETEST');
+              validStatuses.push('PASSED', 'FAILED', 'SKIPPED', 'NOT_STARTED', 'BLOCKED', 'RETEST');
             }
             fieldIssues.push(`invalid status: "${testMethod.status}" (valid: ${validStatuses.join(', ')})`);
           }
@@ -1153,7 +1154,7 @@ export class TestRunService {
           } else {
             // No dropdown options available, fall back to hardcoded defaults
             if (statusUpper === 'PASSED' || statusUpper === 'FAILED' || 
-                statusUpper === 'SKIPPED' || statusUpper === 'BLOCKED' || 
+                statusUpper === 'SKIPPED' || statusUpper === 'NOT_STARTED' || statusUpper === 'BLOCKED' || 
                 statusUpper === 'RETEST') {
               status = statusUpper;
             } else {
@@ -1177,7 +1178,7 @@ export class TestRunService {
           });
         } else {
           // Add default EzTest statuses if no dropdown options
-          validStatuses.push('PASSED', 'FAILED', 'SKIPPED', 'BLOCKED', 'RETEST');
+          validStatuses.push('PASSED', 'FAILED', 'SKIPPED', 'NOT_STARTED', 'BLOCKED', 'RETEST');
         }
         
         validationErrors.push(`Invalid status value: "${testMethod.status}". Valid statuses are: ${validStatuses.join(', ')}`);

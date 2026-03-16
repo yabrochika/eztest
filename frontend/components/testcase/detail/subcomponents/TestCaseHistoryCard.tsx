@@ -75,6 +75,7 @@ export function TestCaseHistoryCard({ testCaseId }: TestCaseHistoryCardProps) {
       case 'BLOCKED':
         return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
       case 'SKIPPED':
+      case 'NOT_STARTED':
         return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
       case 'RETEST':
         return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
@@ -92,6 +93,7 @@ export function TestCaseHistoryCard({ testCaseId }: TestCaseHistoryCardProps) {
       case 'BLOCKED':
         return <AlertCircle className="w-4 h-4 text-orange-500" />;
       case 'SKIPPED':
+      case 'NOT_STARTED':
         return <Circle className="w-4 h-4 text-gray-500" />;
       case 'RETEST':
         return <AlertCircle className="w-4 h-4 text-purple-500" />;

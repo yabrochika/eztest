@@ -493,7 +493,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       const promises = selectedCaseIds.map(async (testCaseId) => {
         const payload = {
           testCaseId,
-          status: 'SKIPPED',
+          status: 'NOT_STARTED',
         };
         
         const response = await fetch(`/api/projects/${projectId}/testruns/${testRunId}/results`, {
@@ -665,7 +665,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             testCaseId,
-            status: 'SKIPPED',
+            status: 'NOT_STARTED',
           }),
         });
 
@@ -724,6 +724,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       case 'BLOCKED':
         return <AlertCircle className="w-5 h-5 text-orange-500" />;
       case 'SKIPPED':
+      case 'NOT_STARTED':
         return <Circle className="w-5 h-5 text-gray-500" />;
       case 'RETEST':
         return <AlertCircle className="w-5 h-5 text-purple-500" />;
@@ -759,6 +760,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             stats.blocked++;
             break;
           case 'SKIPPED':
+          case 'NOT_STARTED':
             stats.skipped++;
             break;
         }

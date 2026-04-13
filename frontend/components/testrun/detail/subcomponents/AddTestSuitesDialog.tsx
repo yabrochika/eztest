@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
+import { SearchInput } from '@/frontend/reusable-elements/inputs/SearchInput';
 import { ChevronDown, ChevronRight, FolderOpen, TestTube2 } from 'lucide-react';
 import { PriorityBadge, Priority } from '@/frontend/reusable-components/badges/PriorityBadge';
 
@@ -63,6 +64,41 @@ export function AddTestSuitesDialog({
   const [expandedSuites, setExpandedSuites] = useState<Set<string>>(
     new Set(availableTestSuites.map((s) => s.id))
   );
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredSuites = useMemo(() => {
+    if (!normalizedQuery) {
+      return availableTestSuites.map((suite) => ({
+        ...suite,
+        displayTestCases: suite.testCases || [],
+        totalTestCases: suite.testCases?.length || 0,
+      }));
+    }
+
+    return availableTestSuites
+      .map((suite) => {
+        const suiteMatches =
+          suite.name.toLowerCase().includes(normalizedQuery) ||
+          (suite.description || '').toLowerCase().includes(normalizedQuery);
+
+        const totalTestCases = suite.testCases?.length || 0;
+        const matchedTestCases = (suite.testCases || []).filter((testCase) =>
+          `${testCase.title || testCase.name || ''} ${testCase.description || ''}`
+            .toLowerCase()
+            .includes(normalizedQuery)
+        );
+
+        const displayTestCases = suiteMatches ? (suite.testCases || []) : matchedTestCases;
+
+        return {
+          ...suite,
+          displayTestCases,
+          totalTestCases,
+        };
+      })
+      .filter((suite) => suite.displayTestCases.length > 0);
+  }, [availableTestSuites, normalizedQuery]);
 
   const toggleSuiteExpanded = (suiteId: string) => {
     setExpandedSuites((prev) => {
@@ -86,18 +122,26 @@ export function AddTestSuitesDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="mb-4">
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="スイート名・テストケース名で検索..."
+          />
+        </div>
+
         <div className="max-h-[500px] overflow-y-auto custom-scrollbar space-y-3 mb-4">
           {fetchingData ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-3">
               <div className="w-8 h-8 border-3 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
               <p className="text-white/60 text-sm">テストスイートを読み込み中...</p>
             </div>
-          ) : availableTestSuites.length === 0 ? (
+          ) : filteredSuites.length === 0 ? (
             <p className="text-white/60 text-center py-8">
-              追加できるテストスイートがありません
+              {searchQuery ? '検索条件に一致するテストスイートがありません' : '追加できるテストスイートがありません'}
             </p>
           ) : (
-            availableTestSuites.map((testSuite) => (
+            filteredSuites.map((testSuite) => (
               <div key={testSuite.id} className="border border-white/10 rounded-lg overflow-hidden">
                 {/* Suite Header */}
                 <div className="bg-white/5 p-4 hover:bg-white/10 transition-colors">
@@ -142,17 +186,19 @@ export function AddTestSuitesDialog({
                       </label>
 
                       <Badge variant="outline" className="text-xs shrink-0">
-                        {testSuite._count?.testCases || testSuite.testCases?.length || 0} 件のテストケース
+                        {searchQuery
+                          ? `${testSuite.displayTestCases.length} / ${testSuite.totalTestCases} 件のテストケース`
+                          : `${testSuite.totalTestCases} 件のテストケース`}
                       </Badge>
                     </div>
                   </div>
                 </div>
 
                 {/* Test Cases List (Expandable) */}
-                {expandedSuites.has(testSuite.id) && testSuite.testCases && (
+                {expandedSuites.has(testSuite.id) && testSuite.displayTestCases && (
                   <div className="bg-black/20 p-4 space-y-2">
-                    {testSuite.testCases.length > 0 ? (
-                      testSuite.testCases.map((testCase) => (
+                    {testSuite.displayTestCases.length > 0 ? (
+                      testSuite.displayTestCases.map((testCase) => (
                         <div
                           key={testCase.id}
                           className="p-3 bg-white/5 rounded border border-white/10 hover:border-white/20 transition-colors"

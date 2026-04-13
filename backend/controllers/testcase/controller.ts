@@ -344,6 +344,23 @@ evidence: validatedData.evidence,
   }
 
   /**
+   * Remove fully duplicated test cases in a project
+   * Permission already checked by route wrapper
+   */
+  async removeDuplicateTestCases(request: CustomRequest, projectId: string) {
+    try {
+      const result = await testCaseService.removeDuplicateTestCases(
+        projectId,
+        request.userInfo.id,
+        request.scopeInfo.scope_name
+      );
+      return { data: result };
+    } catch {
+      throw new InternalServerException('Failed to remove duplicate test cases');
+    }
+  }
+
+  /**
    * Update test steps
    * Permission already checked by route wrapper
    */

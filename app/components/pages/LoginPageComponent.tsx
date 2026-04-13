@@ -51,7 +51,6 @@ export default function LoginPageComponent() {
         setStars(null);
       });
   }, []);
-  const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
@@ -124,7 +123,6 @@ export default function LoginPageComponent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     
     if (!validateForm()) {
       setAlert({
@@ -152,7 +150,6 @@ export default function LoginPageComponent() {
       const otpData = await otpResponse.json();
 
       if (!otpData.success) {
-        setError(otpData.message || 'Failed to send OTP');
         setAlert({
           type: 'error',
           title: 'Error',
@@ -179,7 +176,6 @@ export default function LoginPageComponent() {
       setShowOtpVerification(true);
     } catch {
       const errorMsg = 'An unexpected error occurred';
-      setError(errorMsg);
       setAlert({
         type: 'error',
         title: 'Error',
@@ -201,7 +197,6 @@ export default function LoginPageComponent() {
 
       if (result?.error) {
         const errorMsg = 'Invalid email or password';
-        setError(errorMsg);
         setAlert({
           type: 'error',
           title: 'Login Failed',
@@ -225,7 +220,6 @@ export default function LoginPageComponent() {
       }
     } catch {
       const errorMsg = 'An unexpected error occurred';
-      setError(errorMsg);
       setAlert({
         type: 'error',
         title: 'Error',
@@ -364,7 +358,6 @@ export default function LoginPageComponent() {
           <div className="w-full max-w-md">
             <LoginForm
               formData={formData}
-              error={error}
               fieldErrors={fieldErrors}
               isLoading={isLoading}
               onFormDataChange={setFormData}

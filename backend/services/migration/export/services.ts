@@ -437,7 +437,7 @@ export class ExportService {
       const passed = testRun.results.filter((r) => r.status === 'PASSED').length;
       const failed = testRun.results.filter((r) => r.status === 'FAILED').length;
       const blocked = testRun.results.filter((r) => r.status === 'BLOCKED').length;
-      const skipped = testRun.results.filter((r) => r.status === 'SKIPPED').length;
+      const skipped = testRun.results.filter((r) => r.status === 'SKIPPED' || r.status === 'NOT_STARTED').length;
       const retest = testRun.results.filter((r) => r.status === 'RETEST').length;
 
       return {
@@ -576,7 +576,7 @@ export class ExportService {
     const passed = testRun.results.filter((r) => r.status === 'PASSED').length;
     const failed = testRun.results.filter((r) => r.status === 'FAILED').length;
     const blocked = testRun.results.filter((r) => r.status === 'BLOCKED').length;
-    const skipped = testRun.results.filter((r) => r.status === 'SKIPPED').length;
+    const skipped = testRun.results.filter((r) => r.status === 'SKIPPED' || r.status === 'NOT_STARTED').length;
     const retest = testRun.results.filter((r) => r.status === 'RETEST').length;
     
     // Calculate percentages

@@ -77,6 +77,7 @@ export function TestRunCard({
           counts.blocked++;
           break;
         case 'SKIPPED':
+        case 'NOT_STARTED':
           counts.skipped++;
           break;
       }

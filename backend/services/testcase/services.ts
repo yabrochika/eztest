@@ -954,6 +954,159 @@ export class TestCaseService {
   }
 
   /**
+   * Build a deterministic signature to compare test case contents.
+   * IDs and timestamps are intentionally excluded.
+   */
+  private buildDuplicateSignature(testCase: {
+    moduleId: string | null;
+    suiteId: string | null;
+    title: string;
+    description: string | null;
+    expectedResult: string | null;
+    testData: string | null;
+    priority: string;
+    status: string;
+    estimatedTime: number | null;
+    preconditions: string | null;
+    postconditions: string | null;
+    rtcId: string | null;
+    flowId: string | null;
+    layer: string | null;
+    testType: string | null;
+    evidence: string | null;
+    notes: string | null;
+    platform: string | null;
+    device: string | null;
+    domain: string | null;
+    functionName: string | null;
+    executionType: string | null;
+    automationStatus: string | null;
+    steps: Array<{
+      stepNumber: number;
+      action: string;
+      expectedResult: string;
+    }>;
+  }) {
+    return JSON.stringify({
+      moduleId: testCase.moduleId,
+      suiteId: testCase.suiteId,
+      title: testCase.title,
+      description: testCase.description,
+      expectedResult: testCase.expectedResult,
+      testData: testCase.testData,
+      priority: testCase.priority,
+      status: testCase.status,
+      estimatedTime: testCase.estimatedTime,
+      preconditions: testCase.preconditions,
+      postconditions: testCase.postconditions,
+      rtcId: testCase.rtcId,
+      flowId: testCase.flowId,
+      layer: testCase.layer,
+      testType: testCase.testType,
+      evidence: testCase.evidence,
+      notes: testCase.notes,
+      platform: testCase.platform,
+      device: testCase.device,
+      domain: testCase.domain,
+      functionName: testCase.functionName,
+      executionType: testCase.executionType,
+      automationStatus: testCase.automationStatus,
+      steps: testCase.steps,
+    });
+  }
+
+  /**
+   * Remove fully duplicated test cases in a project.
+   * Keep the oldest test case in each duplicated group.
+   */
+  async removeDuplicateTestCases(projectId: string, userId: string, scope: string) {
+    const whereClause: Record<string, unknown> = { projectId };
+
+    if (scope === 'project') {
+      whereClause.project = {
+        members: {
+          some: {
+            userId,
+          },
+        },
+      };
+    }
+
+    const testCases = await prisma.testCase.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        moduleId: true,
+        suiteId: true,
+        title: true,
+        description: true,
+        expectedResult: true,
+        testData: true,
+        priority: true,
+        status: true,
+        estimatedTime: true,
+        preconditions: true,
+        postconditions: true,
+        rtcId: true,
+        flowId: true,
+        layer: true,
+        testType: true,
+        evidence: true,
+        notes: true,
+        platform: true,
+        device: true,
+        domain: true,
+        functionName: true,
+        executionType: true,
+        automationStatus: true,
+        createdAt: true,
+        steps: {
+          select: {
+            stepNumber: true,
+            action: true,
+            expectedResult: true,
+          },
+          orderBy: {
+            stepNumber: 'asc',
+          },
+        },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+
+    const groups = new Map<string, string[]>();
+    for (const testCase of testCases) {
+      const signature = this.buildDuplicateSignature(testCase);
+      const groupedIds = groups.get(signature) ?? [];
+      groupedIds.push(testCase.id);
+      groups.set(signature, groupedIds);
+    }
+
+    const duplicateIdGroups = Array.from(groups.values()).filter((ids) => ids.length > 1);
+    const deleteIds = duplicateIdGroups.flatMap((ids) => ids.slice(1));
+
+    let deletedCount = 0;
+    let failedCount = 0;
+    for (const id of deleteIds) {
+      try {
+        await this.deleteTestCase(id, userId, scope);
+        deletedCount += 1;
+      } catch {
+        failedCount += 1;
+      }
+    }
+
+    return {
+      checkedCount: testCases.length,
+      duplicateGroupCount: duplicateIdGroups.length,
+      candidateDeleteCount: deleteIds.length,
+      deletedCount,
+      failedCount,
+      keptCount: duplicateIdGroups.length,
+    };
+  }
+
+  /**
    * Add/Update test steps
    * Scope filtering: verify user has access before updating
    */

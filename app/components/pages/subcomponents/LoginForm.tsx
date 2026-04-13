@@ -3,7 +3,6 @@ import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimar
 import { Input } from '@/frontend/reusable-elements/inputs/Input';
 import { Label } from '@/frontend/reusable-elements/labels/Label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/frontend/reusable-elements/cards/Card';
-import { Alert, AlertDescription } from '@/frontend/reusable-elements/alerts/Alert';
 
 interface FieldErrors {
   email?: string;
@@ -15,7 +14,6 @@ interface LoginFormProps {
     email: string;
     password: string;
   };
-  error: string;
   fieldErrors?: FieldErrors;
   isLoading: boolean;
   onFormDataChange: (data: { email: string; password: string }) => void;
@@ -25,7 +23,6 @@ interface LoginFormProps {
 
 export const LoginForm = ({
   formData,
-  error,
   fieldErrors = {},
   isLoading,
   onFormDataChange,
@@ -46,15 +43,6 @@ export const LoginForm = ({
 
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription className="flex items-center gap-2">
-                  <span>❌</span>
-                  <span>{error}</span>
-                </AlertDescription>
-              </Alert>
-            )}
-
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
               <Input

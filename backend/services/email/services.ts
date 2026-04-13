@@ -498,7 +498,7 @@ export class EmailService {
         passed: testRun.results.filter(r => r.status === 'PASSED').length,
         failed: testRun.results.filter(r => r.status === 'FAILED').length,
         blocked: testRun.results.filter(r => r.status === 'BLOCKED').length,
-        skipped: testRun.results.filter(r => r.status === 'SKIPPED').length,
+        skipped: testRun.results.filter(r => r.status === 'SKIPPED' || r.status === 'NOT_STARTED').length,
       };
 
       // Send email via utility function

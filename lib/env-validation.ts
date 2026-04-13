@@ -14,6 +14,9 @@ export interface ValidatedEnv {
   debug: boolean;
   enableAttachments: boolean;
   firebaseConfigured: boolean;
+  googleClientId: string | undefined;
+  googleClientSecret: string | undefined;
+  googleAllowedDomain: string | undefined;
 }
 
 /**
@@ -72,6 +75,9 @@ For production, generate a secure secret:
     debug: process.env.DEBUG === 'true',
     enableAttachments: process.env.ENABLE_ATTACHMENTS === 'true', // Default to false if not set
     firebaseConfigured,
+    googleClientId: process.env.GOOGLE_CLIENT_ID || undefined,
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || undefined,
+    googleAllowedDomain: process.env.GOOGLE_ALLOWED_DOMAIN || undefined,
   };
 }
 

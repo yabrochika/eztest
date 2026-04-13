@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { LoginForm } from './subcomponents/LoginForm';
@@ -26,6 +26,14 @@ export default function LoginPageComponent() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
+  const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/config/features')
+      .then((r) => r.json())
+      .then((data) => setGoogleAuthEnabled(!!data.googleAuthEnabled))
+      .catch(() => {});
+  }, []);
 
   const validateEmail = (email: string): string | undefined => {
     if (!email) {
@@ -170,6 +178,10 @@ export default function LoginPageComponent() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    await signIn('google', { callbackUrl: '/projects' });
+  };
+
   const handleOtpCancel = () => {
     setShowOtpVerification(false);
     setIsLoading(false);
@@ -204,6 +216,8 @@ export default function LoginPageComponent() {
           onFormDataChange={setFormData}
           onFieldBlur={handleFieldBlur}
           onSubmit={handleSubmit}
+          googleAuthEnabled={googleAuthEnabled}
+          onGoogleSignIn={handleGoogleSignIn}
         />
       </div>
     </div>

@@ -44,12 +44,11 @@ const STATIC_BADGE_COLORS: Record<string, { bg: string; text: string; border: st
   'CANCELLED': { bg: 'bg-gray-500/10', text: 'text-gray-500', border: 'border-gray-500/20' },
   
   // TestResult Status
-  'NOT_STARTED': { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/20' },
+  // Note: NOT_STARTED is already defined above for TestRun Status (slate)
   'PASSED': { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/20' },
   'FAILED': { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
   'BLOCKED': { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/20' },
   'SKIPPED': { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' },
-  'NOT_STARTED': { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' },
   'RETEST': { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20' },
   
   // Requirement Status

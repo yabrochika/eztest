@@ -6,13 +6,13 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/frontend/reusable-elements/hover-cards/HoverCard';
+import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import { Trash2, Bug } from 'lucide-react';
 import { GroupedDataTable, ColumnDef, GroupConfig, ActionConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
 import { TestCase, Module } from '../types';
 import { useRouter } from 'next/navigation';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
-import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 
 interface TestCaseTableProps {
   testCases: TestCase[];
@@ -32,14 +32,14 @@ interface TestCaseTableProps {
 /**
  * Test case table component with module grouping and collapsible sections
  * Uses the reusable GroupedDataTable component internally
- * 
+ *
  * @example
  * // Basic usage
  * <TestCaseTable
  *   testCases={testCases}
  *   onClick={(id) => router.push(`/testcases/${id}`)}
  * />
- * 
+ *
  * @example
  * // With module grouping and actions
  * <TestCaseTable

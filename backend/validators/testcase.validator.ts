@@ -103,6 +103,13 @@ export const updateTestStepsSchema = z.object({
 });
 
 /**
+ * Bulk delete schema
+ */
+export const bulkDeleteTestCaseSchema = z.object({
+  testCaseIds: z.array(z.string()).min(1, 'At least one test case ID is required'),
+});
+
+/**
  * Test Case Query Parameters Schema
  */
 export const testCaseQuerySchema = z.object({

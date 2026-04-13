@@ -9,6 +9,8 @@ export interface ColumnDef<T> {
   label: ReactNode;
   width?: string;
   render?: (row: T, index: number) => ReactNode;
+  /** ヘッダーセルのカスタム描画（省略時は label を表示） */
+  renderHeader?: () => ReactNode;
   className?: string;
   align?: 'left' | 'center' | 'right';
 }
@@ -182,7 +184,7 @@ export function GroupedDataTable<T = Record<string, unknown>>({
           key={col.key}
           className={col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''}
         >
-          {col.label}
+          {col.renderHeader ? col.renderHeader() : col.label}
         </div>
       ))}
       {actions && <div></div>}

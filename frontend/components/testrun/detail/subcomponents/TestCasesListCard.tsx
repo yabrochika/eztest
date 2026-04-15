@@ -70,7 +70,7 @@ export function TestCasesListCard({
   const { options: priorityOptions, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptions, loading: loadingStatus } = useDropdownOptions('TestResult', 'status');
   const { hasPermission: hasPermissionCheck } = usePermissions();
-  const [sortField, setSortField] = useState<SortField>('rtcId');
+  const [sortField, setSortField] = useState<SortField>('tcId');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
   // Check if user can create defects
@@ -342,7 +342,7 @@ export function TestCasesListCard({
     return Number.isNaN(lastNum) ? 0 : lastNum;
   };
 
-  // IN_PROGRESS時はRTC-ID昇順のフラットリスト、それ以外はモジュールグループ表示
+  // IN_PROGRESS時はTC-ID昇順のフラットリスト、それ以外はモジュールグループ表示
   const isInProgress = testRunStatus === 'IN_PROGRESS';
 
   const getSortValue = (row: ResultRow, field: SortField): string | number => {
@@ -377,6 +377,10 @@ export function TestCasesListCard({
       result = aValue - bValue;
     } else {
       result = String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' });
+    }
+
+    if (result === 0) {
+      result = (a.testCase.tcId || '').localeCompare(b.testCase.tcId || '', undefined, { numeric: true, sensitivity: 'base' });
     }
 
     if (result === 0) {

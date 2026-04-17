@@ -93,14 +93,6 @@ export function TestCasesListCard({
       ),
     },
     {
-      key: 'rtcId',
-      label: 'RTC-ID',
-      width: '160px',
-      render: (row: ResultRow) => (
-        <p className="text-xs font-mono text-white/70 truncate">{row.testCase.rtcId || '-'}</p>
-      ),
-    },
-    {
       key: 'testCase',
       label: 'テストケース',
       className: 'min-w-0',
@@ -200,10 +192,10 @@ export function TestCasesListCard({
     {
       key: 'actions',
       label: 'アクション',
-      width: '180px',
+      width: '150px',
       align: 'right',
       render: (row: ResultRow) => (
-        <div className="flex items-center gap-2 justify-end">
+        <div className="flex items-center gap-1 justify-end">
           {(testRunStatus === 'IN_PROGRESS' || forceShowDefectActions) && (
             <>
               {testRunStatus === 'IN_PROGRESS' && canUpdate && (
@@ -214,7 +206,7 @@ export function TestCasesListCard({
                     e.stopPropagation();
                     onExecuteTestCase(row.testCase);
                   }}
-                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 h-7 px-2 text-xs"
                   buttonName={`Test Cases List Card - ${row.status && row.status !== 'SKIPPED' ? 'Update' : 'Execute'} (${row.testCase.title || row.testCase.id})`}
                 >
                   {row.status && row.status !== 'SKIPPED' ? '更新' : '実行'}
@@ -230,7 +222,7 @@ export function TestCasesListCard({
                   >
                     <ButtonSecondary
                       size="sm"
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-1 h-7 px-2 text-xs"
                       buttonName={`Test Cases List Card - Defect Actions (${row.testCase.title || row.testCase.id})`}
                     >
                       欠陥
@@ -274,11 +266,11 @@ export function TestCasesListCard({
                   e.stopPropagation();
                   onExcludeTestCase(row.testCase, row.status);
                 }}
-                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 px-2 text-xs"
                 title="このテストケースをテストランから除外"
                 buttonName={`Test Cases List Card - Exclude (${row.testCase.title || row.testCase.id})`}
               >
-                <Trash2 className="w-4 h-4 mr-1" />
+                <Trash2 className="w-3 h-3 mr-1" />
                 除外
               </Button>
             )}
@@ -403,7 +395,7 @@ export function TestCasesListCard({
           groupConfig={groupConfig}
           defaultExpanded={true}
           onRowClick={(row) => router.push(`/projects/${projectId}/testcases/${row.testCase.id}`)}
-          gridTemplateColumns="70px 160px 1fr 100px 90px 120px 120px 140px 180px"
+          gridTemplateColumns="70px 1fr 100px 90px 120px 120px 140px 150px"
           emptyMessage="テストケースはありません"
         />
       )}

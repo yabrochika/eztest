@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { s3Client, getS3Bucket, getS3PathPrefix, isS3Configured, MAX_FILE_SIZE, CHUNK_SIZE } from '@/lib/s3-client';
+import { s3Client, getS3Bucket, getS3PathPrefix, isS3Configured, isUploadLocalRelativePath, MAX_FILE_SIZE, CHUNK_SIZE } from '@/lib/s3-client';
 import { CreateMultipartUploadCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import crypto from 'crypto';
@@ -302,7 +302,7 @@ export class AttachmentService {
 
     // Generate URL for file access
     let signedUrl: string;
-    if (isS3Configured()) {
+    if (isS3Configured() && !isUploadLocalRelativePath(attachment.path)) {
       const { GetObjectCommand } = await import('@aws-sdk/client-s3');
       const command = new GetObjectCommand({
         Bucket: getS3Bucket(),
@@ -375,7 +375,7 @@ export class AttachmentService {
     }
 
     // Generate presigned DELETE URL for browser to delete from S3
-    if (isS3Configured()) {
+    if (isS3Configured() && !isUploadLocalRelativePath(attachment.path)) {
       const command = new DeleteObjectCommand({
         Bucket: getS3Bucket(),
         Key: attachment.path,
@@ -417,17 +417,19 @@ export class AttachmentService {
       where: { id: attachmentId },
     });
 
-    // Delete from S3 (fire and forget)
-    try {
-      await s3Client.send(
-        new DeleteObjectCommand({
-          Bucket: getS3Bucket(),
-          Key: attachment.path,
-        })
-      );
-    } catch (error) {
-      console.error('Error deleting file from S3:', error);
-      // Don't throw - file cleanup is non-critical
+    // Delete from S3 (fire and forget) — upload-local のパスはバケットに存在しない
+    if (isS3Configured() && !isUploadLocalRelativePath(attachment.path)) {
+      try {
+        await s3Client.send(
+          new DeleteObjectCommand({
+            Bucket: getS3Bucket(),
+            Key: attachment.path,
+          })
+        );
+      } catch (error) {
+        console.error('Error deleting file from S3:', error);
+        // Don't throw - file cleanup is non-critical
+      }
     }
 
     return {

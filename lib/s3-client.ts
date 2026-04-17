@@ -55,6 +55,26 @@ export function getS3Bucket(): string {
   return process.env.AWS_S3_BUCKET;
 }
 
+/**
+ * `POST /api/attachments/upload-local` が保存する相対パスかどうか。
+ * この形式は `uploads/` 配下のファイルを指し、S3 のオブジェクトキーではない。
+ * S3 環境変数が設定されていても、S3 アップロード失敗時のフォールバックでこの形式が DB に入る。
+ */
+export function isUploadLocalRelativePath(storedPath: string): boolean {
+  if (!storedPath || storedPath.includes('..')) {
+    return false;
+  }
+  const prefixes = [
+    'comment/',
+    'defect/',
+    'testcase/',
+    'teststep/',
+    'testresult/',
+    'unassigned/',
+  ];
+  return prefixes.some((p) => storedPath.startsWith(p));
+}
+
 export function getS3PathPrefix(): string {
   // Returns the base path for storing attachments in S3 bucket
   // 'attachments' is always the default final directory

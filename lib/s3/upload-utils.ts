@@ -352,15 +352,21 @@ export async function deleteFile(attachmentId: string, entityType?: string): Pro
       throw new Error('Failed to prepare delete');
     }
 
-    const { deleteUrl } = await prepareResponse.json();
+    const prepareJson = (await prepareResponse.json()) as {
+      deleteUrl?: string | null;
+      data?: { deleteUrl?: string | null };
+    };
+    const deleteUrl = prepareJson.deleteUrl ?? prepareJson.data?.deleteUrl ?? null;
 
-    // Step 2: Delete directly from S3 using presigned URL
-    const s3DeleteResponse = await fetch(deleteUrl, {
-      method: 'DELETE',
-    });
+    // Step 2: Delete directly from S3 using presigned URL（ローカル保存の場合はスキップ）
+    if (deleteUrl) {
+      const s3DeleteResponse = await fetch(deleteUrl, {
+        method: 'DELETE',
+      });
 
-    if (!s3DeleteResponse.ok) {
-      throw new Error('Failed to delete from S3');
+      if (!s3DeleteResponse.ok) {
+        throw new Error('Failed to delete from S3');
+      }
     }
 
     // Step 3: Confirm deletion in database

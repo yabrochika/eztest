@@ -23,6 +23,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
 import { EditTestRunDialog } from '@/frontend/components/testrun/subcomponents/EditTestRunDialog';
+import { ConfirmDeleteDialog } from '@/frontend/reusable-components/dialogs/ConfirmDeleteDialog';
 
 interface TestRunDetailProps {
   testRunId: string;
@@ -55,6 +56,12 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [loadingSuites, setLoadingSuites] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [excludeTarget, setExcludeTarget] = useState<{
+    testCaseId: string;
+    title: string;
+    currentStatus: string;
+  } | null>(null);
+  const [excludeLoading, setExcludeLoading] = useState(false);
 
   const [resultForm, setResultForm, clearResultForm] = useFormPersistence<ResultFormData>(
     `testrun-result-${testRunId}`,
@@ -705,6 +712,56 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setCreateDefectDialogOpen(true);
   };
 
+  /**
+   * 「除外」ボタンが押された際に、確認ダイアログ用の状態をセットする。
+   * 実際の削除呼び出しは ConfirmDeleteDialog の onConfirm 経由で実行する。
+   */
+  const handleExcludeRequest = (testCase: TestCase, currentStatus: string) => {
+    setExcludeTarget({
+      testCaseId: testCase.id,
+      title: testCase.title || testCase.tcId || testCase.id,
+      currentStatus,
+    });
+  };
+
+  const handleConfirmExclude = async () => {
+    if (!excludeTarget || !testRun?.project?.id) return;
+
+    setExcludeLoading(true);
+    try {
+      const response = await fetch(
+        `/api/projects/${testRun.project.id}/testruns/${testRunId}/testcases/${excludeTarget.testCaseId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message || data?.error || 'テストケースの除外に失敗しました'
+        );
+      }
+
+      setFloatingAlert({
+        type: 'success',
+        title: '除外しました',
+        message: `「${excludeTarget.title}」をテストランから除外しました`,
+      });
+      setExcludeTarget(null);
+      await fetchTestRun();
+    } catch (error) {
+      setFloatingAlert({
+        type: 'error',
+        title: '除外に失敗しました',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      });
+    } finally {
+      setExcludeLoading(false);
+    }
+  };
+
   const handleDefectCreated = () => {
     setCreateDefectDialogOpen(false);
     setSelectedTestCaseForDefect(null);
@@ -857,6 +914,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           }}
           onExecuteTestCase={handleOpenResultDialog}
           onCreateDefect={handleCreateDefect}
+          onExcludeTestCase={handleExcludeRequest}
           forceShowDefectActions={showAutomationDefectActions}
           getResultIcon={getResultIcon}
         />
@@ -976,6 +1034,29 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           onTestRunUpdated={handleTestRunUpdated}
+        />
+
+        <ConfirmDeleteDialog
+          open={!!excludeTarget}
+          title="テストケースをテストランから除外"
+          description={(() => {
+            const status = excludeTarget?.currentStatus;
+            const isExecuted =
+              !!status && status !== 'SKIPPED' && status !== 'PENDING';
+            const base = `「${excludeTarget?.title || ''}」を、このテストランから除外します。`;
+            const warn = isExecuted
+              ? `\n現在のステータス: ${status}\n実行結果・コメント・添付ファイルも併せて削除されます。`
+              : '';
+            return `${base}${warn}\nこの操作は取り消せません。`;
+          })()}
+          confirmLabel="除外する"
+          cancelLabel="キャンセル"
+          isLoading={excludeLoading}
+          onOpenChange={(open) => {
+            if (!open) setExcludeTarget(null);
+          }}
+          onConfirm={handleConfirmExclude}
+          dialogName="Test Run Detail - Exclude Test Case"
         />
       </div>
 

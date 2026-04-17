@@ -200,6 +200,44 @@ export class TestRunController {
   }
 
   /**
+   * テストランから特定のテストケースを除外する
+   */
+  async removeTestCaseFromTestRun(testRunId: string, testCaseId: string) {
+    if (!testCaseId) {
+      throw new ValidationException('testCaseId is required');
+    }
+
+    // テストランの存在確認（404 vs 200 を明確化するため）
+    const testRun = await testRunService.getTestRunById(testRunId);
+    if (!testRun) {
+      throw new ValidationException(TestRunMessages.TestRunNotFound);
+    }
+
+    const result = await testRunService.removeTestCaseFromTestRun(
+      testRunId,
+      testCaseId
+    );
+
+    if (!result.removed) {
+      // 既に除外済み・存在しない場合も冪等に成功扱い
+      return {
+        data: {
+          removed: false,
+          message: '対象テストケースは既にテストランに含まれていません',
+        },
+      };
+    }
+
+    return {
+      data: {
+        removed: true,
+        previousStatus: result.previousStatus,
+        message: 'テストケースをテストランから除外しました',
+      },
+    };
+  }
+
+  /**
    * Check XML for matching test cases before import
    */
   async checkXMLMatches(

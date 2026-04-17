@@ -5,7 +5,7 @@ import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSeco
 import { formatDateTime } from '@/lib/date-utils';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { GroupedDataTable, type ColumnDef, type GroupConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
-import { AlertCircle, Plus, Bug, ListChecks, ChevronDown } from 'lucide-react';
+import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2 } from 'lucide-react';
 import { TestResult, TestCase } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
@@ -28,6 +28,8 @@ interface TestCasesListCardProps {
   onAddTestSuites: () => void;
   onExecuteTestCase: (testCase: TestCase) => void;
   onCreateDefect?: (testCaseId: string) => void;
+  /** テストケースをテストランから除外する */
+  onExcludeTestCase?: (testCase: TestCase, currentStatus: string) => void;
   forceShowDefectActions?: boolean;
   getResultIcon: (status?: string) => React.JSX.Element;
 }
@@ -51,6 +53,7 @@ export function TestCasesListCard({
   onAddTestSuites,
   onExecuteTestCase,
   onCreateDefect,
+  onExcludeTestCase,
   forceShowDefectActions = false,
   getResultIcon,
 }: TestCasesListCardProps) {
@@ -197,7 +200,7 @@ export function TestCasesListCard({
     {
       key: 'actions',
       label: 'アクション',
-      width: '140px',
+      width: '180px',
       align: 'right',
       render: (row: ResultRow) => (
         <div className="flex items-center gap-2 justify-end">
@@ -260,6 +263,25 @@ export function TestCasesListCard({
               )}
             </>
           )}
+          {onExcludeTestCase &&
+            canUpdate &&
+            testRunStatus !== 'COMPLETED' &&
+            testRunStatus !== 'CANCELLED' && (
+              <Button
+                variant="glass"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExcludeTestCase(row.testCase, row.status);
+                }}
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                title="このテストケースをテストランから除外"
+                buttonName={`Test Cases List Card - Exclude (${row.testCase.title || row.testCase.id})`}
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                除外
+              </Button>
+            )}
         </div>
       ),
     },
@@ -381,7 +403,7 @@ export function TestCasesListCard({
           groupConfig={groupConfig}
           defaultExpanded={true}
           onRowClick={(row) => router.push(`/projects/${projectId}/testcases/${row.testCase.id}`)}
-          gridTemplateColumns="70px 160px 1fr 100px 90px 120px 120px 140px 140px"
+          gridTemplateColumns="70px 160px 1fr 100px 90px 120px 120px 140px 180px"
           emptyMessage="テストケースはありません"
         />
       )}

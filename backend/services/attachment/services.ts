@@ -311,6 +311,7 @@ export class AttachmentService {
     // Determine if file should be previewed or downloaded
     const isPreviewable =
       attachment.mimeType.startsWith('image/') ||
+      attachment.mimeType.startsWith('video/') ||
       attachment.mimeType === 'application/pdf';
 
     // Generate URL for file access

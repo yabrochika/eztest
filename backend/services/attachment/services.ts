@@ -40,10 +40,23 @@ export class AttachmentService {
       return false;
     }
 
-    // Only allow videos for defect/comment attachments
+    // 動画はストレージ負荷が大きいため、エビデンス系の添付のみ許可（初期化時は entityType、完了時は S3 キーで判定）
     if (mimeType.startsWith('video/')) {
-      const allowByEntityType = entityType === 'defect' || entityType === 'comment';
-      const allowByS3Path = typeof s3Key === 'string' && (s3Key.includes('/defects/') || s3Key.includes('/comments/'));
+      const videoAllowedEntities = new Set([
+        'defect',
+        'comment',
+        'testresult',
+        'testcase',
+        'teststep',
+      ]);
+      const allowByEntityType = Boolean(entityType && videoAllowedEntities.has(entityType));
+      const allowByS3Path =
+        typeof s3Key === 'string' &&
+        (s3Key.includes('/defects/') ||
+          s3Key.includes('/comments/') ||
+          s3Key.includes('/testresults/') ||
+          s3Key.includes('/testcases/') ||
+          s3Key.includes('/teststeps/'));
       return allowByEntityType || allowByS3Path;
     }
 

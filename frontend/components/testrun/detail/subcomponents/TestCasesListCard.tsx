@@ -215,7 +215,6 @@ export function TestCasesListCard({
       key: 'actions',
       label: 'アクション',
       width: '120px',
-      align: 'right',
       render: (row: ResultRow) => (
         <div className="flex items-center gap-1 justify-end">
           {(testRunStatus === 'IN_PROGRESS' || forceShowDefectActions) && (

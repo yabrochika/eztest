@@ -214,7 +214,7 @@ export function TestCasesListCard({
     {
       key: 'actions',
       label: 'アクション',
-      width: '120px',
+      width: '175px',
       render: (row: ResultRow) => (
         <div className="flex items-center gap-1 justify-end">
           {(testRunStatus === 'IN_PROGRESS' || forceShowDefectActions) && (
@@ -420,7 +420,7 @@ export function TestCasesListCard({
           groupConfig={groupConfig}
           defaultExpanded={true}
           onRowClick={(row) => router.push(`/projects/${projectId}/testcases/${row.testCase.id}`)}
-          gridTemplateColumns="70px 1fr 100px 90px 120px 70px 140px 120px"
+          gridTemplateColumns="70px 1fr 100px 90px 120px 70px 140px 175px"
           emptyMessage="テストケースはありません"
         />
       )}

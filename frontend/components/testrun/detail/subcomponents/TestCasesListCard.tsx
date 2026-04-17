@@ -110,7 +110,7 @@ export function TestCasesListCard({
     },
     {
       key: 'estimatedTime',
-      label: 'テスト実行時間',
+      label: '実行時間',
       width: '100px',
       render: (row: ResultRow) => {
         const t = row.testCase.estimatedTime;

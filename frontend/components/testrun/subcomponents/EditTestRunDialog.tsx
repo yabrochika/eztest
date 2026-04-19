@@ -135,6 +135,8 @@ export function EditTestRunDialog({
         { value: 'iPhone', label: 'iPhone' },
         { value: 'Android', label: 'Android' },
         { value: 'PC', label: 'PC' },
+        { value: 'Chrome', label: 'Chrome' },
+        { value: 'Safari', label: 'Safari' },
       ],
       cols: 1,
     },

@@ -518,6 +518,17 @@ export class TestRunService {
                 avatar: true,
               },
             },
+            attachments: {
+              select: {
+                id: true,
+                filename: true,
+                originalName: true,
+                mimeType: true,
+                size: true,
+                fieldName: true,
+                uploadedAt: true,
+              },
+            },
           },
           orderBy: {
             executedAt: 'desc',
@@ -579,21 +590,31 @@ export class TestRunService {
     // Collect test case IDs
     let testCaseIds = data.testCaseIds || [];
 
-    // If test suite IDs are provided, fetch all test cases from those suites
+    // If test suite IDs are provided, fetch all test cases from those suites.
+    // テストケースとテストスイートの関連は新しい中間テーブル `TestCaseSuite` と
+    // 旧来の `TestCase.suiteId`（レガシー、後方互換用）の両方を参照する必要がある。
     if (data.testSuiteIds && data.testSuiteIds.length > 0) {
-      const suiteCases = await prisma.testCase.findMany({
-        where: {
-          suiteId: {
-            in: data.testSuiteIds,
+      const [joinTableEntries, legacySuiteCases] = await Promise.all([
+        prisma.testCaseSuite.findMany({
+          where: {
+            testSuiteId: { in: data.testSuiteIds },
+            testCase: { projectId: data.projectId },
           },
-          projectId: data.projectId,
-        },
-        select: {
-          id: true,
-        },
-      });
-      
-      const suiteTestCaseIds = suiteCases.map(tc => tc.id);
+          select: { testCaseId: true },
+        }),
+        prisma.testCase.findMany({
+          where: {
+            suiteId: { in: data.testSuiteIds },
+            projectId: data.projectId,
+          },
+          select: { id: true },
+        }),
+      ]);
+
+      const suiteTestCaseIds = [
+        ...joinTableEntries.map(j => j.testCaseId),
+        ...legacySuiteCases.map(tc => tc.id),
+      ];
       testCaseIds = [...new Set([...testCaseIds, ...suiteTestCaseIds])]; // Remove duplicates
     }
 
@@ -652,12 +673,14 @@ export class TestRunService {
 
     // If test case IDs are provided, create placeholder results
     if (testCaseIds.length > 0) {
-      await prisma.testResult.createMany({
+      // executedById は NOT NULL で User への外部キー。
+      // テスター未割り当て時は作成者 ID をフォールバックに使う（実際の実行時に上書きされる）。
+      const placeholderExecutorId = data.assignedToId || data.createdById;
         data: testCaseIds.map((testCaseId) => ({
           testRunId: testRun.id,
           testCaseId,
           status: 'NOT_STARTED',
-          executedById: primaryAssignedToId || '', // Will be updated when actually executed
+          executedById: placeholderExecutorId,
         })),
         skipDuplicates: true,
       });
@@ -749,6 +772,46 @@ export class TestRunService {
     return await prisma.testRun.delete({
       where: { id: testRunId },
     });
+  }
+
+  /**
+   * テストランから特定のテストケースを除外する。
+   * 該当する TestResult を削除し、紐づく添付（Attachment）は schema の
+   * `onDelete: Cascade` 設定により併せて削除される。
+   * 対象が存在しない場合は no-op として扱う。
+   *
+   * @param testRunId  対象テストランID
+   * @param testCaseId 除外するテストケースID
+   * @returns 削除対象が存在し、削除できたかどうか
+   */
+  async removeTestCaseFromTestRun(testRunId: string, testCaseId: string) {
+    const existing = await prisma.testResult.findUnique({
+      where: {
+        testRunId_testCaseId: {
+          testRunId,
+          testCaseId,
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!existing) {
+      return { removed: false, previousStatus: null as string | null };
+    }
+
+    await prisma.testResult.delete({
+      where: {
+        testRunId_testCaseId: {
+          testRunId,
+          testCaseId,
+        },
+      },
+    });
+
+    return { removed: true, previousStatus: existing.status };
   }
 
   /**

@@ -81,7 +81,7 @@ export function EditTestRunDialog({
       type: 'text',
       required: true,
       minLength: 3,
-      maxLength: 50,
+      maxLength: 255,
       cols: 2,
       defaultValue: testRun?.name || '',
     },

@@ -146,11 +146,15 @@ export function hasPermission(
 ) {
   return baseInterceptor(async (request: NextRequest, context) => {
     // Extract projectId from URL if available (for project-specific key validation)
+    // Only treat params.id as a project ID when the route is under /api/projects/
     let projectId: string | undefined;
     try {
-      const params = await context.params;
-      if (params && 'id' in params) {
-        projectId = params.id as string;
+      const isProjectRoute = request.nextUrl.pathname.startsWith('/api/projects/');
+      if (isProjectRoute) {
+        const params = await context.params;
+        if (params && 'id' in params) {
+          projectId = params.id as string;
+        }
       }
     } catch {
       // No projectId in URL, that's fine

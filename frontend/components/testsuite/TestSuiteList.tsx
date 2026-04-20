@@ -14,6 +14,7 @@ import { TestSuiteTreeItem } from './subcomponents/TestSuiteTreeItem';
 import { CreateTestSuiteDialog } from './subcomponents/CreateTestSuiteDialog';
 import { DeleteTestSuiteDialog } from './subcomponents/DeleteTestSuiteDialog';
 import { EmptyTestSuiteState } from './subcomponents/EmptyTestSuiteState';
+import { CreateTestRunDialog } from '@/frontend/components/testrun/subcomponents/CreateTestRunDialog';
 import { usePermissions } from '@/hooks/usePermissions';
 
 interface TestSuiteListProps {
@@ -28,11 +29,14 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [createTestRunDialogOpen, setCreateTestRunDialogOpen] = useState(false);
   const [selectedSuite, setSelectedSuite] = useState<TestSuite | null>(null);
+  const [suiteForTestRun, setSuiteForTestRun] = useState<TestSuite | null>(null);
   const [expandedSuites, setExpandedSuites] = useState<Set<string>>(new Set());
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
 
   const canCreateTestSuite = hasPermissionCheck('testsuites:create');
+  const canCreateTestRun = hasPermissionCheck('testruns:create');
 
   const navbarActions = useMemo(() => {
     const actions = [];
@@ -183,6 +187,11 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
     setDeleteDialogOpen(true);
   };
 
+  const handleCreateTestRunClick = (suite: TestSuite) => {
+    setSuiteForTestRun(suite);
+    setCreateTestRunDialogOpen(true);
+  };
+
   const rootSuites = testSuites.filter(s => !s.parentId);
 
   if (loading || permissionsLoading) {
@@ -247,7 +256,9 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
                 onToggleExpand={toggleExpanded}
                 onView={handleViewSuite}
                 onDelete={handleDeleteClick}
+                onCreateTestRun={handleCreateTestRunClick}
                 canDelete={canDeleteTestSuite}
+                canCreateTestRun={canCreateTestRun}
               />
             ))}
           </ResponsiveGrid>
@@ -277,6 +288,32 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteTestSuite}
       />
+
+      {suiteForTestRun && (
+        <CreateTestRunDialog
+          key={suiteForTestRun.id}
+          projectId={projectId}
+          triggerOpen={createTestRunDialogOpen}
+          onOpenChange={(open) => {
+            setCreateTestRunDialogOpen(open);
+            if (!open) {
+              setSuiteForTestRun(null);
+            }
+          }}
+          testSuiteIds={[suiteForTestRun.id]}
+          defaultName={suiteForTestRun.name}
+          onTestRunCreated={(testRun) => {
+            setAlert({
+              type: 'success',
+              title: '成功',
+              message: `テストラン「${testRun.name}」を作成しました`,
+            });
+            setTimeout(() => setAlert(null), 5000);
+            setCreateTestRunDialogOpen(false);
+            setSuiteForTestRun(null);
+          }}
+        />
+      )}
     </>
   );
 }

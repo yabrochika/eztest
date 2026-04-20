@@ -9,7 +9,9 @@ interface TestSuiteTreeItemProps {
   onToggleExpand: (suiteId: string) => void;
   onView: (suiteId: string) => void;
   onDelete: (suite: TestSuite) => void;
+  onCreateTestRun?: (suite: TestSuite) => void;
   canDelete?: boolean;
+  canCreateTestRun?: boolean;
 }
 
 export function TestSuiteTreeItem({
@@ -18,7 +20,9 @@ export function TestSuiteTreeItem({
   onToggleExpand,
   onView,
   onDelete,
+  onCreateTestRun,
   canDelete = true,
+  canCreateTestRun = false,
 }: TestSuiteTreeItemProps) {
   return (
     <TestSuiteCard
@@ -27,7 +31,9 @@ export function TestSuiteTreeItem({
       onToggleExpand={onToggleExpand}
       onView={onView}
       onDelete={onDelete}
+      onCreateTestRun={onCreateTestRun}
       canDelete={canDelete}
+      canCreateTestRun={canCreateTestRun}
     />
   );
 }

@@ -1,3 +1,13 @@
+export interface TestResultAttachment {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  fieldName?: string | null;
+  uploadedAt: string;
+}
+
 export interface TestResult {
   id: string;
   status: 'NOT_STARTED' | 'PASSED' | 'FAILED' | 'BLOCKED' | 'SKIPPED' | 'RETEST';
@@ -9,7 +19,10 @@ export interface TestResult {
   executedBy?: {
     name: string;
     email: string;
+    avatar?: string | null;
+    avatar?: string | null;
   };
+  attachments?: TestResultAttachment[];
 }
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';

@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Send } from 'lucide-react';
+import { Send, Maximize2 } from 'lucide-react';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
+import { MediaPreviewModal } from '@/frontend/reusable-components/dialogs/MediaPreviewModal';
 import { TextareaWithAttachments, Attachment } from '@/frontend/reusable-elements/textareas/TextareaWithAttachments';
 import { uploadFileToS3 } from '@/lib/s3';
 
@@ -15,32 +16,78 @@ interface PendingAttachment extends Attachment {
 // Separate component for comment attachments to avoid hook ordering issues
 function CommentAttachmentItem({ attachment }: { attachment: { id: string; filename: string; originalName: string; size: number; mimeType: string; uploadedAt: Date } }) {
   const isImage = attachment.mimeType.startsWith('image/');
-  const [imageUrl, setImageUrl] = React.useState<string | null>(null);
+  const isVideo = attachment.mimeType.startsWith('video/');
+  const [mediaUrl, setMediaUrl] = React.useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = React.useState(false);
 
   React.useEffect(() => {
-    if (isImage) {
+    if (isImage || isVideo) {
       fetch(`/api/comment-attachments/${attachment.id}`)
         .then(res => res.json())
         .then(data => {
           if (data.data?.url) {
-            setImageUrl(data.data.url);
+            setMediaUrl(data.data.url);
           }
         })
         .catch(console.error);
     }
-  }, [attachment.id, isImage]);
+  }, [attachment.id, isImage, isVideo]);
 
-  if (isImage && imageUrl) {
+  if (isImage && mediaUrl) {
     return (
-      <div className="rounded-lg overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageUrl}
-          alt={attachment.originalName}
-          className="max-w-full h-auto max-h-64 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => window.open(imageUrl, '_blank')}
+      <>
+        <div className="rounded-lg overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={mediaUrl}
+            alt={attachment.originalName}
+            className="max-w-full h-auto max-h-[64rem] rounded-lg cursor-zoom-in hover:opacity-90 transition-opacity object-contain"
+            onClick={() => setPreviewOpen(true)}
+          />
+        </div>
+        <MediaPreviewModal
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          src={mediaUrl}
+          mimeType={attachment.mimeType}
+          originalName={attachment.originalName}
         />
-      </div>
+      </>
+    );
+  }
+
+  if (isVideo && mediaUrl) {
+    return (
+      <>
+        <div className="relative rounded-lg overflow-hidden bg-black group">
+          <video
+            src={mediaUrl}
+            className="max-w-full h-auto max-h-[64rem] rounded-lg"
+            controls
+            preload="metadata"
+          />
+          {/* 動画は controls クリックを邪魔しないように右上に拡大ボタンのみ配置 */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPreviewOpen(true);
+            }}
+            className="absolute top-2 right-2 inline-flex items-center justify-center w-8 h-8 rounded-md bg-black/55 hover:bg-black/80 text-white border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            title="拡大表示"
+            aria-label="拡大表示"
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+        </div>
+        <MediaPreviewModal
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          src={mediaUrl}
+          mimeType={attachment.mimeType}
+          originalName={attachment.originalName}
+        />
+      </>
     );
   }
 

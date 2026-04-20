@@ -20,6 +20,15 @@ interface CreateTestRunDialogProps {
   triggerOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   onTestRunCreated: (testRun: TestRun) => void;
+  /**
+   * 事前にテストランへ含めたいテストスイート ID 群。
+   * 指定された場合、テストスイート配下のテストケースが自動的に追加される。
+   */
+  testSuiteIds?: string[];
+  /**
+   * テストラン名の初期値（テストスイートから作成する際にスイート名を引き継ぐなど）。
+   */
+  defaultName?: string;
 }
 
 interface MultiSelectCheckboxFieldProps {
@@ -77,6 +86,8 @@ export function CreateTestRunDialog({
   triggerOpen,
   onOpenChange,
   onTestRunCreated,
+  testSuiteIds,
+  defaultName,
 }: CreateTestRunDialogProps) {
   // Fetch dynamic dropdown options
   const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
@@ -115,8 +126,9 @@ export function CreateTestRunDialog({
       type: 'text',
       required: true,
       minLength: 3,
-      maxLength: 50,
+      maxLength: 255,
       cols: 2,
+      defaultValue: defaultName,
     },
     {
       name: 'environment',
@@ -240,6 +252,7 @@ export function CreateTestRunDialog({
         platform: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,
         device: selectedDevices.length > 0 ? selectedDevices : undefined,
         executionType: 'MANUAL',
+        testSuiteIds: testSuiteIds && testSuiteIds.length > 0 ? testSuiteIds : undefined,
       }),
     });
 
@@ -268,6 +281,8 @@ export function CreateTestRunDialog({
     },
     submitButtonName: 'Create Test Run Dialog - Create Test Run',
     cancelButtonName: 'Create Test Run Dialog - Cancel',
+    // 事前指定値（テストスイート起点の作成）がある場合は永続化値で上書きしない
+    disablePersistence: !!defaultName || !!(testSuiteIds && testSuiteIds.length > 0),
   };
 
   return <BaseDialog {...config} />;

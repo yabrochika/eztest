@@ -775,6 +775,46 @@ export class TestRunService {
   }
 
   /**
+   * テストランから特定のテストケースを除外する。
+   * 該当する TestResult を削除し、紐づく添付（Attachment）は schema の
+   * `onDelete: Cascade` 設定により併せて削除される。
+   * 対象が存在しない場合は no-op として扱う。
+   *
+   * @param testRunId  対象テストランID
+   * @param testCaseId 除外するテストケースID
+   * @returns 削除対象が存在し、削除できたかどうか
+   */
+  async removeTestCaseFromTestRun(testRunId: string, testCaseId: string) {
+    const existing = await prisma.testResult.findUnique({
+      where: {
+        testRunId_testCaseId: {
+          testRunId,
+          testCaseId,
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!existing) {
+      return { removed: false, previousStatus: null as string | null };
+    }
+
+    await prisma.testResult.delete({
+      where: {
+        testRunId_testCaseId: {
+          testRunId,
+          testCaseId,
+        },
+      },
+    });
+
+    return { removed: true, previousStatus: existing.status };
+  }
+
+  /**
    * Start a test run
    */
   async startTestRun(testRunId: string) {

@@ -178,6 +178,22 @@ export class DefectService {
                 id: true,
                 tcId: true,
                 title: true,
+                suite: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                testCaseSuites: {
+                  select: {
+                    testSuite: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
@@ -504,9 +520,36 @@ export class DefectService {
       })
     );
 
+    const uniqueSuites = new Map<string, { id: string; name: string }>();
+
+    defect.testRun?.suites.forEach((suiteLink) => {
+      uniqueSuites.set(suiteLink.testSuite.id, {
+        id: suiteLink.testSuite.id,
+        name: suiteLink.testSuite.name,
+      });
+    });
+
+    testCasesWithFailureCount.forEach((tc) => {
+      const legacySuite = tc.testCase.suite;
+      if (legacySuite) {
+        uniqueSuites.set(legacySuite.id, {
+          id: legacySuite.id,
+          name: legacySuite.name,
+        });
+      }
+
+      tc.testCase.testCaseSuites?.forEach((suiteLink: { testSuite: { id: string; name: string } }) => {
+        uniqueSuites.set(suiteLink.testSuite.id, {
+          id: suiteLink.testSuite.id,
+          name: suiteLink.testSuite.name,
+        });
+      });
+    });
+
     return {
       ...defect,
       testCases: testCasesWithFailureCount,
+      executedTestSuites: Array.from(uniqueSuites.values()),
     };
   }
 

@@ -294,6 +294,16 @@ export class DefectService {
           select: {
             id: true,
             name: true,
+            suites: {
+              select: {
+                testSuite: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
       },

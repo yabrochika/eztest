@@ -871,7 +871,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           onReopenTestRun={handleReopenTestRun}
           totalExecutionTime={
             testRun.results
-              ?.reduce((sum, r) => sum + (r.testCase?.estimatedTime || 0), 0) || 0
+              ?.reduce((sum, r) => sum + (r.duration || 0), 0) || 0
           }
         />
 
@@ -919,6 +919,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             setResultForm({ ...resultForm, ...filteredData } as ResultFormData);
           }}
           onSubmit={handleSubmitResult}
+          initialDurationSeconds={
+            selectedTestCase
+              ? testRun.results.find((r) => r.testCaseId === selectedTestCase.testCaseId)?.duration
+              : undefined
+          }
           refreshTrigger={defectRefreshTrigger}
           onNavigate={navigateTestCase}
           hasPrev={sortedTestCases.findIndex(tc => tc.id === selectedTestCase?.testCaseId) > 0}

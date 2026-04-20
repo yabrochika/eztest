@@ -46,6 +46,12 @@ export interface Defect {
   testRun: {
     id: string;
     name: string;
+    suites: {
+      testSuite: {
+        id: string;
+        name: string;
+      };
+    }[];
   } | null;
   attachments: DefectAttachment[];
   comments: DefectComment[];

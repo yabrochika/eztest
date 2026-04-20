@@ -38,6 +38,7 @@ interface ResultRow {
   testCase: TestCase;
   status: string;
   comment?: string;
+  duration?: number;
   executedBy?: { name: string };
   executedAt?: string;
 }
@@ -160,7 +161,7 @@ export function TestCasesListCard({
       label: renderSortableLabel('estimatedTime', 'テスト実行時間'),
       width: '100px',
       render: (row: ResultRow) => {
-        const t = row.testCase.estimatedTime;
+        const t = row.duration;
         if (t == null || !Number.isFinite(t)) return <span className="text-white/70 text-sm">-</span>;
         const h = Math.floor(t / 3600);
         const m = Math.floor((t % 3600) / 60);
@@ -328,6 +329,7 @@ export function TestCasesListCard({
       testCase: result.testCase,
       status: result.status,
       comment: result.comment,
+      duration: result.duration,
       executedBy: result.executedBy,
       executedAt: result.executedAt,
     }));
@@ -354,7 +356,7 @@ export function TestCasesListCard({
       case 'testCase':
         return row.testCase.title || '';
       case 'estimatedTime':
-        return row.testCase.estimatedTime ?? Number.NEGATIVE_INFINITY;
+        return row.duration ?? Number.NEGATIVE_INFINITY;
       case 'priority':
         return row.testCase.priority || '';
       case 'status':

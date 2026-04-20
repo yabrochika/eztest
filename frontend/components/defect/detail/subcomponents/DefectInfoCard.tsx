@@ -62,6 +62,20 @@ export function DefectInfoCard({ defect }: DefectInfoCardProps) {
             テスト実行
           </h4>
           <Badge variant="outline">{defect.testRun.name}</Badge>
+          {defect.testRun.suites.length > 0 && (
+            <div className="mt-2">
+              <h5 className="text-xs font-medium text-white/50 mb-1">
+                実行テストスイート
+              </h5>
+              <div className="flex flex-wrap gap-1">
+                {defect.testRun.suites.map((suite) => (
+                  <Badge key={suite.testSuite.id} variant="outline">
+                    {suite.testSuite.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

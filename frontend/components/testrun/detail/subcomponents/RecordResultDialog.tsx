@@ -71,6 +71,7 @@ interface RecordResultDialogProps {
   onOpenChange: (open: boolean) => void;
   onFormChange: (data: Partial<ResultFormData>) => void;
   onSubmit: (durationSeconds?: number) => void;
+  initialDurationSeconds?: number;
   refreshTrigger?: number; // Trigger to refresh defects after creation
   onNavigate?: (direction: 'prev' | 'next') => void;
   hasPrev?: boolean;
@@ -89,6 +90,7 @@ export function RecordResultDialog({
   onOpenChange,
   onFormChange,
   onSubmit,
+  initialDurationSeconds,
   refreshTrigger,
   onNavigate,
   hasPrev = false,
@@ -179,10 +181,13 @@ export function RecordResultDialog({
         setElapsedSeconds(cachedElapsed);
         setTimerStartTime(Date.now());
       } else {
-        // 初回表示時のみ既存実行時間を初期値として利用
+        // 初回表示時はこのテストラン内の既存実行時間のみ初期値として利用
+        const initialDuration = initialDurationSeconds && initialDurationSeconds > 0
+          ? initialDurationSeconds
+          : 0;
         setTimerStartTime(null);
-        setTimerOffset(0);
-        setElapsedSeconds(0);
+        setTimerOffset(initialDuration);
+        setElapsedSeconds(initialDuration);
       }
 
       const fetchTestCaseDetail = async () => {
@@ -192,14 +197,6 @@ export function RecordResultDialog({
           const data = await response.json();
           if (data.data) {
             setTestCaseDetail(data.data);
-            // キャッシュがない場合のみ既存実行時間をオフセットに採用
-            if (cachedElapsed === undefined) {
-              const existingTime = data.data.estimatedTime;
-              if (existingTime && existingTime > 0) {
-                setTimerOffset(existingTime);
-                setElapsedSeconds(existingTime);
-              }
-            }
           }
         } catch (error) {
           console.error('Error fetching test case detail:', error);
@@ -221,7 +218,7 @@ export function RecordResultDialog({
       setTimerStartTime(null);
       setTestCaseDetail(null);
     }
-  }, [open, testCaseId, persistElapsedForTestCase]);
+  }, [open, testCaseId, initialDurationSeconds, persistElapsedForTestCase]);
 
   useEffect(() => {
     if (open && timerStartTime) {

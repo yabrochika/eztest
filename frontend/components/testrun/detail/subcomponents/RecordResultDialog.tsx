@@ -11,7 +11,7 @@ import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
 import { Label } from '@/frontend/reusable-elements/labels/Label';
-import { Textarea } from '@/frontend/reusable-elements/textareas/Textarea';
+import { TextareaWithAttachments, type Attachment } from '@/frontend/reusable-elements/textareas/TextareaWithAttachments';
 import { SearchInput } from '@/frontend/reusable-elements/inputs/SearchInput';
 import {
   Select,
@@ -68,6 +68,8 @@ interface RecordResultDialogProps {
   testRunPlatform?: string;
   testRunDevice?: string;
   formData: ResultFormData;
+  commentAttachments: Attachment[];
+  onCommentAttachmentsChange: (attachments: Attachment[]) => void;
   onOpenChange: (open: boolean) => void;
   onFormChange: (data: Partial<ResultFormData>) => void;
   onSubmit: (durationSeconds?: number) => void;
@@ -86,6 +88,8 @@ export function RecordResultDialog({
   testRunPlatform,
   testRunDevice,
   formData,
+  commentAttachments,
+  onCommentAttachmentsChange,
   onOpenChange,
   onFormChange,
   onSubmit,
@@ -608,14 +612,22 @@ export function RecordResultDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="comment">コメント</Label>
-            <Textarea
+            <Label htmlFor="comment">コメント（画像・動画を添付可能）</Label>
+            <TextareaWithAttachments
               id="comment"
+              fieldName="comment"
               variant="glass"
               value={formData.comment}
-              onChange={(e) => onFormChange({ comment: e.target.value })}
+              onChange={(v) => onFormChange({ comment: v })}
               placeholder="このテスト実行についてコメントを追加（任意）"
               rows={4}
+              attachments={commentAttachments}
+              onAttachmentsChange={onCommentAttachmentsChange}
+              entityType="testresult"
+              projectId={projectId}
+              showAttachments={true}
+              forceShowAttachments={true}
+              uploadOnSave={true}
             />
           </div>
 

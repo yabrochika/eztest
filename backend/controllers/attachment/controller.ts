@@ -153,12 +153,13 @@ export class AttachmentController {
   async updateAttachment(req: RequestLike, attachmentId: string) {
     try {
       const body = await req.json();
-      const { testCaseId, testStepId } = body as Record<string, unknown>;
+      const { testCaseId, testStepId, testResultId } = body as Record<string, unknown>;
 
       const result = await attachmentService.updateAttachment(
         attachmentId,
-        testCaseId ? String(testCaseId) : undefined,
-        testStepId ? String(testStepId) : undefined
+        testCaseId !== undefined ? (testCaseId ? String(testCaseId) : null) : undefined,
+        testStepId !== undefined ? (testStepId ? String(testStepId) : null) : undefined,
+        testResultId !== undefined ? (testResultId ? String(testResultId) : null) : undefined
       );
 
       return {

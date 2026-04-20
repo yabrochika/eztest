@@ -18,7 +18,9 @@ import {
   Circle,
   Upload,
 } from 'lucide-react';
-import { TestRun, TestCase, ResultFormData, TestRunStats, TestSuite } from './types';
+import { TestRun, TestCase, ResultFormData, TestRunStats, TestSuite, TestResult } from './types';
+import type { Attachment } from '@/lib/s3';
+import { uploadFileToS3, linkAttachments } from '@/lib/s3';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
@@ -55,6 +57,8 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [loadingSuites, setLoadingSuites] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  /** テスト結果コメントの添付（保存時に TestResult に紐づけ） */
+  const [resultCommentAttachments, setResultCommentAttachments] = useState<Attachment[]>([]);
 
   const [resultForm, setResultForm, clearResultForm] = useFormPersistence<ResultFormData>(
     `testrun-result-${testRunId}`,
@@ -117,7 +121,21 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     }
   }, [testRun]);
 
-  const fetchTestRun = async () => {
+  const mapResultAttachments = useCallback((result: TestResult | undefined): Attachment[] => {
+    if (!result?.attachments?.length) return [];
+    return result.attachments.map((a) => ({
+      id: a.id,
+      filename: a.filename,
+      originalName: a.originalName,
+      size: a.size,
+      mimeType: a.mimeType,
+      uploadedAt: typeof a.uploadedAt === 'string' ? a.uploadedAt : new Date(a.uploadedAt).toISOString(),
+      fieldName: a.fieldName || 'comment',
+      entityType: 'testresult' as const,
+    }));
+  }, []);
+
+  const fetchTestRun = async (): Promise<TestRun | null> => {
     try {
       setLoading(true);
       // Extract projectId from URL path or use from testRun data
@@ -137,12 +155,14 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       const data = await response.json();
       if (data.data) {
         setTestRun(data.data);
-      } else {
-        alert(data.error || 'テストランの取得に失敗しました');
+        return data.data as TestRun;
       }
+      alert(data.error || 'テストランの取得に失敗しました');
+      return null;
     } catch (error) {
       console.error('Error fetching test run:', error);
       alert('テストランの取得に失敗しました');
+      return null;
     } finally {
       setLoading(false);
     }
@@ -347,19 +367,22 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       status: resolvedStatus,
       comment: existingResult?.comment || '',
     });
-  }, [selectedTestCase, sortedTestCases, testRun?.results, setResultForm]);
+    setResultCommentAttachments(mapResultAttachments(existingResult));
+  }, [selectedTestCase, sortedTestCases, testRun?.results, setResultForm, mapResultAttachments]);
 
   // 次のテストケースに遷移するヘルパー（保存後・欠陥作成後に使用）
-  const navigateToNextTestCase = useCallback(() => {
+  const navigateToNextTestCase = useCallback((freshRun?: TestRun | null) => {
+    const run = freshRun ?? testRun;
     if (!selectedTestCase || sortedTestCases.length === 0) {
       setResultDialogOpen(false);
       setSelectedTestCase(null);
+      setResultCommentAttachments([]);
       return;
     }
     const currentIndex = sortedTestCases.findIndex(tc => tc.id === selectedTestCase.testCaseId);
     if (currentIndex >= 0 && currentIndex < sortedTestCases.length - 1) {
       const nextTestCase = sortedTestCases[currentIndex + 1];
-      const nextResult = testRun?.results.find((r) => r.testCaseId === nextTestCase.id);
+      const nextResult = run?.results.find((r) => r.testCaseId === nextTestCase.id);
       const resolvedStatus = !nextResult
         ? 'NOT_STARTED'
         : nextResult.status === 'SKIPPED' && !nextResult.comment
@@ -373,12 +396,14 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         status: resolvedStatus,
         comment: nextResult?.comment || '',
       });
+      setResultCommentAttachments(mapResultAttachments(nextResult));
       setResultDialogOpen(true);
     } else {
       setResultDialogOpen(false);
       setSelectedTestCase(null);
+      setResultCommentAttachments([]);
     }
-  }, [selectedTestCase, sortedTestCases, testRun?.results, setResultForm]);
+  }, [selectedTestCase, sortedTestCases, testRun, setResultForm, mapResultAttachments]);
 
   const handleOpenResultDialog = (testCase: TestCase) => {
     const existingResult = testRun?.results.find(
@@ -402,6 +427,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       comment: existingResult?.comment || '',
     });
 
+    setResultCommentAttachments(mapResultAttachments(existingResult));
     setResultDialogOpen(true);
   };
 
@@ -420,6 +446,27 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           projectId = pathSegments[projectIndex + 1];
         }
       }
+      if (!projectId) {
+        alert('プロジェクト情報を取得できませんでした');
+        return;
+      }
+
+      const uploadedToLink: Attachment[] = [];
+      for (const att of resultCommentAttachments) {
+        if (!att.id.startsWith('pending-')) continue;
+        const file = (att as Attachment & { _pendingFile?: File })._pendingFile;
+        if (!file) continue;
+        const up = await uploadFileToS3({
+          file,
+          fieldName: att.fieldName || 'comment',
+          entityType: 'testresult',
+          projectId,
+          onProgress: () => {},
+        });
+        if (up.success && up.attachment) {
+          uploadedToLink.push({ ...up.attachment, entityType: 'testresult' });
+        }
+      }
 
       const response = await fetch(`/api/projects/${projectId}/testruns/${testRunId}/results`, {
         method: 'POST',
@@ -435,8 +482,15 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       const data = await response.json();
 
       if (data.data) {
+        const testResultId = data.data.id as string;
+        if (uploadedToLink.length > 0) {
+          await linkAttachments(uploadedToLink, 'testResultId', testResultId);
+        }
+
         clearResultForm();
-        fetchTestRun();
+        setResultCommentAttachments([]);
+
+        const latestRun = await fetchTestRun();
 
         if (resultForm.status === 'FAILED' && selectedTestCase) {
           // FAILED → 結果記録を閉じて新規欠陥作成ダイアログを開く
@@ -445,7 +499,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           setCreateDefectDialogOpen(true);
         } else {
           // FAILED以外 → 次のテストケースへ遷移
-          navigateToNextTestCase();
+          navigateToNextTestCase(latestRun);
         }
       } else {
         alert(data.error || '結果の保存に失敗しました');
@@ -722,14 +776,14 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setCreateDefectDialogOpen(true);
   };
 
-  const handleDefectCreated = () => {
+  const handleDefectCreated = async () => {
     setCreateDefectDialogOpen(false);
     setSelectedTestCaseForDefect(null);
     setDefectRefreshTrigger(prev => prev + 1);
-    fetchTestRun();
+    const latest = await fetchTestRun();
 
     // 欠陥作成後、次のテストケースの結果記録ダイアログを開く
-    navigateToNextTestCase();
+    navigateToNextTestCase(latest);
   };
 
   const getResultIcon = (status?: string) => {
@@ -895,6 +949,8 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           testRunPlatform={testRun.platform}
           testRunDevice={testRun.device}
           formData={resultForm}
+          commentAttachments={resultCommentAttachments}
+          onCommentAttachmentsChange={setResultCommentAttachments}
           onOpenChange={setResultDialogOpen}
           onFormChange={(data) => {
             const filteredData = Object.fromEntries(

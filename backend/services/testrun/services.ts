@@ -518,6 +518,17 @@ export class TestRunService {
                 avatar: true,
               },
             },
+            attachments: {
+              select: {
+                id: true,
+                filename: true,
+                originalName: true,
+                mimeType: true,
+                size: true,
+                fieldName: true,
+                uploadedAt: true,
+              },
+            },
           },
           orderBy: {
             executedAt: 'desc',

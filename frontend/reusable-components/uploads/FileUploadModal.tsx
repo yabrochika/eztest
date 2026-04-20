@@ -446,17 +446,31 @@ export function FileUploadModal({
                         )}
                       </div>
 
-                      {/* Pending Badge */}
+                      {/* Pending Badge（× と重ならないよう左上） */}
                       {isPending && (
-                        <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 bg-yellow-500/90 backdrop-blur-sm rounded-md">
+                        <div className="absolute top-2 left-2 z-[5] flex items-center gap-1.5 px-2 py-1 bg-yellow-500/90 backdrop-blur-sm rounded-md">
                           <Loader className="w-3 h-3 text-white animate-spin" />
-                          <span className="text-xs font-medium text-white">Pending</span>
+                          <span className="text-xs font-medium text-white">保存待ち</span>
                         </div>
                       )}
 
-                      {/* Hover Overlay with Actions */}
+                      {/* 常時表示の削除（×）— タッチ端末でも操作可能 */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick(attachment.id);
+                        }}
+                        className="absolute top-2 right-2 z-20 inline-flex items-center justify-center w-8 h-8 rounded-full border border-white/25 bg-black/60 hover:bg-red-600 text-white shadow-md transition-colors cursor-pointer"
+                        aria-label="添付を削除"
+                        title="添付を削除"
+                      >
+                        <X className="w-4 h-4" strokeWidth={2.5} />
+                      </button>
+
+                      {/* Hover: ダウンロード（アップロード済みのみ） */}
                       <div className={cn(
-                        "absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity flex items-center justify-center gap-2",
+                        "absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity flex items-center justify-center gap-2 pointer-events-none",
                         hoveredId === attachment.id ? "opacity-100" : "opacity-0"
                       )}>
                         {!isPending && (
@@ -464,19 +478,13 @@ export function FileUploadModal({
                             type="button"
                             size="sm"
                             variant="glass"
+                            className="pointer-events-auto"
                             onClick={() => handleDownload(attachment)}
-                            title="Download"
+                            title="ダウンロード"
                           >
                             <Download className="w-4 h-4" />
                           </Button>
                         )}
-                        <ButtonDestructive
-                          size="sm"
-                          onClick={() => handleDeleteClick(attachment.id)}
-                          title="Delete"
-                        >
-                          <X className="w-4 h-4" />
-                        </ButtonDestructive>
                       </div>
                     </div>
 

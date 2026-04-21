@@ -54,6 +54,7 @@ model User {
   defectComments  DefectComment[]
   defectAttachments DefectAttachment[]
   commentAttachments CommentAttachment[]
+  createdMemberGroups ProjectMemberGroup[]
 
   @@index([email])
   @@index([roleId])
@@ -136,6 +137,7 @@ model Project {
   modules     Module[]
   defects     Defect[]
   apiKeys     ApiKey[]
+  memberGroups ProjectMemberGroup[]
 
   @@index([key])
   @@index([createdById])
@@ -150,10 +152,42 @@ model ProjectMember {
 
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groups    ProjectMemberGroupMember[]
 
   @@unique([projectId, userId])
   @@index([projectId])
   @@index([userId])
+}
+
+model ProjectMemberGroup {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  members     ProjectMemberGroupMember[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@index([createdById])
+}
+
+model ProjectMemberGroupMember {
+  id              String   @id @default(cuid())
+  groupId         String
+  projectMemberId String
+  addedAt         DateTime @default(now())
+
+  group           ProjectMemberGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  projectMember   ProjectMember      @relation(fields: [projectMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, projectMemberId])
+  @@index([groupId])
+  @@index([projectMemberId])
 }
 
 // Test Management

@@ -2,15 +2,14 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { Plus, Edit, PlayCircle, Folder } from 'lucide-react';
 import { Navbar } from '@/frontend/reusable-components/layout/Navbar';
 import { Breadcrumbs } from '@/frontend/reusable-components/layout/Breadcrumbs';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
-import { ResponsiveGrid } from '@/frontend/reusable-components/layout/ResponsiveGrid';
+import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
 import { TestSuite, Project } from './types';
-import { TestSuiteTreeItem } from './subcomponents/TestSuiteTreeItem';
 import { CreateTestSuiteDialog } from './subcomponents/CreateTestSuiteDialog';
 import { DeleteTestSuiteDialog } from './subcomponents/DeleteTestSuiteDialog';
 import { EmptyTestSuiteState } from './subcomponents/EmptyTestSuiteState';
@@ -32,7 +31,6 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
   const [createTestRunDialogOpen, setCreateTestRunDialogOpen] = useState(false);
   const [selectedSuite, setSelectedSuite] = useState<TestSuite | null>(null);
   const [suiteForTestRun, setSuiteForTestRun] = useState<TestSuite | null>(null);
-  const [expandedSuites, setExpandedSuites] = useState<Set<string>>(new Set());
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
 
   const canCreateTestSuite = hasPermissionCheck('testsuites:create');
@@ -168,16 +166,6 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
     }
   };
 
-  const toggleExpanded = (suiteId: string) => {
-    const newExpanded = new Set(expandedSuites);
-    if (newExpanded.has(suiteId)) {
-      newExpanded.delete(suiteId);
-    } else {
-      newExpanded.add(suiteId);
-    }
-    setExpandedSuites(newExpanded);
-  };
-
   const handleViewSuite = (suiteId: string) => {
     router.push(`/projects/${projectId}/testsuites/${suiteId}`);
   };
@@ -192,13 +180,13 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
     setCreateTestRunDialogOpen(true);
   };
 
-  const rootSuites = testSuites.filter(s => !s.parentId);
+  const rootSuites = testSuites
+    .filter(s => !s.parentId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (loading || permissionsLoading) {
     return <Loader fullScreen text="テストスイートを読み込み中..." />;
   }
-
-  const canDeleteTestSuite = hasPermissionCheck('testsuites:delete');
 
   return (
     <>
@@ -244,24 +232,71 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
         ) : testSuites.length === 0 ? (
           <EmptyTestSuiteState onCreateClick={() => setCreateDialogOpen(true)} canCreate={canCreateTestSuite} />
         ) : (
-          <ResponsiveGrid
-            columns={{ default: 1, md: 2, lg: 2, xl: 3 }}
-            gap="md"
-          >
-            {rootSuites.map((suite) => (
-              <TestSuiteTreeItem
-                key={suite.id}
-                suite={suite}
-                isExpanded={expandedSuites.has(suite.id)}
-                onToggleExpand={toggleExpanded}
-                onView={handleViewSuite}
-                onDelete={handleDeleteClick}
-                onCreateTestRun={handleCreateTestRunClick}
-                canDelete={canDeleteTestSuite}
-                canCreateTestRun={canCreateTestRun}
-              />
-            ))}
-          </ResponsiveGrid>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10 text-xs font-semibold text-white/60">
+                  <th className="px-3 py-2 text-left">名前</th>
+                  <th className="px-3 py-2 text-left">説明</th>
+                  <th className="px-3 py-2 text-center">テストケース数</th>
+                  <th className="px-3 py-2 text-center">子スイート数</th>
+                  <th className="px-3 py-2 text-left">作成日</th>
+                  <th className="px-3 py-2 text-right"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rootSuites.map((suite) => (
+                  <tr
+                    key={suite.id}
+                    className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
+                    onClick={() => handleViewSuite(suite.id)}
+                  >
+                    <td className="px-3 py-3 font-medium text-white">
+                      {suite.name}
+                    </td>
+                    <td className="px-3 py-3 text-white/50 max-w-xs truncate">
+                      {suite.description || '—'}
+                    </td>
+                    <td className="px-3 py-3 text-center text-white/70">
+                      <span className="inline-flex items-center gap-1">
+                        <Edit className="w-3.5 h-3.5" />
+                        {suite._count.testCases}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-center text-white/70">
+                      <span className="inline-flex items-center gap-1">
+                        <Folder className="w-3.5 h-3.5" />
+                        {suite.children?.length ?? 0}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-white/50">
+                      {new Date(suite.createdAt).toLocaleDateString('ja-JP')}
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      <ActionMenu
+                        items={[
+                          {
+                            label: 'View / Edit',
+                            icon: Edit,
+                            onClick: () => handleViewSuite(suite.id),
+                          },
+                          {
+                            label: 'テストランを作成',
+                            icon: PlayCircle,
+                            onClick: () => handleCreateTestRunClick(suite),
+                            show: canCreateTestRun,
+                            buttonName: 'Test Suite List - Create Test Run',
+                          },
+                        ]}
+                        align="end"
+                        iconSize="h-4 w-4"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -303,14 +338,9 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
           testSuiteIds={[suiteForTestRun.id]}
           defaultName={suiteForTestRun.name}
           onTestRunCreated={(testRun) => {
-            setAlert({
-              type: 'success',
-              title: '成功',
-              message: `テストラン「${testRun.name}」を作成しました`,
-            });
-            setTimeout(() => setAlert(null), 5000);
             setCreateTestRunDialogOpen(false);
             setSuiteForTestRun(null);
+            router.push(`/projects/${projectId}/testruns/${testRun.id}`);
           }}
         />
       )}

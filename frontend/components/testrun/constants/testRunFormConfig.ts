@@ -26,7 +26,7 @@ export function getTestRunFormFields(): FormFieldConfig[] {
       type: 'text',
       required: true,
       placeholder: 'テストラン名を入力',
-      maxLength: 50,
+      maxLength: 255,
     },
     {
       name: 'description',

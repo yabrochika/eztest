@@ -21,6 +21,7 @@ import { UploadTestNGXMLDialog } from './subcomponents/UploadTestNGXMLDialog';
 import { TestRun, Project, TestRunFilters } from './types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
+import { includesMultiValueField } from './utils/multiValueField';
 
 interface TestRunsListProps {
   projectId: string;
@@ -117,31 +118,31 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
     // Environment filter
     if (filters.environmentFilter !== 'all') {
       filtered = filtered.filter(
-        (tr) => tr.environment === filters.environmentFilter
+        (tr) => includesMultiValueField(tr.environment, filters.environmentFilter)
       );
     }
 
     // Platform filter
     if (filters.platformFilter !== 'all') {
       filtered = filtered.filter(
-        (tr) => tr.platform === filters.platformFilter
+        (tr) => includesMultiValueField(tr.platform, filters.platformFilter)
       );
     }
 
     // Device filter
     if (filters.deviceFilter !== 'all') {
       filtered = filtered.filter(
-        (tr) => tr.device === filters.deviceFilter
+        (tr) => includesMultiValueField(tr.device, filters.deviceFilter)
       );
     }
 
     // Assigned tester filter
     if (filters.assignedToFilter !== 'all') {
       if (filters.assignedToFilter === 'unassigned') {
-        filtered = filtered.filter((tr) => !tr.assignedTo);
+        filtered = filtered.filter((tr) => !tr.assignedTo && (!tr.assignedToIds || tr.assignedToIds.length === 0));
       } else {
         filtered = filtered.filter(
-          (tr) => tr.assignedTo?.id === filters.assignedToFilter
+          (tr) => tr.assignedTo?.id === filters.assignedToFilter || tr.assignedToIds?.includes(filters.assignedToFilter)
         );
       }
     }
@@ -224,6 +225,15 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
           label: tr.assignedTo.name || tr.assignedTo.email,
         });
       }
+      tr.assignedToList?.forEach((assignedUser) => {
+        if (!seen.has(assignedUser.id)) {
+          seen.add(assignedUser.id);
+          options.push({
+            value: assignedUser.id,
+            label: assignedUser.name || assignedUser.email,
+          });
+        }
+      });
     });
     return options;
   }, [testRuns]);

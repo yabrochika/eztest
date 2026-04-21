@@ -8,6 +8,13 @@ export interface TestRun {
   environment?: string;
   platform?: string;
   device?: string;
+  assignedToIds?: string[];
+  assignedToList?: Array<{
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  }>;
   assignedTo?: {
     id: string;
     name: string;

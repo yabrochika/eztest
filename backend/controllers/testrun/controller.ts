@@ -8,6 +8,29 @@ import {
 import { ValidationException } from '@/backend/utils/exceptions';
 import { TestRunMessages } from '@/backend/constants/static_messages';
 
+function normalizeMultiSelectInput(value?: string | string[]): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    const normalizedValues = value.map((item) => item.trim()).filter(Boolean);
+    return normalizedValues.length > 0 ? normalizedValues.join(',') : undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function normalizeIdArray(value?: string[]): string[] | undefined {
+  if (!value || value.length === 0) {
+    return undefined;
+  }
+
+  const normalized = value.map((item) => item.trim()).filter(Boolean);
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 export class TestRunController {
   /**
    * Get all test runs for a project
@@ -71,9 +94,13 @@ export class TestRunController {
     }
 
     const validatedData = validationResult.data;
+    const assignedToIds = normalizeIdArray(validatedData.assignedToIds);
+    const environment = normalizeMultiSelectInput(validatedData.environment);
+    const platform = normalizeMultiSelectInput(validatedData.platform);
+    const device = normalizeMultiSelectInput(validatedData.device);
 
     // Sanitize assignedToId - convert empty string or 'none' to undefined
-    let assignedToId = validatedData.assignedToId;
+    let assignedToId = validatedData.assignedToId || assignedToIds?.[0];
     if (!assignedToId || assignedToId === 'none' || assignedToId === '') {
       assignedToId = undefined;
     }
@@ -84,12 +111,14 @@ export class TestRunController {
       description: validatedData.description,
       executionType: validatedData.executionType,
       assignedToId,
-      environment: validatedData.environment,
+      assignedToIds,
+      environment,
       version: validatedData.version,
-      platform: validatedData.platform,
-      device: validatedData.device,
+      platform,
+      device,
       status: validatedData.status,
       testCaseIds: validatedData.testCaseIds,
+      testSuiteIds: validatedData.testSuiteIds,
       createdById: userId,
     });
 
@@ -112,8 +141,19 @@ export class TestRunController {
     }
 
     const validatedData = validationResult.data;
+    const assignedToIds = normalizeIdArray(validatedData.assignedToIds);
+    const environment = normalizeMultiSelectInput(validatedData.environment);
+    const platform = normalizeMultiSelectInput(validatedData.platform);
+    const device = normalizeMultiSelectInput(validatedData.device);
 
-    const testRun = await testRunService.updateTestRun(testRunId, validatedData);
+    const testRun = await testRunService.updateTestRun(testRunId, {
+      ...validatedData,
+      assignedToId: validatedData.assignedToId || assignedToIds?.[0],
+      assignedToIds,
+      environment,
+      platform,
+      device,
+    });
 
     return { data: testRun };
   }
@@ -197,6 +237,44 @@ export class TestRunController {
     );
 
     return { data: result, statusCode: 201 };
+  }
+
+  /**
+   * テストランから特定のテストケースを除外する
+   */
+  async removeTestCaseFromTestRun(testRunId: string, testCaseId: string) {
+    if (!testCaseId) {
+      throw new ValidationException('testCaseId is required');
+    }
+
+    // テストランの存在確認（404 vs 200 を明確化するため）
+    const testRun = await testRunService.getTestRunById(testRunId);
+    if (!testRun) {
+      throw new ValidationException(TestRunMessages.TestRunNotFound);
+    }
+
+    const result = await testRunService.removeTestCaseFromTestRun(
+      testRunId,
+      testCaseId
+    );
+
+    if (!result.removed) {
+      // 既に除外済み・存在しない場合も冪等に成功扱い
+      return {
+        data: {
+          removed: false,
+          message: '対象テストケースは既にテストランに含まれていません',
+        },
+      };
+    }
+
+    return {
+      data: {
+        removed: true,
+        previousStatus: result.previousStatus,
+        message: 'テストケースをテストランから除外しました',
+      },
+    };
   }
 
   /**

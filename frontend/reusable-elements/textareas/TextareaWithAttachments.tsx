@@ -2,7 +2,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonDestructive } from '@/frontend/reusable-elements/buttons/ButtonDestructive';
-import { X, File, FileText, Image, Video, Archive, Download, Paperclip } from 'lucide-react';
+import { X, File, FileText, Image, Video, Archive, Download, Paperclip, UploadCloud } from 'lucide-react';
 import { BaseConfirmDialog } from '@/frontend/reusable-components/dialogs/BaseConfirmDialog';
 import {
   type Attachment,
@@ -67,7 +67,9 @@ function TextareaWithAttachments({
   const [attachmentToDelete, setAttachmentToDelete] = React.useState<string | null>(null);
   const [fileModalOpen, setFileModalOpen] = React.useState(false);
   const [markedForDeletion, setMarkedForDeletion] = React.useState<string[]>([]);
+  const [isDragOver, setIsDragOver] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const dragCounterRef = React.useRef(0);
 
   const fetchAttachmentUrl = React.useCallback(async (attachment: Attachment): Promise<string | null> => {
     const candidateEndpoints: string[] = [];
@@ -194,7 +196,10 @@ function TextareaWithAttachments({
     });
 
     if (result.success && result.attachment) {
-      onAttachmentsChange?.([...attachments, result.attachment]);
+      const merged: Attachment = entityType
+        ? { ...result.attachment, entityType }
+        : result.attachment;
+      onAttachmentsChange?.([...attachments, merged]);
       setUploadProgress(100);
       setTimeout(() => {
         setUploading(false);
@@ -212,41 +217,102 @@ function TextareaWithAttachments({
     }
   };
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const processFiles = async (files: File[]) => {
+    if (files.length === 0) return;
     setFileError('');
 
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      setFileError(validation.error || 'Invalid file');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
+    const errors: string[] = [];
+    const pendingToAppend: Attachment[] = [];
+    const filesToUploadImmediately: File[] = [];
+
+    for (const file of files) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        errors.push(`${file.name}: ${validation.error || 'Invalid file'}`);
+        continue;
+      }
+
+      if (!uploadOnSave && (entityId || forceShowAttachments)) {
+        filesToUploadImmediately.push(file);
+      } else {
+        pendingToAppend.push({
+          id: `pending-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          filename: file.name,
+          originalName: file.name,
+          size: file.size,
+          mimeType: file.type,
+          uploadedAt: new Date().toISOString(),
+          fieldName: fieldName,
+          ...(entityType ? { entityType } : {}),
+          // @ts-expect-error - Add file object for later upload
+          _pendingFile: file,
+        });
+      }
     }
 
-    // Upload behavior:
-    // - uploadOnSave=true: keep as pending and upload on parent form save
-    // - uploadOnSave=false: upload immediately when entityId/forceShowAttachments is available
-    if (!uploadOnSave && (entityId || forceShowAttachments)) {
-      await handleUpload(file);
-    } else {
-      // Creating new entity - store in memory, upload on save
-      const pendingAttachment: Attachment = {
-        id: `pending-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-        filename: file.name,
-        originalName: file.name,
-        size: file.size,
-        mimeType: file.type,
-        uploadedAt: new Date().toISOString(),
-        fieldName: fieldName,
-        // @ts-expect-error - Add file object for later upload
-        _pendingFile: file,
-      };
-      onAttachmentsChange?.([...attachments, pendingAttachment]);
+    if (pendingToAppend.length > 0) {
+      onAttachmentsChange?.([...attachments, ...pendingToAppend]);
     }
-    
+
+    for (const file of filesToUploadImmediately) {
+      // 直アップロードは順次実行（進捗表示のため）
+      // eslint-disable-next-line no-await-in-loop
+      await handleUpload(file);
+    }
+
+    if (errors.length > 0) {
+      setFileError(errors.join('\n'));
+    }
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    if (files.length === 0) return;
+    await processFiles(files);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDropzoneClick = () => {
+    if (uploading) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (uploading) return;
+    if (!e.dataTransfer.types.includes('Files')) return;
+    dragCounterRef.current += 1;
+    setIsDragOver(true);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (uploading) return;
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+    if (uploading) return;
+    const files = Array.from(e.dataTransfer?.files || []);
+    if (files.length === 0) return;
+    await processFiles(files);
   };
 
   const handleDownload = async (attachment: Attachment) => {
@@ -256,6 +322,15 @@ function TextareaWithAttachments({
       console.error('File access error:', error);
       setFileError('Failed to access file');
     }
+  };
+
+  /** 一覧から削除（保存待ちは確認なし、既にアップロード済みは確認後に S3/DB 削除） */
+  const handleRemoveInline = (attachmentId: string) => {
+    if (attachmentId.startsWith('pending-')) {
+      onAttachmentsChange?.(attachments.filter((a) => a.id !== attachmentId));
+      return;
+    }
+    handleDeleteClick(attachmentId);
   };
 
   const handleDeleteClick = (attachmentId: string) => {
@@ -320,18 +395,24 @@ function TextareaWithAttachments({
   };
 
   return (
-    <div className="w-full space-y-3">
-      <div className="relative overflow-visible">
+    <div className="w-full">
+      {/* テキスト入力欄 + 添付エリアを 1 つの大枠で囲む */}
+      <div
+        className={cn(
+          "w-full rounded-[10px] border overflow-hidden",
+          variant === "glass"
+            ? "bg-[#101a2b]/70 border-white/15 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+            : "border-border/40 bg-input",
+          "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40 transition-all",
+          isOverLimit && "border-red-500 focus-within:border-red-500 focus-within:ring-red-500/40"
+        )}
+      >
+        {/* コメント入力欄（外枠と一体化させるため自身のボーダーは持たない） */}
         <textarea
           data-slot="textarea"
           className={cn(
-            "placeholder:text-white/50 selection:bg-primary selection:text-primary-foreground flex min-h-24 max-h-48 w-full rounded-[10px] border px-4 py-3 text-base transition-all outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm backdrop-blur-xl resize-none overflow-y-auto custom-scrollbar",
-            variant === "glass"
-              ? "bg-[#101a2b]/70 border-white/15 text-white/90 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] rounded-[10px]"
-              : "border-border/40 bg-input",
-            "focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40",
-            "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-            isOverLimit && "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/40",
+            "placeholder:text-white/50 selection:bg-primary selection:text-primary-foreground flex min-h-20 max-h-48 w-full px-4 py-3 text-base outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm bg-transparent border-0 resize-none overflow-y-auto custom-scrollbar",
+            variant === "glass" ? "text-white/90" : "",
             className
           )}
           value={value}
@@ -339,36 +420,64 @@ function TextareaWithAttachments({
           maxLength={maxLength}
           {...props}
         />
-      </div>
-      
-      {/* Attachment Display and Button - Below textarea */}
-      {shouldShowAttachments && (
-        <div className="w-full rounded-[10px] bg-[#101a2b]/70 border border-white/20 text-sm shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-2">
-            <span className="text-white/60">{attachments.length} 件のファイル</span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="px-2 py-1 rounded-md bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-blue-400 hover:text-blue-300 text-xs"
-              >
-                ファイルを追加
-              </button>
+
+        {/* 添付ファイル領域（同一フレーム内の下段） */}
+        {shouldShowAttachments && (
+          <div className="border-t border-white/10 bg-black/15 px-3 py-2 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-white/70">
+                <Paperclip className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-medium uppercase tracking-wide">
+                  画像・動画・ファイル
+                </span>
+                <span className="text-[11px] text-white/40">
+                  （{attachments.length} 件）
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => setFileModalOpen(true)}
                 disabled={uploading}
-                className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-white/60 hover:text-white/80"
+                className="text-[11px] text-white/50 hover:text-white/80 underline-offset-2 hover:underline disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 title="ファイルを管理"
               >
-                <Paperclip className="w-4 h-4" />
+                一覧を管理
               </button>
             </div>
-          </div>
-          {/* 添付ファイル一覧 */}
-          {attachments.length > 0 && (
-            <div className="px-3 pb-2 space-y-1">
+
+            {/* コンパクトなドラッグ＆ドロップゾーン（1 行） */}
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={handleDropzoneClick}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleDropzoneClick();
+                }
+              }}
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={cn(
+                "w-full rounded-md border border-dashed transition-colors px-3 py-2 flex items-center justify-center gap-2 cursor-pointer text-xs",
+                isDragOver
+                  ? "border-blue-400/70 bg-blue-500/10 text-blue-200"
+                  : "border-white/15 bg-white/[0.03] hover:bg-white/[0.06] text-white/60 hover:text-white/80",
+                uploading && "opacity-60 cursor-not-allowed"
+              )}
+            >
+              <UploadCloud className="w-4 h-4 flex-shrink-0" />
+              <span>
+                <span className="text-white/85 font-medium">ドラッグ＆ドロップ</span>
+                <span className="text-white/50">、またはクリックして画像・動画・ファイルを追加</span>
+              </span>
+            </div>
+
+            {/* 添付ファイル一覧（同一フレーム内、ドロップゾーンの下） */}
+            {attachments.length > 0 && (
+              <div className="space-y-1">
               {attachments.map((att) => (
                 <div key={att.id} className="flex items-center gap-2 px-2 py-1 rounded bg-white/5 text-xs">
                   {getFileIcon(att.mimeType, "w-3 h-3 text-white/50 flex-shrink-0")}
@@ -377,6 +486,15 @@ function TextareaWithAttachments({
                   {att.id.startsWith('pending-') && (
                     <span className="text-yellow-400 flex-shrink-0">保存待ち</span>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveInline(att.id)}
+                    className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full border border-white/15 bg-white/5 hover:bg-red-500/25 hover:border-red-400/40 text-white/60 hover:text-red-300 transition-colors cursor-pointer"
+                    aria-label="添付を削除"
+                    title="添付を削除"
+                  >
+                    <X className="w-4 h-4" strokeWidth={2.5} />
+                  </button>
                 </div>
               ))}
               {attachments.some((att) => att.mimeType.startsWith('image/')) && (
@@ -384,7 +502,7 @@ function TextareaWithAttachments({
                   {attachments
                     .filter((att) => att.mimeType.startsWith('image/'))
                     .map((att) => (
-                      <div key={`preview-${att.id}`} className="w-full aspect-square rounded overflow-hidden border border-white/15 bg-white/5">
+                      <div key={`preview-${att.id}`} className="relative w-full aspect-square rounded overflow-hidden border border-white/15 bg-white/5">
                         {imageUrls[att.id] ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -397,15 +515,25 @@ function TextareaWithAttachments({
                             読み込み中
                           </div>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveInline(att.id)}
+                          className="absolute top-1.5 right-1.5 z-10 inline-flex items-center justify-center w-7 h-7 rounded-full border border-white/20 bg-black/65 hover:bg-red-600 text-white shadow-md hover:scale-105 transition-transform cursor-pointer"
+                          aria-label="添付を削除"
+                          title="添付を削除"
+                        >
+                          <X className="w-4 h-4" strokeWidth={2.5} />
+                        </button>
                       </div>
                     ))}
                 </div>
               )}
-            </div>
-          )}
-        </div>
-      )}
-      
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {showCharCount && maxLength && (
         <div className={cn(
           "text-xs mt-1 text-right",
@@ -421,6 +549,7 @@ function TextareaWithAttachments({
           <input
             ref={fileInputRef}
             type="file"
+            multiple
             onChange={handleFileSelect}
             disabled={uploading}
             className="hidden"
@@ -566,10 +695,10 @@ function TextareaWithAttachments({
 
       {/* Delete Attachment Confirmation Dialog */}
       <BaseConfirmDialog
-        title="Delete Attachment"
-        description="Are you sure you want to delete this attachment? This action cannot be undone."
-        submitLabel="Delete"
-        cancelLabel="Cancel"
+        title="添付を削除しますか？"
+        description="アップロード済みのファイルはストレージから削除されます。この操作は取り消せません。"
+        submitLabel="削除する"
+        cancelLabel="キャンセル"
         triggerOpen={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
         onSubmit={handleDeleteConfirm}

@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Download, FileText, Image as ImageIcon, File as FileIcon, X } from 'lucide-react';
+import { Download, FileText, Image as ImageIcon, File as FileIcon, Video as VideoIcon, X } from 'lucide-react';
 import { type Attachment, downloadFile, getFileIconType, formatFileSize } from '@/lib/s3';
 import { cn } from '@/lib/utils';
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonDestructive } from '@/frontend/reusable-elements/buttons/ButtonDestructive';
 import { isAttachmentsEnabledClient } from '@/lib/attachment-config';
+import { MediaPreviewModal } from '@/frontend/reusable-components/dialogs/MediaPreviewModal';
 
 interface AttachmentDisplayProps {
   attachments: Attachment[];
@@ -31,6 +32,7 @@ export function AttachmentDisplay({ attachments, showPreview = true, onDelete, s
   const [previewPosition, setPreviewPosition] = useState<{ top: number; left: number; showAbove?: boolean } | null>(null);
   const [mounted, setMounted] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [previewMediaId, setPreviewMediaId] = useState<string | null>(null);
   const thumbnailRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const imageUrlsRef = useRef<Record<string, string>>({});
@@ -47,12 +49,15 @@ export function AttachmentDisplay({ attachments, showPreview = true, onDelete, s
     };
   }, []);
 
-  // Fetch image URLs for attachments
+  // Fetch image / video URLs for attachments
   useEffect(() => {
     const fetchImageUrls = async () => {
       const urls: Record<string, string> = {};
       for (const attachment of attachments) {
-        if (attachment.mimeType.startsWith('image/')) {
+        if (
+          attachment.mimeType.startsWith('image/') ||
+          attachment.mimeType.startsWith('video/')
+        ) {
           try {
             // Use different endpoint based on entity type
             let endpoint: string;
@@ -107,6 +112,8 @@ export function AttachmentDisplay({ attachments, showPreview = true, onDelete, s
     switch (type) {
       case 'image':
         return <ImageIcon className={className || "w-6 h-6"} />;
+      case 'video':
+        return <VideoIcon className={className || "w-6 h-6"} />;
       case 'pdf':
         return <FileText className={className || "w-6 h-6"} />;
       default:
@@ -120,6 +127,46 @@ export function AttachmentDisplay({ attachments, showPreview = true, onDelete, s
     } catch (error) {
       console.error('Download error:', error);
     }
+  };
+
+  /**
+   * サムネイルクリック時のハンドラ：
+   * - 画像/動画 → モーダルプレビュー
+   * - それ以外 → 既存のダウンロード/インライン表示
+   */
+  const handleThumbnailClick = async (attachment: Attachment) => {
+    const isMedia =
+      attachment.mimeType.startsWith('image/') ||
+      attachment.mimeType.startsWith('video/');
+
+    if (!isMedia) {
+      await handleDownload(attachment);
+      return;
+    }
+
+    // 動画は事前 URL 取得していない可能性があるため、未取得時はここで取得
+    if (!imageUrls[attachment.id]) {
+      let endpoint: string;
+      if (attachment.entityType === 'defect') {
+        endpoint = `/api/defect-attachments/${attachment.id}`;
+      } else if (attachment.entityType === 'comment') {
+        endpoint = `/api/comment-attachments/${attachment.id}`;
+      } else {
+        endpoint = `/api/attachments/${attachment.id}`;
+      }
+      try {
+        const response = await fetch(endpoint);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.data?.url) {
+            setImageUrls((prev) => ({ ...prev, [attachment.id]: result.data.url }));
+          }
+        }
+      } catch (error) {
+        console.error('[AttachmentDisplay] Failed to load media URL for preview:', error);
+      }
+    }
+    setPreviewMediaId(attachment.id);
   };
 
   const handleDelete = (attachmentId: string) => {
@@ -232,8 +279,12 @@ export function AttachmentDisplay({ attachments, showPreview = true, onDelete, s
             <div
               ref={(el) => { thumbnailRefs.current[attachment.id] = el; }} 
               className="relative w-10 h-10 rounded-md overflow-hidden border border-white/15 bg-white/5 hover:border-primary/50 transition-all cursor-pointer shadow-sm"
-              onClick={() => handleDownload(attachment)}
-              title={`Click to download ${attachment.originalName || attachment.filename}`}
+              onClick={() => handleThumbnailClick(attachment)}
+              title={
+                attachment.mimeType.startsWith('image/') || attachment.mimeType.startsWith('video/')
+                  ? `${attachment.originalName || attachment.filename} を拡大表示`
+                  : `${attachment.originalName || attachment.filename} をダウンロード`
+              }
             >
               {isImage && imageUrls[attachment.id] ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -267,6 +318,8 @@ export function AttachmentDisplay({ attachments, showPreview = true, onDelete, s
         if (!attachment) return null;
         
         const isImage = attachment.mimeType.startsWith('image/');
+        const isVideo = attachment.mimeType.startsWith('video/');
+        const previewUrl = imageUrls[attachment.id];
         
         return createPortal(
           <div 
@@ -282,12 +335,12 @@ export function AttachmentDisplay({ attachments, showPreview = true, onDelete, s
             onMouseEnter={handleMouseEnterPreview}
             onMouseLeave={handleMouseLeavePreview}
           >
-                {/* Preview Image/Icon */}
+                {/* Preview Image/Video/Icon */}
                 <div className="relative h-64 bg-black/20 flex items-center justify-center">
-                  {isImage && imageUrls[attachment.id] ? (
+                  {isImage && previewUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={imageUrls[attachment.id]}
+                      src={previewUrl}
                       alt={attachment.originalName || attachment.filename}
                       className="w-full h-full object-contain"
                       onError={(e) => {
@@ -299,10 +352,21 @@ export function AttachmentDisplay({ attachments, showPreview = true, onDelete, s
                         }
                       }}
                     />
+                  ) : isVideo && previewUrl ? (
+                    <video
+                      src={previewUrl}
+                      className="w-full h-full object-contain bg-black"
+                      controls
+                      preload="metadata"
+                      onClick={(e) => e.stopPropagation()}
+                      onError={() => {
+                        console.error('Failed to load video preview');
+                      }}
+                    />
                   ) : (
                     <div className="text-white/60 flex items-center justify-center flex-col gap-2">
                       {getFileIcon(attachment.mimeType, "w-24 h-24")}
-                      {isImage && !imageUrls[attachment.id] && (
+                      {(isImage || isVideo) && !previewUrl && (
                         <p className="text-xs text-white/50">Loading preview...</p>
                       )}
                     </div>
@@ -392,6 +456,21 @@ export function AttachmentDisplay({ attachments, showPreview = true, onDelete, s
             </div>
           </div>,
           document.body
+        );
+      })()}
+
+      {/* Media Preview Modal（画像・動画） */}
+      {(() => {
+        const att = previewMediaId ? attachments.find(a => a.id === previewMediaId) : null;
+        if (!att) return null;
+        return (
+          <MediaPreviewModal
+            open={!!previewMediaId}
+            onClose={() => setPreviewMediaId(null)}
+            src={imageUrls[att.id] || null}
+            mimeType={att.mimeType}
+            originalName={att.originalName || att.filename}
+          />
         );
       })()}
     </div>

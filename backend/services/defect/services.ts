@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { s3Client, getS3Bucket, isS3Configured } from '@/lib/s3-client';
+import { s3Client, getS3Bucket, isS3Configured, isUploadLocalRelativePath } from '@/lib/s3-client';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 interface CreateDefectInput {
@@ -890,10 +890,11 @@ export class DefectService {
     // Determine if file should be previewed or downloaded
     const isPreviewable =
       attachment.mimeType.startsWith('image/') ||
+      attachment.mimeType.startsWith('video/') ||
       attachment.mimeType === 'application/pdf';
 
     let signedUrl: string;
-    if (isS3Configured()) {
+    if (isS3Configured() && !isUploadLocalRelativePath(attachment.path)) {
       const bucket = getS3Bucket();
       const { GetObjectCommand } = await import('@aws-sdk/client-s3');
       const command = new GetObjectCommand({
@@ -929,7 +930,7 @@ export class DefectService {
     }
 
     if (step === 'prepare') {
-      if (isS3Configured()) {
+      if (isS3Configured() && !isUploadLocalRelativePath(attachment.path)) {
         const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
         const command = new DeleteObjectCommand({
           Bucket: getS3Bucket(),

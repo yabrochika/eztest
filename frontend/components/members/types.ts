@@ -22,21 +22,6 @@ export interface Project {
   key: string;
 }
 
-export interface ProjectMemberGroup {
-  id: string;
-  name: string;
-  createdAt: string;
-  createdBy: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  members: Array<{
-    id: string;
-    projectMember: ProjectMember;
-  }>;
-}
-
 export interface AddMemberFormData {
   email: string;
 }

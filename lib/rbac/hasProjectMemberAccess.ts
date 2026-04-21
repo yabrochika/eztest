@@ -58,14 +58,8 @@ export function hasProjectMemberAccess(
       (rp) => rp.permission.name
     ) || [];
     const hasPermission = userPermissions.includes(permissionName);
-    // Backward-compatible fallback: older seeded PROJECT_MANAGER roles may miss
-    // projects:manage_members even though the UI/feature model allows it.
-    const hasLegacyProjectManagerMemberAccess =
-      user.role.name === 'PROJECT_MANAGER' &&
-      module === 'projects' &&
-      action === 'manage_members';
 
-    if (!hasPermission && !hasLegacyProjectManagerMemberAccess) {
+    if (!hasPermission) {
       return NextResponse.json(
         { success: false, message: 'Forbidden: Insufficient permissions' },
         { status: 403 }

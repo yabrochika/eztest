@@ -31,6 +31,8 @@ interface TestCasesListCardProps {
   onCreateDefect?: (testCaseId: string) => void;
   /** テストケースをテストランから除外する */
   onExcludeTestCase?: (testCase: TestCase, currentStatus: string) => void;
+  /** 実行済み結果の詳細（コメント・添付）を表示する */
+  onViewResult?: (result: TestResult) => void;
   forceShowDefectActions?: boolean;
   getResultIcon: (status?: string) => React.JSX.Element;
 }
@@ -43,6 +45,8 @@ interface ResultRow {
   duration?: number;
   executedBy?: { name: string; email?: string; avatar?: string | null };
   executedAt?: string;
+  /** 元の TestResult（ビュー表示用）。コメントや添付を参照する。 */
+  result: TestResult;
 }
 
 export function TestCasesListCard({
@@ -56,6 +60,7 @@ export function TestCasesListCard({
   onExecuteTestCase,
   onCreateDefect,
   onExcludeTestCase,
+  onViewResult,
   forceShowDefectActions = false,
   getResultIcon,
 }: TestCasesListCardProps) {
@@ -328,7 +333,20 @@ export function TestCasesListCard({
       duration: result.duration,
       executedBy: result.executedBy,
       executedAt: result.executedAt,
+      result,
     }));
+
+  /**
+   * 実行済みテストケース（コメント/添付ファイルが記録され得る行）かを判定する。
+   * NOT_STARTED や、コメントが無い空の SKIPPED プレースホルダーは未実行として扱う。
+   */
+  const isExecutedRow = (row: ResultRow): boolean => {
+    if (!row.status || row.status === 'NOT_STARTED') return false;
+    if (row.status === 'SKIPPED' && !row.comment && !(row.result.attachments?.length)) {
+      return false;
+    }
+    return true;
+  };
 
   /** モジュール名の末尾の数字を取得（並び替え用）。なければ no-module は末尾にするため Infinity、数字なしは 0 */
   const getModuleSortKey = (row: ResultRow): number => {
@@ -421,7 +439,15 @@ export function TestCasesListCard({
           grouped={!isInProgress}
           groupConfig={groupConfig}
           defaultExpanded={true}
-          onRowClick={(row) => router.push(`/projects/${projectId}/testcases/${row.testCase.id}`)}
+          onRowClick={(row) => {
+            // 実行済み行はコメント・添付ファイルを読み取り専用で表示。
+            // 未実行（NOT_STARTED 等）の行はこれまで通りテストケース詳細ページへ遷移する。
+            if (onViewResult && isExecutedRow(row)) {
+              onViewResult(row.result);
+              return;
+            }
+            router.push(`/projects/${projectId}/testcases/${row.testCase.id}`);
+          }}
           gridTemplateColumns="70px 1fr 100px 90px 120px 70px 140px 175px"
           emptyMessage="テストケースはありません"
         />

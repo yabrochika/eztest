@@ -7,6 +7,7 @@ import { TestRunHeader } from './subcomponents/TestRunHeader';
 import { TestRunStatsCards } from './subcomponents/TestRunStatsCards';
 import { TestCasesListCard } from './subcomponents/TestCasesListCard';
 import { RecordResultDialog } from './subcomponents/RecordResultDialog';
+import { ViewResultDialog } from './subcomponents/ViewResultDialog';
 import { AddTestCasesDialog } from '@/frontend/components/common/dialogs/AddTestCasesDialog';
 import { AddTestSuitesDialog } from './subcomponents/AddTestSuitesDialog';
 import { CreateDefectDialog } from '@/frontend/components/defect/subcomponents/CreateDefectDialog';
@@ -81,6 +82,9 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [excludeLoading, setExcludeLoading] = useState(false);
   /** テスト結果コメントの添付（保存時に TestResult に紐づけ） */
   const [resultCommentAttachments, setResultCommentAttachments] = useState<Attachment[]>([]);
+  /** 実行済みテストケースの結果（コメント・添付）を読み取り専用で表示するダイアログ */
+  const [viewResultDialogOpen, setViewResultDialogOpen] = useState(false);
+  const [viewingResult, setViewingResult] = useState<TestResult | null>(null);
 
   const [resultForm, setResultForm, clearResultForm] = useFormPersistence<ResultFormData>(
     `testrun-result-${testRunId}`,
@@ -832,6 +836,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setShortcutEpicPickerOpen(true);
   };
 
+  const handleViewResult = (result: TestResult) => {
+    setViewingResult(result);
+    setViewResultDialogOpen(true);
+  };
+
   const handleExcludeRequest = (testCase: TestCase, currentStatus: string) => {
     setExcludeTarget({
       testCaseId: testCase.id,
@@ -1024,8 +1033,18 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           onExecuteTestCase={handleOpenResultDialog}
           onCreateDefect={handleCreateDefect}
           onExcludeTestCase={handleExcludeRequest}
+          onViewResult={handleViewResult}
           forceShowDefectActions={showAutomationDefectActions}
           getResultIcon={getResultIcon}
+        />
+
+        <ViewResultDialog
+          open={viewResultDialogOpen}
+          onOpenChange={(open) => {
+            setViewResultDialogOpen(open);
+            if (!open) setViewingResult(null);
+          }}
+          result={viewingResult}
         />
 
         <RecordResultDialog

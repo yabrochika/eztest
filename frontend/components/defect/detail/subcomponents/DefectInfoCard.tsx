@@ -10,37 +10,11 @@ import { DateInfoSection } from '@/frontend/reusable-components/data/DateInfoSec
 import { Defect } from '../types';
 import { ShortcutEpicPickerDialog } from './ShortcutEpicPickerDialog';
 import { ShortcutStoryPickerDialog } from './ShortcutStoryPickerDialog';
+import { extractEpicId, extractEpicIdFromString } from './shortcutEpicDetect';
 
 interface DefectInfoCardProps {
   defect: Defect;
   onChanged?: () => void;
-}
-
-// Extract an epic id from a string.
-// Accepts both explicit `epic-XXX` tokens and the common test-suite naming
-// convention where the epic id is a leading number followed by `_` or `-`
-// (e.g. "3569_march-cp-chore" -> 3569).
-function extractEpicIdFromString(s: string | null | undefined): number | null {
-  if (!s) return null;
-  const explicit = /epic-(\d+)/i.exec(s);
-  if (explicit) {
-    const id = parseInt(explicit[1], 10);
-    if (Number.isFinite(id)) return id;
-  }
-  const leading = /^\s*(\d{2,})[_\-]/.exec(s);
-  if (leading) {
-    const id = parseInt(leading[1], 10);
-    if (Number.isFinite(id)) return id;
-  }
-  return null;
-}
-
-function extractEpicId(...sources: Array<string | null | undefined>): number | null {
-  for (const s of sources) {
-    const id = extractEpicIdFromString(s);
-    if (id !== null) return id;
-  }
-  return null;
 }
 
 export function DefectInfoCard({ defect, onChanged }: DefectInfoCardProps) {

@@ -186,6 +186,7 @@ export interface ShortcutStorySummary {
   app_url: string;
   workflow_state_id: number;
   epic_id?: number | null;
+  parent_story_id?: number | null;
   archived?: boolean;
   completed?: boolean;
 }

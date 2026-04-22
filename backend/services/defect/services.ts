@@ -1238,14 +1238,19 @@ export const shortcutService = {
     const config = getShortcutConfig();
     if (!config) throw new Error('Shortcut integration is not configured');
     const stories = await listStoriesForEpic(config, epicId);
-    return stories.map((s) => ({
-      id: s.id,
-      name: s.name,
-      story_type: s.story_type,
-      app_url: s.app_url,
-      archived: !!s.archived,
-      completed: !!s.completed,
-    }));
+    // Only return top-level stories. Sub-tasks (stories with a parent_story_id)
+    // are not valid as parents for a new Defect sub-task, and previously
+    // imported Defects would otherwise pollute the picker.
+    return stories
+      .filter((s) => !s.parent_story_id)
+      .map((s) => ({
+        id: s.id,
+        name: s.name,
+        story_type: s.story_type,
+        app_url: s.app_url,
+        archived: !!s.archived,
+        completed: !!s.completed,
+      }));
   },
 
   async setDefectEpic(defectId: string, epicId: number | null) {

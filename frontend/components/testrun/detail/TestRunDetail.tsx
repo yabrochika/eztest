@@ -10,6 +10,7 @@ import { RecordResultDialog } from './subcomponents/RecordResultDialog';
 import { AddTestCasesDialog } from '@/frontend/components/common/dialogs/AddTestCasesDialog';
 import { AddTestSuitesDialog } from './subcomponents/AddTestSuitesDialog';
 import { CreateDefectDialog } from '@/frontend/components/defect/subcomponents/CreateDefectDialog';
+import { CreateShortcutStoryFromTestCaseDialog } from '@/frontend/components/defect/detail/subcomponents/CreateShortcutStoryFromTestCaseDialog';
 import { SendTestRunReportDialog } from './subcomponents/SendTestRunReportDialog';
 import {
   CheckCircle,
@@ -41,6 +42,8 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [addSuitesDialogOpen, setAddSuitesDialogOpen] = useState(false);
   const [createDefectDialogOpen, setCreateDefectDialogOpen] = useState(false);
   const [selectedTestCaseForDefect, setSelectedTestCaseForDefect] = useState<string | null>(null);
+  const [createStoryDialogOpen, setCreateStoryDialogOpen] = useState(false);
+  const [selectedTestCaseForStory, setSelectedTestCaseForStory] = useState<TestCase | null>(null);
   const [selectedTestCase, setSelectedTestCase] = useState<{
     testCaseId: string;
     testCaseName: string;
@@ -783,6 +786,24 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setCreateDefectDialogOpen(true);
   };
 
+  const handleCreateStory = (testCaseId: string) => {
+    const row = testRun?.results.find((r) => r.testCase.id === testCaseId);
+    const tc =
+      row?.testCase ??
+      testRun?.testCases?.find((t) => t.id === testCaseId) ??
+      null;
+    if (!tc) {
+      setFloatingAlert({
+        type: 'error',
+        title: 'テストケースが見つかりません',
+        message: '画面を再読み込みしてから再試行してください',
+      });
+      return;
+    }
+    setSelectedTestCaseForStory(tc);
+    setCreateStoryDialogOpen(true);
+  };
+
   const handleExcludeRequest = (testCase: TestCase, currentStatus: string) => {
     setExcludeTarget({
       testCaseId: testCase.id,
@@ -974,6 +995,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           }}
           onExecuteTestCase={handleOpenResultDialog}
           onCreateDefect={handleCreateDefect}
+          onCreateStory={handleCreateStory}
           onExcludeTestCase={handleExcludeRequest}
           forceShowDefectActions={showAutomationDefectActions}
           getResultIcon={getResultIcon}
@@ -1070,6 +1092,30 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             testRunEnvironment={testRun.environment}
             testRunPlatform={testRun.platform}
             testRunDevice={testRun.device}
+          />
+        )}
+
+        {selectedTestCaseForStory && testRun.project?.id && (
+          <CreateShortcutStoryFromTestCaseDialog
+            projectId={testRun.project.id}
+            testCase={selectedTestCaseForStory}
+            extraEpicHints={[testRun.name]}
+            open={createStoryDialogOpen}
+            onOpenChange={(o) => {
+              setCreateStoryDialogOpen(o);
+              if (!o) setSelectedTestCaseForStory(null);
+            }}
+            onCreated={(result) => {
+              setFloatingAlert({
+                type: 'success',
+                title: 'Shortcut Story を作成しました',
+                message: `Story #${result.shortcutStoryId} を Sub-task として登録しました`,
+              });
+            }}
+            onRequestCreateDefect={() => {
+              setSelectedTestCaseForDefect(selectedTestCaseForStory.id);
+              setCreateDefectDialogOpen(true);
+            }}
           />
         )}
 

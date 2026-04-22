@@ -6,7 +6,7 @@ import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSeco
 import { formatDateTime } from '@/lib/date-utils';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { GroupedDataTable, type ColumnDef, type GroupConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
-import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2 } from 'lucide-react';
+import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2, Link2 } from 'lucide-react';
 import { TestResult, TestCase } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
@@ -29,6 +29,8 @@ interface TestCasesListCardProps {
   onAddTestSuites: () => void;
   onExecuteTestCase: (testCase: TestCase) => void;
   onCreateDefect?: (testCaseId: string) => void;
+  /** Shortcut Story の Sub-task を作成するフローを開く */
+  onCreateStory?: (testCaseId: string) => void;
   /** テストケースをテストランから除外する */
   onExcludeTestCase?: (testCase: TestCase, currentStatus: string) => void;
   forceShowDefectActions?: boolean;
@@ -55,6 +57,7 @@ export function TestCasesListCard({
   onAddTestSuites,
   onExecuteTestCase,
   onCreateDefect,
+  onCreateStory,
   onExcludeTestCase,
   forceShowDefectActions = false,
   getResultIcon,
@@ -276,6 +279,17 @@ export function TestCasesListCard({
                       <ListChecks className="w-4 h-4 mr-2" />
                       欠陥を選択
                     </DropdownMenuItem>
+                    {onCreateStory && (
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCreateStory(row.testCase.id);
+                        }}
+                      >
+                        <Link2 className="w-4 h-4 mr-2" />
+                        ストーリーを作成
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}

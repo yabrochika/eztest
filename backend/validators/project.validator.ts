@@ -45,6 +45,21 @@ export const addProjectMemberSchema = z
   });
 
 /**
+ * Create Project Member Group Schema
+ */
+export const createProjectMemberGroupSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Group name is required')
+    .max(100, 'Group name must not exceed 100 characters')
+    .trim(),
+  memberIds: z
+    .array(z.string().min(1, 'Invalid member ID'))
+    .min(1, 'At least one member is required')
+    .max(100, 'A group can contain up to 100 members'),
+});
+
+/**
  * Project Query Parameters Schema
  */
 export const projectQuerySchema = z.object({
@@ -60,4 +75,5 @@ export const projectQuerySchema = z.object({
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type AddProjectMemberInput = z.infer<typeof addProjectMemberSchema>;
+export type CreateProjectMemberGroupInput = z.infer<typeof createProjectMemberGroupSchema>;
 export type ProjectQueryParams = z.infer<typeof projectQuerySchema>;

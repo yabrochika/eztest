@@ -3,7 +3,7 @@ import { emailService } from '@/backend/services/email/services';
 import { CustomRequest } from '@/backend/utils/interceptor';
 import { BadRequestException, ConflictException, NotFoundException, InternalServerException, ValidationException } from '@/backend/utils/exceptions';
 import { ProjectMessages, ProjectMemberMessages } from '@/backend/constants/static_messages';
-import { createProjectSchema, updateProjectSchema, addProjectMemberSchema } from '@/backend/validators';
+import { createProjectSchema, updateProjectSchema, addProjectMemberSchema, createProjectMemberGroupSchema } from '@/backend/validators';
 
 export class ProjectController {
   /**
@@ -136,6 +136,15 @@ export class ProjectController {
   }
 
   /**
+   * GET /api/projects/[id]/member-groups - Get member groups of a project
+   * Access already checked by route wrapper
+   */
+  async getProjectMemberGroups(request: CustomRequest, projectId: string) {
+    const groups = await projectService.getProjectMemberGroups(projectId);
+    return { data: groups };
+  }
+
+  /**
    * POST /api/projects/[id]/members - Add member to project
    * Permission already checked by route wrapper
    */
@@ -187,6 +196,41 @@ export class ProjectController {
       }
 
       throw new InternalServerException(ProjectMemberMessages.FailedToAddMember);
+    }
+  }
+
+  /**
+   * POST /api/projects/[id]/member-groups - Create member group in project
+   * Permission already checked by route wrapper
+   */
+  async createProjectMemberGroup(request: CustomRequest, projectId: string) {
+    const body = await request.json();
+
+    const validationResult = createProjectMemberGroupSchema.safeParse(body);
+    if (!validationResult.success) {
+      throw new ValidationException(
+        'Validation failed',
+        validationResult.error.issues
+      );
+    }
+
+    const { name, memberIds } = validationResult.data;
+
+    try {
+      const group = await projectService.createProjectMemberGroup(projectId, {
+        name,
+        memberIds,
+        createdById: request.userInfo.id,
+      });
+      return { data: group, statusCode: 201 };
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Group name already exists') {
+        throw new ConflictException('A group with this name already exists in this project.');
+      }
+      if (error instanceof Error && error.message === 'Some members do not belong to this project') {
+        throw new BadRequestException('Some selected members are invalid for this project.');
+      }
+      throw new InternalServerException('Failed to create member group.');
     }
   }
 

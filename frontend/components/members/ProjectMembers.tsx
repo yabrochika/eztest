@@ -3,17 +3,19 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Plus, Users } from 'lucide-react';
+import { Plus, Users, UsersRound } from 'lucide-react';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
 import { Navbar } from '@/frontend/reusable-components/layout/Navbar';
 import { Breadcrumbs } from '@/frontend/reusable-components/layout/Breadcrumbs';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
 import { NotFoundState } from '@/frontend/reusable-components/errors/NotFoundState';
-import { Project, ProjectMember } from './types';
+import { Project, ProjectMember, ProjectMemberGroup } from './types';
 import { MembersCard } from './subcomponents/MembersCard';
 import { CreateAddMemberDialog } from './subcomponents/AddMemberDialog';
 import { RemoveMemberDialog } from './subcomponents/RemoveMemberDialog';
+import { MemberGroupsCard } from './subcomponents/MemberGroupsCard';
+import { CreateMemberGroupDialog } from './subcomponents/CreateMemberGroupDialog';
 
 interface ProjectMembersProps {
   projectId: string;
@@ -24,8 +26,10 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
   const { data: session } = useSession();
   const [project, setProject] = useState<Project | null>(null);
   const [members, setMembers] = useState<ProjectMember[]>([]);
+  const [groups, setGroups] = useState<ProjectMemberGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<{ id: string; name: string } | null>(null);
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
@@ -37,6 +41,14 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
     const actions = [];
     
     if (isAdminOrManager) {
+      actions.push({
+        type: 'action' as const,
+        label: 'グループを作成',
+        icon: UsersRound,
+        onClick: () => setCreateGroupDialogOpen(true),
+        variant: 'secondary' as const,
+        buttonName: 'Project Members - Create Group',
+      });
       actions.push({
         type: 'action' as const,
         label: 'メンバーを追加',
@@ -68,9 +80,10 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
 
   const fetchProjectAndMembers = async () => {
     try {
-      const [projectRes, membersRes] = await Promise.all([
+      const [projectRes, membersRes, groupsRes] = await Promise.all([
         fetch(`/api/projects/${projectId}`),
         fetch(`/api/projects/${projectId}/members`),
+        fetch(`/api/projects/${projectId}/member-groups`),
       ]);
 
       if (projectRes.ok) {
@@ -91,6 +104,11 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
       if (membersRes.ok) {
         const membersData = await membersRes.json();
         setMembers(membersData.data || []);
+      }
+
+      if (groupsRes.ok) {
+        const groupsData = await groupsRes.json();
+        setGroups(groupsData.data || []);
       }
     } catch {
       // Error handling
@@ -115,6 +133,16 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
   const handleRemoveMember = (memberId: string, memberName: string) => {
     setMemberToDelete({ id: memberId, name: memberName });
     setDeleteDialogOpen(true);
+  };
+
+  const handleGroupCreated = (group: ProjectMemberGroup) => {
+    setGroups((prev) => [group, ...prev]);
+    setCreateGroupDialogOpen(false);
+    setAlert({
+      type: 'success',
+      title: 'グループを作成しました',
+      message: `${group.name} を作成しました。`,
+    });
   };
 
   const confirmRemoveMember = async () => {
@@ -204,6 +232,8 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
             isAdminOrManager={isAdminOrManager}
             onRemoveMember={handleRemoveMember}
           />
+
+          <MemberGroupsCard groups={groups} />
         </div>
       </div>
 
@@ -212,6 +242,14 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
         triggerOpen={addDialogOpen}
         onOpenChange={setAddDialogOpen}
         onMemberAdded={handleMemberAdded}
+      />
+
+      <CreateMemberGroupDialog
+        projectId={projectId}
+        members={members}
+        triggerOpen={createGroupDialogOpen}
+        onOpenChange={setCreateGroupDialogOpen}
+        onGroupCreated={handleGroupCreated}
       />
 
       <RemoveMemberDialog

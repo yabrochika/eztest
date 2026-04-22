@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from 'react';
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/frontend/reusable-elements/avatars/Avatar';
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
@@ -68,9 +69,47 @@ export function TestCasesListCard({
   const { options: priorityOptions, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptions, loading: loadingStatus } = useDropdownOptions('TestResult', 'status');
   const { hasPermission: hasPermissionCheck } = usePermissions();
-  
+
   // Check if user can create defects
   const canCreateDefect = hasPermissionCheck('defects:create');
+
+  // 並び替え対象の列キーと方向（null: デフォルト順）
+  type SortKey = 'tcId' | 'testCase' | 'estimatedTime' | 'priority' | 'status' | 'executedBy' | 'executedAt';
+  const [sortState, setSortState] = useState<{ key: SortKey; direction: 'asc' | 'desc' } | null>(null);
+
+  const toggleSort = (key: SortKey) => {
+    setSortState((prev) => {
+      if (!prev || prev.key !== key) return { key, direction: 'asc' };
+      if (prev.direction === 'asc') return { key, direction: 'desc' };
+      return null;
+    });
+  };
+
+  const renderSortableHeader = (key: SortKey, label: string, align: 'left' | 'center' | 'right' = 'left'): ReactNode => {
+    const active = sortState?.key === key ? sortState.direction : null;
+    const alignClass = align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : '';
+    return (
+      <button
+        type="button"
+        onClick={() => toggleSort(key)}
+        className={`inline-flex items-center gap-1 text-xs font-semibold text-white/60 hover:text-white/90 transition-colors cursor-pointer ${alignClass}`}
+        title={
+          active === 'asc'
+            ? `${label} 昇順（クリックで降順）`
+            : active === 'desc'
+              ? `${label} 降順（クリックで解除）`
+              : `${label} で並び替え`
+        }
+        aria-label={`${label} で並び替え`}
+      >
+        <span>{label}</span>
+        <span className="flex flex-col leading-none text-[9px]" aria-hidden="true">
+          <span className={active === 'asc' ? 'text-white' : 'text-white/30'}>▲</span>
+          <span className={active === 'desc' ? 'text-white' : 'text-white/30'}>▼</span>
+        </span>
+      </button>
+    );
+  };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getStatusColor = (status: string) => {
@@ -95,6 +134,7 @@ export function TestCasesListCard({
       key: 'tcId',
       label: 'ID',
       width: '70px',
+      renderHeader: () => renderSortableHeader('tcId', 'ID'),
       render: (row: ResultRow) => (
         <p className="text-xs font-mono text-white/70 truncate">{row.testCase.tcId || '-'}</p>
       ),
@@ -103,6 +143,7 @@ export function TestCasesListCard({
       key: 'testCase',
       label: 'テストケース',
       className: 'min-w-0',
+      renderHeader: () => renderSortableHeader('testCase', 'テストケース'),
       render: (row: ResultRow) => (
         <div className="min-w-0 overflow-hidden">
           <p className="font-medium text-white/90 truncate block">{row.testCase.title}</p>
@@ -118,6 +159,7 @@ export function TestCasesListCard({
       key: 'estimatedTime',
       label: '実行時間',
       width: '100px',
+      renderHeader: () => renderSortableHeader('estimatedTime', '実行時間'),
       render: (row: ResultRow) => {
         const t = row.duration;
         if (t == null || !Number.isFinite(t)) return <span className="text-white/70 text-sm">-</span>;
@@ -135,6 +177,7 @@ export function TestCasesListCard({
       key: 'priority',
       label: '優先度',
       width: '90px',
+      renderHeader: () => renderSortableHeader('priority', '優先度'),
       render: (row: ResultRow) => {
         const badgeProps = getDynamicBadgeProps(row.testCase.priority, priorityOptions);
         const priorityLabel = !loadingPriority && priorityOptions.length > 0
@@ -155,6 +198,7 @@ export function TestCasesListCard({
       key: 'status',
       label: 'ステータス',
       width: '120px',
+      renderHeader: () => renderSortableHeader('status', 'ステータス'),
       render: (row: ResultRow) => {
         const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
         const label = !loadingStatus && statusOptions.length > 0
@@ -179,6 +223,7 @@ export function TestCasesListCard({
       label: '実行者',
       width: '70px',
       align: 'center',
+      renderHeader: () => renderSortableHeader('executedBy', '実行者', 'center'),
       render: (row: ResultRow) => {
         const user = row.executedBy;
         if (!user?.name) {
@@ -209,6 +254,7 @@ export function TestCasesListCard({
       key: 'executedAt',
       label: '日時',
       width: '140px',
+      renderHeader: () => renderSortableHeader('executedAt', '日時'),
       render: (row: ResultRow) => (
         <span className="text-white/70 text-sm">
           {row.executedAt
@@ -361,21 +407,69 @@ export function TestCasesListCard({
   // IN_PROGRESS時はRTC-ID昇順のフラットリスト、それ以外はモジュールグループ表示
   const isInProgress = testRunStatus === 'IN_PROGRESS';
 
-  const tableDataSorted = isInProgress
-    ? [...tableData].sort((a, b) => {
-        const aId = a.testCase.rtcId || '';
-        const bId = b.testCase.rtcId || '';
-        // RTC-IDがない行は末尾に
-        if (!aId && bId) return 1;
-        if (aId && !bId) return -1;
-        return aId.localeCompare(bId, undefined, { numeric: true });
-      })
-    : [...tableData].sort((a, b) => {
-        const keyA = getModuleSortKey(a);
-        const keyB = getModuleSortKey(b);
-        if (keyA !== keyB) return keyA - keyB;
-        return (a.testCase.rtcId || '').localeCompare(b.testCase.rtcId || '', undefined, { numeric: true });
-      });
+  /** 列キー毎の比較値を取得する。数値なら number、文字列なら string を返す。 */
+  const getSortValue = (row: ResultRow, key: SortKey): number | string => {
+    switch (key) {
+      case 'tcId':
+        return row.testCase.tcId || '';
+      case 'testCase':
+        return row.testCase.title || '';
+      case 'estimatedTime':
+        return typeof row.duration === 'number' && Number.isFinite(row.duration)
+          ? row.duration
+          : Number.POSITIVE_INFINITY; // 未入力は末尾
+      case 'priority': {
+        // 優先度はドロップダウンの並び順（index）で比較する
+        const idx = priorityOptions.findIndex((opt) => opt.value === row.testCase.priority);
+        return idx === -1 ? Number.POSITIVE_INFINITY : idx;
+      }
+      case 'status': {
+        const idx = statusOptions.findIndex((opt) => opt.value === row.status);
+        return idx === -1 ? Number.POSITIVE_INFINITY : idx;
+      }
+      case 'executedBy':
+        return row.executedBy?.name || '';
+      case 'executedAt':
+        return row.executedAt ? new Date(row.executedAt).getTime() : Number.POSITIVE_INFINITY;
+      default:
+        return '';
+    }
+  };
+
+  const compareBySortState = (a: ResultRow, b: ResultRow): number => {
+    if (!sortState) return 0;
+    const va = getSortValue(a, sortState.key);
+    const vb = getSortValue(b, sortState.key);
+    let cmp: number;
+    if (typeof va === 'number' && typeof vb === 'number') {
+      cmp = va - vb;
+    } else {
+      cmp = String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' });
+    }
+    return sortState.direction === 'desc' ? -cmp : cmp;
+  };
+
+  let tableDataSorted: ResultRow[];
+  if (sortState) {
+    // 並び替え指定時はグループ/RTC-ID順を上書きしてフラットに並び替え
+    tableDataSorted = [...tableData].sort(compareBySortState);
+  } else if (isInProgress) {
+    tableDataSorted = [...tableData].sort((a, b) => {
+      const aId = a.testCase.rtcId || '';
+      const bId = b.testCase.rtcId || '';
+      // RTC-IDがない行は末尾に
+      if (!aId && bId) return 1;
+      if (aId && !bId) return -1;
+      return aId.localeCompare(bId, undefined, { numeric: true });
+    });
+  } else {
+    tableDataSorted = [...tableData].sort((a, b) => {
+      const keyA = getModuleSortKey(a);
+      const keyB = getModuleSortKey(b);
+      if (keyA !== keyB) return keyA - keyB;
+      return (a.testCase.rtcId || '').localeCompare(b.testCase.rtcId || '', undefined, { numeric: true });
+    });
+  }
 
   return (
     <DetailCard
@@ -436,7 +530,7 @@ export function TestCasesListCard({
         <GroupedDataTable
           data={tableDataSorted}
           columns={columns}
-          grouped={!isInProgress}
+          grouped={!isInProgress && !sortState}
           groupConfig={groupConfig}
           defaultExpanded={true}
           onRowClick={(row) => {

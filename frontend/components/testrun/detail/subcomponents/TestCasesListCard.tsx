@@ -40,6 +40,7 @@ interface ResultRow {
   testCase: TestCase;
   status: string;
   comment?: string;
+  duration?: number;
   executedBy?: { name: string; email?: string; avatar?: string | null };
   executedAt?: string;
 }
@@ -113,7 +114,7 @@ export function TestCasesListCard({
       label: '実行時間',
       width: '100px',
       render: (row: ResultRow) => {
-        const t = row.testCase.estimatedTime;
+        const t = row.duration;
         if (t == null || !Number.isFinite(t)) return <span className="text-white/70 text-sm">-</span>;
         const h = Math.floor(t / 3600);
         const m = Math.floor((t % 3600) / 60);
@@ -324,6 +325,7 @@ export function TestCasesListCard({
       testCase: result.testCase,
       status: result.status,
       comment: result.comment,
+      duration: result.duration,
       executedBy: result.executedBy,
       executedAt: result.executedAt,
     }));
@@ -338,9 +340,8 @@ export function TestCasesListCard({
     return Number.isNaN(lastNum) ? 0 : lastNum;
   };
 
-  // IN_PROGRESS時はRTC-ID昇順のフラットリスト、それ以外はモジュールグループ表示
+  // IN_PROGRESS時はTC-ID昇順のフラットリスト、それ以外はモジュールグループ表示
   const isInProgress = testRunStatus === 'IN_PROGRESS';
-
   const tableDataSorted = isInProgress
     ? [...tableData].sort((a, b) => {
         const aId = a.testCase.rtcId || '';

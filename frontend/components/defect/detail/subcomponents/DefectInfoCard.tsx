@@ -65,6 +65,21 @@ export function DefectInfoCard({ defect }: DefectInfoCardProps) {
         </div>
       )}
 
+      {defect.executedTestSuites.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium text-white/60 mb-1">
+            実行テストスイート
+          </h4>
+          <div className="flex flex-wrap gap-1">
+            {defect.executedTestSuites.map((suite) => (
+              <Badge key={suite.id} variant="outline">
+                {suite.name}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       <StatisticsSection
         statistics={[
           { label: 'コメント', value: defect.comments.length },

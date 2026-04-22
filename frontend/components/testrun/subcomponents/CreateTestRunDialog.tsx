@@ -200,6 +200,8 @@ export function CreateTestRunDialog({
             { value: 'iPhone', label: 'iPhone' },
             { value: 'Android', label: 'Android' },
             { value: 'PC', label: 'PC' },
+            { value: 'Chrome', label: 'Chrome' },
+            { value: 'Safari', label: 'Safari' },
           ]}
           emptyLabel="未選択"
         />

@@ -50,6 +50,56 @@ interface ResultRow {
   result: TestResult;
 }
 
+/**
+ * Layer (SMOKE / CORE / EXTENDED) の並び順を表す優先度マップ。
+ * デフォルト並び順で使用（列ヘッダ駆動の sortState とは独立）。
+ */
+const LAYER_SORT_ORDER: Record<string, number> = {
+  SMOKE: 0,
+  CORE: 1,
+  EXTENDED: 2,
+  UNKNOWN: 3,
+};
+
+/** タイトル先頭の [SM-001] / [CR-007] / [EX-012] 等のプレフィックスから Layer 略号と番号を抽出 */
+const TITLE_PREFIX_REGEX = /^\s*\[?\s*(SM|CR|EX)\s*-\s*(\d+)\s*\]?/i;
+
+const TITLE_PREFIX_TO_LAYER: Record<string, string> = {
+  SM: 'SMOKE',
+  CR: 'CORE',
+  EX: 'EXTENDED',
+};
+
+const parseTitlePrefix = (title?: string): { layer?: string; num?: number } => {
+  if (!title) return {};
+  const m = title.match(TITLE_PREFIX_REGEX);
+  if (!m) return {};
+  const prefix = m[1].toUpperCase();
+  const num = parseInt(m[2], 10);
+  return {
+    layer: TITLE_PREFIX_TO_LAYER[prefix],
+    num: Number.isNaN(num) ? undefined : num,
+  };
+};
+
+/**
+ * Layer ソートキー。
+ * タイトル先頭の [SM-/CR-/EX-] プレフィックスを最優先する
+ * （DB の layer フィールドが UNKNOWN のままインポートされたケースでも正しく分類するため）。
+ */
+const getLayerSortKey = (layer?: string | null, title?: string): number => {
+  const titleLayer = parseTitlePrefix(title).layer;
+  const resolved = titleLayer || (layer && layer !== 'UNKNOWN' ? layer : undefined);
+  if (!resolved) return 99;
+  return LAYER_SORT_ORDER[resolved] ?? 98;
+};
+
+/** タイトル先頭プレフィックスの番号（昇順用）。なければ末尾扱い。 */
+const getTitleNumberSortKey = (title?: string): number => {
+  const num = parseTitlePrefix(title).num;
+  return num ?? Number.POSITIVE_INFINITY;
+};
+
 export function TestCasesListCard({
   results,
   testRunStatus,
@@ -449,25 +499,37 @@ export function TestCasesListCard({
     return sortState.direction === 'desc' ? -cmp : cmp;
   };
 
+  /**
+   * デフォルト並び順用の比較関数。
+   * Layer (SMOKE → CORE → EXTENDED → UNKNOWN/未設定) → タイトル先頭番号 → tcId 数値、の優先順位で昇順比較する。
+   */
+  const compareByLayerDefault = (a: ResultRow, b: ResultRow): number => {
+    const layerCmp = getLayerSortKey(a.testCase.layer, a.testCase.title)
+      - getLayerSortKey(b.testCase.layer, b.testCase.title);
+    if (layerCmp !== 0) return layerCmp;
+    const numCmp = getTitleNumberSortKey(a.testCase.title) - getTitleNumberSortKey(b.testCase.title);
+    if (numCmp !== 0) return numCmp;
+    return (a.testCase.tcId || '').localeCompare(
+      b.testCase.tcId || '',
+      undefined,
+      { numeric: true, sensitivity: 'base' }
+    );
+  };
+
   let tableDataSorted: ResultRow[];
   if (sortState) {
-    // 並び替え指定時はグループ/RTC-ID順を上書きしてフラットに並び替え
+    // 並び替え指定時はグループ/Layer順を上書きしてフラットに並び替え
     tableDataSorted = [...tableData].sort(compareBySortState);
   } else if (isInProgress) {
-    tableDataSorted = [...tableData].sort((a, b) => {
-      const aId = a.testCase.rtcId || '';
-      const bId = b.testCase.rtcId || '';
-      // RTC-IDがない行は末尾に
-      if (!aId && bId) return 1;
-      if (aId && !bId) return -1;
-      return aId.localeCompare(bId, undefined, { numeric: true });
-    });
+    // デフォルトは Layer (Smoke → Core → Extended) → タイトル番号 → tcId
+    tableDataSorted = [...tableData].sort(compareByLayerDefault);
   } else {
+    // モジュールグループ表示時は、モジュール順を最優先しつつグループ内は Layer 順
     tableDataSorted = [...tableData].sort((a, b) => {
       const keyA = getModuleSortKey(a);
       const keyB = getModuleSortKey(b);
       if (keyA !== keyB) return keyA - keyB;
-      return (a.testCase.rtcId || '').localeCompare(b.testCase.rtcId || '', undefined, { numeric: true });
+      return compareByLayerDefault(a, b);
     });
   }
 

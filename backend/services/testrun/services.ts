@@ -492,6 +492,7 @@ export class TestRunService {
                 priority: true,
                 status: true,
                 estimatedTime: true,
+                layer: true,
                 module: {
                   select: {
                     id: true,

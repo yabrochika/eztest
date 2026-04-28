@@ -14,6 +14,8 @@ export interface TestResult {
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
+export type TestLayer = 'SMOKE' | 'CORE' | 'EXTENDED' | 'UNKNOWN';
+
 export interface TestCase {
   id: string;
   tcId?: string;
@@ -24,6 +26,7 @@ export interface TestCase {
   priority: Priority | string;
   status: string;
   estimatedTime?: number | null;
+  layer?: TestLayer | string | null;
   suiteId?: string | null;
   module?: {
     id: string;

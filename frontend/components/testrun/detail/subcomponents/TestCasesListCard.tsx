@@ -43,6 +43,7 @@ interface ResultRow {
 }
 
 type SortField =
+  | 'layer'
   | 'tcId'
   | 'rtcId'
   | 'testCase'
@@ -52,6 +53,47 @@ type SortField =
   | 'executedBy'
   | 'executedAt';
 type SortDirection = 'asc' | 'desc';
+
+const LAYER_SORT_ORDER: Record<string, number> = {
+  SMOKE: 0,
+  CORE: 1,
+  EXTENDED: 2,
+  UNKNOWN: 3,
+};
+
+/** タイトル先頭の [SM-001] / [CR-007] / [EX-012] 等のプレフィックスから Layer 略号と番号を抽出 */
+const TITLE_PREFIX_REGEX = /^\s*\[?\s*(SM|CR|EX)\s*-\s*(\d+)\s*\]?/i;
+
+const TITLE_PREFIX_TO_LAYER: Record<string, string> = {
+  SM: 'SMOKE',
+  CR: 'CORE',
+  EX: 'EXTENDED',
+};
+
+const parseTitlePrefix = (title?: string): { layer?: string; num?: number } => {
+  if (!title) return {};
+  const m = title.match(TITLE_PREFIX_REGEX);
+  if (!m) return {};
+  const prefix = m[1].toUpperCase();
+  const num = parseInt(m[2], 10);
+  return {
+    layer: TITLE_PREFIX_TO_LAYER[prefix],
+    num: Number.isNaN(num) ? undefined : num,
+  };
+};
+
+const getLayerSortKey = (layer?: string | null, title?: string): number => {
+  // タイトル先頭の [SM-/CR-/EX-] プレフィックスを最優先（layer が UNKNOWN でも正しく分類するため）
+  const titleLayer = parseTitlePrefix(title).layer;
+  const resolved = titleLayer || (layer && layer !== 'UNKNOWN' ? layer : undefined);
+  if (!resolved) return 99;
+  return LAYER_SORT_ORDER[resolved] ?? 98;
+};
+
+const getTitleNumberSortKey = (title?: string): number => {
+  const num = parseTitlePrefix(title).num;
+  return num ?? Number.POSITIVE_INFINITY;
+};
 
 export function TestCasesListCard({
   results,
@@ -70,7 +112,7 @@ export function TestCasesListCard({
   const { options: priorityOptions, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
   const { options: statusOptions, loading: loadingStatus } = useDropdownOptions('TestResult', 'status');
   const { hasPermission: hasPermissionCheck } = usePermissions();
-  const [sortField, setSortField] = useState<SortField>('rtcId');
+  const [sortField, setSortField] = useState<SortField>('layer');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
   // Check if user can create defects
@@ -347,6 +389,8 @@ export function TestCasesListCard({
 
   const getSortValue = (row: ResultRow, field: SortField): string | number => {
     switch (field) {
+      case 'layer':
+        return getLayerSortKey(row.testCase.layer, row.testCase.title);
       case 'tcId':
         return row.testCase.tcId || '';
       case 'rtcId':
@@ -379,7 +423,15 @@ export function TestCasesListCard({
       result = String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' });
     }
 
-    if (result === 0) {
+    // Layer ソート時はタイトル先頭の番号 → tcId の順で昇順を保証
+    if (result === 0 && sortField === 'layer') {
+      const aNum = getTitleNumberSortKey(a.testCase.title);
+      const bNum = getTitleNumberSortKey(b.testCase.title);
+      result = aNum - bNum;
+      if (result === 0) {
+        result = (a.testCase.tcId || '').localeCompare(b.testCase.tcId || '', undefined, { numeric: true, sensitivity: 'base' });
+      }
+    } else if (result === 0) {
       result = (a.testCase.rtcId || '').localeCompare(b.testCase.rtcId || '', undefined, { numeric: true, sensitivity: 'base' });
     }
 

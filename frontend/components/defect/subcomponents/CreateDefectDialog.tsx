@@ -9,6 +9,7 @@ import { type Attachment } from '@/lib/s3';
 import { uploadFileToS3 } from '@/lib/s3';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { DefectDescriptionAttachmentField } from '@/frontend/components/defect/shared/DefectDescriptionAttachmentField';
+import { Link2 } from 'lucide-react';
 
 interface Defect {
   id: string;
@@ -27,6 +28,15 @@ interface CreateDefectDialogProps {
   testRunEnvironment?: string; // When creating from test run, auto-populate environment
   testRunPlatform?: string; // When creating from test run, auto-populate platform
   testRunDevice?: string; // When creating from test run, auto-populate device
+  /**
+   * When provided, an extra "ストーリーを作成" footer button is shown. After
+   * the Defect is successfully created via that button, the newly-created
+   * Defect is forwarded to this callback so the parent can launch its own
+   * Shortcut Sub-task creation flow. The Epic/Story pickers are intentionally
+   * rendered by the parent (not inside this dialog) so they remain mounted
+   * even after this dialog closes / unmounts.
+   */
+  onCreateStoryAfterDefect?: (defect: Defect) => void;
 }
 
 export function CreateDefectDialog({
@@ -38,6 +48,7 @@ export function CreateDefectDialog({
   testRunEnvironment,
   testRunPlatform,
   testRunDevice,
+  onCreateStoryAfterDefect,
 }: CreateDefectDialogProps) {
   const { data: session } = useSession();
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
@@ -300,7 +311,7 @@ export function CreateDefectDialog({
     return uploadedAttachments;
   };
 
-  const config: BaseDialogConfig = {
+  const config: BaseDialogConfig<Defect> = {
     title: '新規Defectを作成',
     description: 'バグの内容を入力してください。ステータスはデフォルトで「新規」になります。',
     fields,
@@ -312,6 +323,27 @@ export function CreateDefectDialog({
     projectId,
     submitButtonName: 'Create Defect Dialog - Create Defect',
     cancelButtonName: 'Create Defect Dialog - Cancel',
+    ...(onCreateStoryAfterDefect
+      ? {
+          secondaryAction: {
+            label: 'ストーリーを作成',
+            icon: <Link2 className="w-4 h-4 mr-1" />,
+            buttonName: 'Create Defect Dialog - Create Story',
+            onAfterSubmit: async (defect: Defect) => {
+              setAlert({
+                type: 'success',
+                title: 'Defectを作成しました',
+                message: `Defect ${defect.defectId} が正常に作成されました`,
+              });
+              setDescriptionAttachments([]);
+              // Notify parent so it can run any post-creation bookkeeping
+              // (e.g. refresh lists) AND open its own Shortcut picker flow.
+              onDefectCreated(defect);
+              onCreateStoryAfterDefect(defect);
+            },
+          },
+        }
+      : {}),
     onSubmit: async (formData) => {
       // Collect already-uploaded attachments (immediate upload mode)
       const existingUploadedAttachments: Array<{ id?: string; s3Key: string; fileName: string; mimeType: string; fieldName?: string }> =
@@ -408,7 +440,7 @@ export function CreateDefectDialog({
 
   return (
     <>
-      <BaseDialog {...config} />
+      <BaseDialog<Defect> {...config} />
       <FloatingAlert alert={alert} onClose={() => setAlert(null)} />
     </>
   );

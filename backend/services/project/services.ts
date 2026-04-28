@@ -17,6 +17,12 @@ interface AddMemberInput {
   email?: string; // Email address of the user to add
 }
 
+interface CreateMemberGroupInput {
+  name: string;
+  memberIds: string[];
+  createdById: string;
+}
+
 export class ProjectService {
   /**
    * Get all projects accessible to a user
@@ -370,6 +376,44 @@ export class ProjectService {
   }
 
   /**
+   * Get project member groups
+   */
+  async getProjectMemberGroups(projectId: string) {
+    return await prisma.projectMemberGroup.findMany({
+      where: { projectId },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        members: {
+          include: {
+            projectMember: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    avatar: true,
+                    role: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  /**
    * Add member to project
    */
   async addProjectMember(projectId: string, data: AddMemberInput) {
@@ -429,6 +473,71 @@ export class ProjectService {
         },
       },
     });
+  }
+
+  /**
+   * Create project member group
+   */
+  async createProjectMemberGroup(projectId: string, data: CreateMemberGroupInput) {
+    const normalizedName = data.name.trim();
+
+    const members = await prisma.projectMember.findMany({
+      where: {
+        projectId,
+        id: { in: data.memberIds },
+      },
+      select: { id: true },
+    });
+
+    if (members.length !== data.memberIds.length) {
+      throw new Error('Some members do not belong to this project');
+    }
+
+    try {
+      return await prisma.projectMemberGroup.create({
+        data: {
+          projectId,
+          name: normalizedName,
+          createdById: data.createdById,
+          members: {
+            create: members.map((member) => ({
+              projectMemberId: member.id,
+            })),
+          },
+        },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          members: {
+            include: {
+              projectMember: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      avatar: true,
+                      role: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+        throw new Error('Group name already exists');
+      }
+      throw error;
+    }
   }
 
   /**

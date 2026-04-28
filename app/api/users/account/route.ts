@@ -27,7 +27,10 @@ export async function DELETE(request: NextRequest) {
   if (!user) {
     throw new NotFoundException('User not found');
   }
-  // Verify password
+  // Verify password (Googleログインユーザーはパスワード未設定)
+  if (!user.password) {
+    throw new UnauthorizedException('This account uses Google login and has no password.');
+  }
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
     throw new UnauthorizedException('Invalid password');

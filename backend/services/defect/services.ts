@@ -1,6 +1,23 @@
 import { prisma } from '@/lib/prisma';
-import { s3Client, getS3Bucket, isS3Configured } from '@/lib/s3-client';
+import { s3Client, getS3Bucket, isS3Configured, isUploadLocalRelativePath } from '@/lib/s3-client';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { readFile } from 'fs/promises';
+import path from 'path';
+import {
+  createStory,
+  findMemberIdByEmail,
+  getShortcutConfig,
+  ShortcutError,
+  listEpics,
+  getEpic,
+  listStoriesForEpic,
+  ensureLabel,
+  uploadFile,
+  addStoryComment,
+  getStory,
+  getWorkflow,
+} from '@/lib/shortcut/client';
 
 interface CreateDefectInput {
   projectId: string;
@@ -178,6 +195,22 @@ export class DefectService {
                 id: true,
                 tcId: true,
                 title: true,
+                suite: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                testCaseSuites: {
+                  select: {
+                    testSuite: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
@@ -186,6 +219,16 @@ export class DefectService {
           select: {
             id: true,
             name: true,
+            suites: {
+              select: {
+                testSuite: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -294,6 +337,16 @@ export class DefectService {
           select: {
             id: true,
             name: true,
+            suites: {
+              select: {
+                testSuite: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -403,6 +456,16 @@ export class DefectService {
                 id: true,
                 tcId: true,
                 title: true,
+                testCaseSuites: {
+                  select: {
+                    testSuite: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
@@ -411,6 +474,16 @@ export class DefectService {
           select: {
             id: true,
             name: true,
+            suites: {
+              select: {
+                testSuite: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
         project: {
@@ -441,6 +514,7 @@ export class DefectService {
                 avatar: true,
               },
             },
+            attachments: true,
           },
           orderBy: {
             createdAt: 'desc',
@@ -474,9 +548,44 @@ export class DefectService {
       })
     );
 
+    const uniqueSuites = new Map<string, { id: string; name: string }>();
+
+    defect.testRun?.suites.forEach((suiteLink) => {
+      uniqueSuites.set(suiteLink.testSuite.id, {
+        id: suiteLink.testSuite.id,
+        name: suiteLink.testSuite.name,
+      });
+    });
+
+    testCasesWithFailureCount.forEach((tc) => {
+      const legacySuite = (tc.testCase as any).suite;
+      if (legacySuite) {
+        uniqueSuites.set(legacySuite.id, {
+          id: legacySuite.id,
+          name: legacySuite.name,
+        });
+      }
+
+      tc.testCase.testCaseSuites?.forEach((suiteLink: { testSuite: { id: string; name: string } }) => {
+        uniqueSuites.set(suiteLink.testSuite.id, {
+          id: suiteLink.testSuite.id,
+          name: suiteLink.testSuite.name,
+        });
+      });
+    });
+
+    const executedTestSuites = Array.from(uniqueSuites.values());
+    const linkedTestSuites = executedTestSuites.map((s) => ({
+      id: s.id,
+      name: s.name,
+      title: s.name,
+    }));
+
     return {
       ...defect,
       testCases: testCasesWithFailureCount,
+      executedTestSuites,
+      linkedTestSuites,
     };
   }
 
@@ -890,10 +999,11 @@ export class DefectService {
     // Determine if file should be previewed or downloaded
     const isPreviewable =
       attachment.mimeType.startsWith('image/') ||
+      attachment.mimeType.startsWith('video/') ||
       attachment.mimeType === 'application/pdf';
 
     let signedUrl: string;
-    if (isS3Configured()) {
+    if (isS3Configured() && !isUploadLocalRelativePath(attachment.path)) {
       const bucket = getS3Bucket();
       const { GetObjectCommand } = await import('@aws-sdk/client-s3');
       const command = new GetObjectCommand({
@@ -929,7 +1039,7 @@ export class DefectService {
     }
 
     if (step === 'prepare') {
-      if (isS3Configured()) {
+      if (isS3Configured() && !isUploadLocalRelativePath(attachment.path)) {
         const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
         const command = new DeleteObjectCommand({
           Bucket: getS3Bucket(),
@@ -951,6 +1061,473 @@ export class DefectService {
       throw new Error('Invalid step parameter. Use step=prepare or step=confirm');
     }
   }
+
+  /**
+   * Send defect to Shortcut as a new story and persist the link back to the defect.
+   */
+  async sendToShortcut(defectId: string, appBaseUrl: string | null = null) {
+    const config = getShortcutConfig();
+    if (!config) {
+      throw new Error('Shortcut integration is not configured (SHORTCUT_API_TOKEN missing)');
+    }
+
+    const defect = await this.getDefectById(defectId);
+    if (!defect) {
+      throw new Error('Defect not found');
+    }
+    if ((defect as { shortcutStoryId?: number | null }).shortcutStoryId) {
+      throw new Error('This defect has already been sent to Shortcut');
+    }
+
+    const ownerId = await findMemberIdByEmail(config, defect.assignedTo?.email ?? null).catch(
+      () => null
+    );
+
+    const linkedTestSuites = (defect as { linkedTestSuites?: { name: string }[] }).linkedTestSuites;
+    const description = buildShortcutDescription(defect, linkedTestSuites, appBaseUrl);
+    const externalLinks = appBaseUrl
+      ? [`${appBaseUrl}/projects/${defect.projectId}/defects/${defect.id}`]
+      : undefined;
+
+    try {
+      const story = await createStory(config, {
+        name: `[${defect.defectId}] ${defect.title}`,
+        description,
+        storyType: 'bug',
+        ownerIds: ownerId ? [ownerId] : undefined,
+        externalLinks,
+      });
+
+      const updated = await prisma.defect.update({
+        where: { id: defect.id },
+        data: {
+          shortcutStoryId: story.id,
+          shortcutStoryUrl: story.app_url,
+        },
+        select: {
+          id: true,
+          shortcutStoryId: true,
+          shortcutStoryUrl: true,
+        },
+      });
+
+      return updated;
+    } catch (error) {
+      if (error instanceof ShortcutError) {
+        const reason = typeof error.body === 'object' ? JSON.stringify(error.body) : String(error.body);
+        throw new Error(`Failed to create Shortcut story (HTTP ${error.status}): ${reason}`);
+      }
+      throw error;
+    }
+  }
+}
+
+function buildShortcutDescription(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  defect: any,
+  linkedTestSuites: { name: string }[] | undefined,
+  appBaseUrl: string | null
+): string {
+  const lines: string[] = [];
+  lines.push(`**EZTest Defect:** \`${defect.defectId}\``);
+  if (appBaseUrl) {
+    lines.push(`**Defect URL:** ${appBaseUrl}/projects/${defect.projectId}/defects/${defect.id}`);
+  }
+  lines.push('');
+  lines.push(`**Project:** ${defect.project?.name ?? '-'}`);
+  lines.push(`**Severity:** ${defect.severity} / **Priority:** ${defect.priority} / **Status:** ${defect.status}`);
+  if (defect.environment) lines.push(`**Environment:** ${defect.environment}`);
+  if (defect.assignedTo) {
+    lines.push(`**Assignee (EZTest):** ${defect.assignedTo.name} <${defect.assignedTo.email}>`);
+  }
+  if (defect.testRun) {
+    lines.push(`**Test Run:** ${defect.testRun.name}`);
+  }
+  if (linkedTestSuites && linkedTestSuites.length > 0) {
+    lines.push(`**Test Suites:** ${linkedTestSuites.map((s) => s.name).join(', ')}`);
+  }
+  if (Array.isArray(defect.testCases) && defect.testCases.length > 0) {
+    lines.push('**Linked Test Cases:**');
+    for (const tc of defect.testCases) {
+      lines.push(`- ${tc.testCase.tcId} ${tc.testCase.title}`);
+    }
+  }
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+  lines.push(defect.description || '_No description provided._');
+  return lines.join('\n');
+}
+
+async function readAttachmentBuffer(storedPath: string): Promise<Buffer | null> {
+  try {
+    if (isS3Configured() && !isUploadLocalRelativePath(storedPath)) {
+      const res = await s3Client.send(
+        new GetObjectCommand({ Bucket: getS3Bucket(), Key: storedPath })
+      );
+      const chunks: Buffer[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for await (const chunk of res.Body as any) {
+        chunks.push(Buffer.from(chunk));
+      }
+      return Buffer.concat(chunks);
+    }
+    const full = path.join(process.cwd(), 'uploads', storedPath);
+    return await readFile(full);
+  } catch (err) {
+    console.warn('[shortcut] failed to read attachment', storedPath, err);
+    return null;
+  }
 }
 
 export const defectService = new DefectService();
+
+export const shortcutService = {
+  async resolveId(id: number) {
+    const config = getShortcutConfig();
+    if (!config) throw new Error('Shortcut integration is not configured');
+
+    try {
+      const epic = await getEpic(config, id);
+      return {
+        kind: 'epic' as const,
+        epicId: epic.id,
+        epicName: epic.name,
+        storyId: null as number | null,
+        storyName: null as string | null,
+        appUrl: epic.app_url ?? null,
+      };
+    } catch (e) {
+      if (!(e instanceof ShortcutError) || e.status !== 404) {
+        throw e;
+      }
+    }
+
+    try {
+      const story = await getStory(config, id);
+      let epicName: string | null = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const epicId: number | null = (story as any).epic_id ?? null;
+      if (epicId) {
+        try {
+          const epic = await getEpic(config, epicId);
+          epicName = epic.name;
+        } catch {
+          // ignore
+        }
+      }
+      return {
+        kind: 'story' as const,
+        epicId,
+        epicName,
+        storyId: story.id,
+        storyName: story.name,
+        appUrl: story.app_url ?? null,
+      };
+    } catch (e) {
+      if (e instanceof ShortcutError && e.status === 404) {
+        return {
+          kind: 'unknown' as const,
+          epicId: null as number | null,
+          epicName: null as string | null,
+          storyId: null as number | null,
+          storyName: null as string | null,
+          appUrl: null as string | null,
+        };
+      }
+      throw e;
+    }
+  },
+
+  async listEpics() {
+    const config = getShortcutConfig();
+    if (!config) throw new Error('Shortcut integration is not configured');
+    const epics = await listEpics(config);
+    return epics.map((e) => ({
+      id: e.id,
+      name: e.name,
+      state: e.state,
+      app_url: e.app_url,
+      archived: !!e.archived,
+      completed: !!e.completed,
+      started: !!e.started,
+    }));
+  },
+
+  async listStoriesForEpic(epicId: number) {
+    const config = getShortcutConfig();
+    if (!config) throw new Error('Shortcut integration is not configured');
+    const stories = await listStoriesForEpic(config, epicId);
+    // Only return top-level stories. Sub-tasks (stories with a parent_story_id)
+    // are not valid as parents for a new Defect sub-task, and previously
+    // imported Defects would otherwise pollute the picker.
+    return stories
+      .filter((s) => !s.parent_story_id)
+      .map((s) => ({
+        id: s.id,
+        name: s.name,
+        story_type: s.story_type,
+        app_url: s.app_url,
+        archived: !!s.archived,
+        completed: !!s.completed,
+      }));
+  },
+
+  async setDefectEpic(defectId: string, epicId: number | null) {
+    const config = getShortcutConfig();
+    if (!config && epicId !== null) {
+      throw new Error('Shortcut integration is not configured');
+    }
+
+    let epicName: string | null = null;
+    if (epicId !== null && config) {
+      const epic = await getEpic(config, epicId);
+      epicName = epic.name;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updated = await (prisma.defect as any).update({
+      where: { id: defectId },
+      data: {
+        shortcutEpicId: epicId,
+        shortcutEpicName: epicName,
+      },
+      select: {
+        id: true,
+        shortcutEpicId: true,
+        shortcutEpicName: true,
+      },
+    });
+    return updated;
+  },
+
+  async attachDefectToStory(
+    defectId: string,
+    storyId: number,
+    appBaseUrl: string | null = null
+  ) {
+    const config = getShortcutConfig();
+    if (!config) throw new Error('Shortcut integration is not configured');
+
+    const defect = await defectService.getDefectById(defectId);
+    if (!defect) throw new Error('Defect not found');
+
+    try {
+      const label = await ensureLabel(config, 'Bug', '#E44');
+
+      const linkedTestSuites = (defect as { linkedTestSuites?: { name: string }[] }).linkedTestSuites;
+      const description = buildShortcutDescription(defect, linkedTestSuites, appBaseUrl);
+
+      type UploadedAttachment = {
+        id: number;
+        name: string;
+        url: string | null;
+        mimeType: string;
+        source: 'defect' | 'comment';
+        commentId?: string;
+      };
+
+      const uploaded: UploadedAttachment[] = [];
+      const uploadFailures: string[] = [];
+
+      const uploadOne = async (
+        att: { path: string; originalName: string; mimeType: string },
+        source: 'defect' | 'comment',
+        commentId?: string
+      ) => {
+        const buffer = await readAttachmentBuffer(att.path);
+        if (!buffer) {
+          uploadFailures.push(`${att.originalName} (読み込み失敗)`);
+          return;
+        }
+        try {
+          const up = await uploadFile(config, {
+            buffer,
+            filename: att.originalName,
+            contentType: att.mimeType || 'application/octet-stream',
+          });
+          uploaded.push({
+            id: up.id,
+            name: up.name || att.originalName,
+            url: up.url ?? null,
+            mimeType: att.mimeType || 'application/octet-stream',
+            source,
+            commentId,
+          });
+        } catch (e) {
+          console.warn('[shortcut] upload failed', att.originalName, e);
+          uploadFailures.push(
+            `${att.originalName} (${e instanceof Error ? e.message : String(e)})`
+          );
+        }
+      };
+
+      // 1) Defect-level attachments
+      const defectAttachments = (defect.attachments || []) as Array<{
+        path: string;
+        originalName: string;
+        mimeType: string;
+      }>;
+      for (const att of defectAttachments) {
+        await uploadOne(att, 'defect');
+      }
+
+      // 2) Attachments embedded in defect comments
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const defectComments = ((defect as any).comments || []) as Array<{
+        id: string;
+        content: string;
+        createdAt: Date | string;
+        user?: { name?: string | null; email?: string | null } | null;
+        attachments?: Array<{
+          path: string;
+          originalName: string;
+          mimeType: string;
+        }>;
+      }>;
+      for (const c of defectComments) {
+        for (const att of c.attachments || []) {
+          await uploadOne(att, 'comment', c.id);
+        }
+      }
+
+      // Note: Shortcut's file upload URL (/api/private/files/:id) requires an
+      // authenticated session to view, so we expose clickable links instead of
+      // inlining images. The files are also attached via `file_ids`, which makes
+      // them appear in the story's Files panel.
+      const renderFileLink = (u: UploadedAttachment) => {
+        const icon = u.mimeType.startsWith('image/')
+          ? '🖼'
+          : u.mimeType.startsWith('video/')
+            ? '🎞'
+            : '📎';
+        return u.url
+          ? `- ${icon} [${u.name}](${u.url})`
+          : `- ${icon} ${u.name} (file id: ${u.id})`;
+      };
+
+      const defectFileBlock = (() => {
+        const items = uploaded.filter((u) => u.source === 'defect');
+        if (items.length === 0) return '';
+        return ['', '---', '', '### Attachments', '', ...items.map(renderFileLink)].join('\n');
+      })();
+
+      const commentsBlock = (() => {
+        if (defectComments.length === 0) return '';
+        const blocks: string[] = ['', '---', '', '### EZTest Comments', ''];
+        // Oldest-first is more readable when porting to a fresh story.
+        const sorted = [...defectComments].sort((a, b) => {
+          const ta = new Date(a.createdAt).getTime();
+          const tb = new Date(b.createdAt).getTime();
+          return ta - tb;
+        });
+        for (const c of sorted) {
+          const who = c.user?.name || c.user?.email || 'unknown';
+          const when = new Date(c.createdAt).toISOString();
+          blocks.push(`**${who}** — ${when}`);
+          blocks.push('');
+          blocks.push((c.content || '').trim() || '_(empty)_');
+          const files = uploaded.filter((u) => u.source === 'comment' && u.commentId === c.id);
+          if (files.length > 0) {
+            blocks.push('');
+            for (const f of files) blocks.push(renderFileLink(f));
+          }
+          blocks.push('');
+        }
+        return blocks.join('\n');
+      })();
+
+      const failureMarkdown =
+        uploadFailures.length > 0
+          ? `\n\n> ⚠️ 以下の添付はアップロードに失敗しました:\n${uploadFailures.map((f) => `> - ${f}`).join('\n')}`
+          : '';
+
+      const enrichedDescription = `${description}${defectFileBlock}${commentsBlock}${failureMarkdown}`;
+      const uploadedFileIds = uploaded.map((u) => u.id);
+
+      // Fetch the parent story so the sub-task inherits epic/group.
+      let parentStory: Awaited<ReturnType<typeof getStory>> | null = null;
+      try {
+        parentStory = await getStory(config, storyId);
+      } catch {
+        // ignore
+      }
+
+      // Resolve an "Unstarted" workflow state so the sub-task is NOT auto-completed
+      // (otherwise it inherits whatever state the parent is in, e.g. Done).
+      let unstartedStateId: number | undefined;
+      const workflowId = parentStory?.workflow_id ?? config.workflowId;
+      if (workflowId) {
+        try {
+          const wf = await getWorkflow(config, workflowId);
+          const unstarted = wf.states.find((s) => s.type === 'unstarted');
+          unstartedStateId = unstarted?.id ?? wf.default_state_id;
+        } catch {
+          // ignore
+        }
+      }
+
+      // Map EZTest assignee / reporter to Shortcut owners when possible.
+      const ownerIds: string[] = [];
+      try {
+        const ownerEmail =
+          (defect as { assignedTo?: { email?: string | null } | null }).assignedTo?.email ??
+          (defect as { createdBy?: { email?: string | null } | null }).createdBy?.email ??
+          null;
+        const memberId = await findMemberIdByEmail(config, ownerEmail);
+        if (memberId) ownerIds.push(memberId);
+      } catch {
+        // ignore owner resolution errors
+      }
+
+      const subtaskName = `[${defect.defectId}] ${defect.title}`.slice(0, 250);
+
+      const created = await createStory(config, {
+        name: subtaskName,
+        description: enrichedDescription,
+        storyType: 'bug',
+        parentStoryId: storyId,
+        epicId: parentStory?.epic_id ?? undefined,
+        groupId: parentStory?.group_id ?? undefined,
+        workflowStateId: unstartedStateId,
+        workflowId: unstartedStateId ? undefined : (parentStory?.workflow_id ?? undefined),
+        ownerIds: ownerIds.length > 0 ? ownerIds : undefined,
+        labels: [{ name: label.name, color: label.color ?? '#E44' }],
+        fileIds: uploadedFileIds.length > 0 ? uploadedFileIds : undefined,
+      });
+
+      const commentText = [
+        `## EZTest Defect \`${defect.defectId}\` を Sub-task として取り込みました`,
+        '',
+        enrichedDescription,
+      ].join('\n');
+      // Let errors propagate so the UI can surface them; a silently-missing comment
+      // was previously indistinguishable from success.
+      await addStoryComment(config, created.id, commentText);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updated = await (prisma.defect as any).update({
+        where: { id: defect.id },
+        data: {
+          shortcutStoryId: created.id,
+          shortcutStoryUrl: created.app_url,
+        },
+        select: {
+          id: true,
+          shortcutStoryId: true,
+          shortcutStoryUrl: true,
+          shortcutEpicId: true,
+          shortcutEpicName: true,
+        },
+      });
+      return updated;
+    } catch (error) {
+      if (error instanceof ShortcutError) {
+        const reason =
+          typeof error.body === 'object' ? JSON.stringify(error.body) : String(error.body);
+        throw new Error(`Shortcut API error (HTTP ${error.status}): ${reason}`);
+      }
+      throw error;
+    }
+  },
+};

@@ -52,8 +52,14 @@ export class OtpService {
         };
       }
 
-      // Verify password if provided
+      // Verify password if provided (Googleログインユーザーはパスワード未設定)
       if (input.password) {
+        if (!user.password) {
+          return {
+            success: false,
+            message: 'This account uses Google login. Please sign in with Google.',
+          };
+        }
         const isPasswordValid = await bcrypt.compare(input.password, user.password);
         if (!isPasswordValid) {
           return {

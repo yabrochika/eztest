@@ -11,7 +11,7 @@ import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
 import { Label } from '@/frontend/reusable-elements/labels/Label';
-import { Textarea } from '@/frontend/reusable-elements/textareas/Textarea';
+import { TextareaWithAttachments, type Attachment } from '@/frontend/reusable-elements/textareas/TextareaWithAttachments';
 import { SearchInput } from '@/frontend/reusable-elements/inputs/SearchInput';
 import {
   Select,
@@ -68,9 +68,12 @@ interface RecordResultDialogProps {
   testRunPlatform?: string;
   testRunDevice?: string;
   formData: ResultFormData;
+  commentAttachments: Attachment[];
+  onCommentAttachmentsChange: (attachments: Attachment[]) => void;
   onOpenChange: (open: boolean) => void;
   onFormChange: (data: Partial<ResultFormData>) => void;
   onSubmit: (durationSeconds?: number) => void;
+  initialDurationSeconds?: number;
   refreshTrigger?: number; // Trigger to refresh defects after creation
   onNavigate?: (direction: 'prev' | 'next') => void;
   hasPrev?: boolean;
@@ -86,9 +89,12 @@ export function RecordResultDialog({
   testRunPlatform,
   testRunDevice,
   formData,
+  commentAttachments,
+  onCommentAttachmentsChange,
   onOpenChange,
   onFormChange,
   onSubmit,
+  initialDurationSeconds,
   refreshTrigger,
   onNavigate,
   hasPrev = false,
@@ -179,10 +185,13 @@ export function RecordResultDialog({
         setElapsedSeconds(cachedElapsed);
         setTimerStartTime(Date.now());
       } else {
-        // 初回表示時のみ既存実行時間を初期値として利用
+        // 初回表示時はこのテストラン内の既存実行時間のみ初期値として利用
+        const initialDuration = initialDurationSeconds && initialDurationSeconds > 0
+          ? initialDurationSeconds
+          : 0;
         setTimerStartTime(null);
-        setTimerOffset(0);
-        setElapsedSeconds(0);
+        setTimerOffset(initialDuration);
+        setElapsedSeconds(initialDuration);
       }
 
       const fetchTestCaseDetail = async () => {
@@ -192,14 +201,6 @@ export function RecordResultDialog({
           const data = await response.json();
           if (data.data) {
             setTestCaseDetail(data.data);
-            // キャッシュがない場合のみ既存実行時間をオフセットに採用
-            if (cachedElapsed === undefined) {
-              const existingTime = data.data.estimatedTime;
-              if (existingTime && existingTime > 0) {
-                setTimerOffset(existingTime);
-                setElapsedSeconds(existingTime);
-              }
-            }
           }
         } catch (error) {
           console.error('Error fetching test case detail:', error);
@@ -221,7 +222,7 @@ export function RecordResultDialog({
       setTimerStartTime(null);
       setTestCaseDetail(null);
     }
-  }, [open, testCaseId, persistElapsedForTestCase]);
+  }, [open, testCaseId, initialDurationSeconds, persistElapsedForTestCase]);
 
   useEffect(() => {
     if (open && timerStartTime) {
@@ -608,14 +609,22 @@ export function RecordResultDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="comment">コメント</Label>
-            <Textarea
+            <Label htmlFor="comment">コメント（画像・動画を添付可能）</Label>
+            <TextareaWithAttachments
               id="comment"
+              fieldName="comment"
               variant="glass"
               value={formData.comment}
-              onChange={(e) => onFormChange({ comment: e.target.value })}
+              onChange={(v) => onFormChange({ comment: v })}
               placeholder="このテスト実行についてコメントを追加（任意）"
               rows={4}
+              attachments={commentAttachments}
+              onAttachmentsChange={onCommentAttachmentsChange}
+              entityType="testresult"
+              projectId={projectId}
+              showAttachments={true}
+              forceShowAttachments={true}
+              uploadOnSave={true}
             />
           </div>
 

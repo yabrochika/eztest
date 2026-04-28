@@ -11,7 +11,8 @@ import { ChildSuitesCard } from './subcomponents/ChildSuitesCard';
 import { TestSuiteInfoCard } from './subcomponents/TestSuiteInfoCard';
 import { DeleteTestSuiteDialog } from './subcomponents/DeleteTestSuiteDialog';
 import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionButtonGroup';
-import { Plus, TestTube2, Folder } from 'lucide-react';
+import { Plus, TestTube2, Folder, PlayCircle } from 'lucide-react';
+import { CreateTestRunDialog } from '@/frontend/components/testrun/subcomponents/CreateTestRunDialog';
 import { AddTestCasesDialog } from '@/frontend/components/common/dialogs/AddTestCasesDialog';
 import { AddModulesAndTestCasesDialog } from '@/frontend/reusable-components/dialogs/AddModulesAndTestCasesDialog';
 import { DeleteTestCaseDialog } from '@/frontend/components/testcase/subcomponents/DeleteTestCaseDialog';
@@ -31,6 +32,7 @@ export default function TestSuiteDetail({ suiteId }: TestSuiteDetailProps) {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [createTestRunDialogOpen, setCreateTestRunDialogOpen] = useState(false);
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
   const [addTestCasesDialogOpen, setAddTestCasesDialogOpen] = useState(false);
   const [addModulesDialogOpen, setAddModulesDialogOpen] = useState(false);
@@ -59,6 +61,7 @@ export default function TestSuiteDetail({ suiteId }: TestSuiteDetailProps) {
   const canUpdateSuite = hasPermissionCheck('testsuites:update');
   const canDeleteSuite = hasPermissionCheck('testsuites:delete');
   const canManageTestCases = canUpdateSuite; // Can add/remove test cases if can update suite
+  const canCreateTestRun = hasPermissionCheck('testruns:create');
 
   useEffect(() => {
     fetchTestSuite();
@@ -455,6 +458,14 @@ export default function TestSuiteDetail({ suiteId }: TestSuiteDetailProps) {
         <ActionButtonGroup
           buttons={[
             {
+              label: 'テストランを作成',
+              icon: PlayCircle,
+              onClick: () => setCreateTestRunDialogOpen(true),
+              variant: 'primary',
+              show: canCreateTestRun,
+              buttonName: 'Test Suite Detail - Create Test Run',
+            },
+            {
               label: 'Add Modules & Test Cases',
               icon: Plus,
               onClick: () => {
@@ -588,6 +599,19 @@ export default function TestSuiteDetail({ suiteId }: TestSuiteDetailProps) {
           submitButtonText="Add Selected"
           emptyMessage="No modules or test cases available to add"
           loading={loadingAvailableModules}
+        />
+
+        {/* Create Test Run Dialog */}
+        <CreateTestRunDialog
+          projectId={testSuite.projectId}
+          triggerOpen={createTestRunDialogOpen}
+          onOpenChange={setCreateTestRunDialogOpen}
+          testSuiteIds={[testSuite.id]}
+          defaultName={testSuite.name}
+          onTestRunCreated={(testRun) => {
+            setCreateTestRunDialogOpen(false);
+            router.push(`/projects/${testSuite.projectId}/testruns/${testRun.id}`);
+          }}
         />
 
         {/* Delete Test Case Dialog */}

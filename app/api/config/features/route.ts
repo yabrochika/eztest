@@ -9,9 +9,15 @@ export async function GET() {
   try {
     // Read directly from process.env to get the latest value
     const enableAttachments = process.env.ENABLE_ATTACHMENTS === 'true';
-    
+    const googleAuthEnabled = !!(
+      process.env.GOOGLE_CLIENT_ID &&
+      process.env.GOOGLE_CLIENT_SECRET &&
+      process.env.GOOGLE_ALLOWED_DOMAIN
+    );
+
     return NextResponse.json({
       enableAttachments,
+      googleAuthEnabled,
     });
   } catch (error) {
     console.error('Error fetching feature config:', error);

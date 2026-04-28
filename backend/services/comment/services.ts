@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { s3Client, getS3Bucket, isS3Configured } from '@/lib/s3-client';
+import { s3Client, getS3Bucket, isS3Configured, isUploadLocalRelativePath } from '@/lib/s3-client';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
@@ -88,9 +88,9 @@ export class CommentService {
       throw new Error('Comment attachment not found');
     }
 
-    // S3が設定されている場合はpresigned URLを生成、未設定の場合はローカルURLを返す
+    // S3 が有効でも upload-local フォールバックで保存されたパスはローカルファイルを指す
     let url: string;
-    if (isS3Configured()) {
+    if (isS3Configured() && !isUploadLocalRelativePath(attachment.path)) {
       const command = new GetObjectCommand({
         Bucket: getS3Bucket(),
         Key: attachment.path,
@@ -122,7 +122,7 @@ export class CommentService {
     }
 
     if (step === 'prepare') {
-      if (isS3Configured()) {
+      if (isS3Configured() && !isUploadLocalRelativePath(attachment.path)) {
         // S3: Generate presigned DELETE URL
         const command = new DeleteObjectCommand({
           Bucket: getS3Bucket(),
@@ -131,7 +131,7 @@ export class CommentService {
         const deleteUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
         return { deleteUrl };
       } else {
-        // ローカル: 直接削除可能としてスキップ
+        // ローカル保存または upload-local パス: S3 削除は不要
         return { deleteUrl: null };
       }
     } else if (step === 'confirm') {

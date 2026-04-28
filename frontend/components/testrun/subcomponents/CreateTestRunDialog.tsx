@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
+import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import { TestRun } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { parseMultiValueField, serializeMultiValueField } from '../utils/multiValueField';
 
 interface ProjectMember {
   user: {
@@ -18,6 +20,65 @@ interface CreateTestRunDialogProps {
   triggerOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   onTestRunCreated: (testRun: TestRun) => void;
+  /**
+   * 事前にテストランへ含めたいテストスイート ID 群。
+   * 指定された場合、テストスイート配下のテストケースが自動的に追加される。
+   */
+  testSuiteIds?: string[];
+  /**
+   * テストラン名の初期値（テストスイートから作成する際にスイート名を引き継ぐなど）。
+   */
+  defaultName?: string;
+}
+
+interface MultiSelectCheckboxFieldProps {
+  fieldName: string;
+  value: string;
+  onChange: (nextValue: string) => void;
+  options: Array<{ value: string; label: string }>;
+  emptyLabel: string;
+}
+
+function MultiSelectCheckboxField({
+  fieldName,
+  value,
+  onChange,
+  options,
+  emptyLabel,
+}: MultiSelectCheckboxFieldProps) {
+  const selectedValues = parseMultiValueField(value);
+
+  const toggleValue = (targetValue: string) => {
+    const nextValues = selectedValues.includes(targetValue)
+      ? selectedValues.filter((item) => item !== targetValue)
+      : [...selectedValues, targetValue];
+    onChange(serializeMultiValueField(nextValues) || '');
+  };
+
+  return (
+    <div className="rounded-md border border-[#334155] bg-[#0f172a] p-3 space-y-2">
+      <div className="flex flex-wrap gap-3">
+        {options.map((option) => {
+          const id = `${fieldName}-${option.value}-checkbox`;
+          const isChecked = selectedValues.includes(option.value);
+          return (
+            <label key={option.value} htmlFor={id} className="flex items-center gap-2 text-sm text-white/90 cursor-pointer">
+              <Checkbox
+                id={id}
+                variant="glass"
+                checked={isChecked}
+                onCheckedChange={() => toggleValue(option.value)}
+              />
+              <span>{option.label}</span>
+            </label>
+          );
+        })}
+      </div>
+      {selectedValues.length === 0 && (
+        <p className="text-xs text-white/50">{emptyLabel}</p>
+      )}
+    </div>
+  );
 }
 
 export function CreateTestRunDialog({
@@ -25,6 +86,8 @@ export function CreateTestRunDialog({
   triggerOpen,
   onOpenChange,
   onTestRunCreated,
+  testSuiteIds,
+  defaultName,
 }: CreateTestRunDialogProps) {
   // Fetch dynamic dropdown options
   const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
@@ -63,61 +126,86 @@ export function CreateTestRunDialog({
       type: 'text',
       required: true,
       minLength: 3,
-      maxLength: 50,
+      maxLength: 255,
       cols: 2,
+      defaultValue: defaultName,
     },
     {
       name: 'environment',
       label: '環境',
-      type: 'select',
-      placeholder: '環境を選択',
+      type: 'custom',
       required: true,
-      defaultValue: 'none',
-      options: [
-        { value: 'none', label: '環境を選択' },
-        ...environmentOptions.map(opt => ({ value: opt.value, label: opt.label })),
-      ],
+      defaultValue: '',
+      customRender: (value, onChange) => (
+        <MultiSelectCheckboxField
+          fieldName="environment"
+          value={value}
+          onChange={onChange}
+          options={environmentOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
+          emptyLabel="環境を1つ以上選択してください"
+        />
+      ),
+      validate: (value) =>
+        parseMultiValueField(value).length === 0 ? '環境を1つ以上選択してください' : undefined,
       cols: 2,
     },
     {
-      name: 'assignedToId',
+      name: 'assignedToIds',
       label: 'テスター割り当て',
-      type: 'select',
-      placeholder: 'テスターを選択',
-      defaultValue: 'none',
-      options: [
-        { value: 'none', label: '未割り当て' },
-        ...memberOptions,
-      ],
+      type: 'custom',
+      defaultValue: '',
+      customRender: (value, onChange) => (
+        <MultiSelectCheckboxField
+          fieldName="assigned-to"
+          value={value}
+          onChange={onChange}
+          options={memberOptions}
+          emptyLabel="未割り当て"
+        />
+      ),
       cols: 2,
     },
     {
       name: 'platform',
       label: 'プラットフォーム',
-      type: 'select',
-      placeholder: 'プラットフォームを選択',
-      defaultValue: 'none',
-      options: [
-        { value: 'none', label: 'プラットフォームを選択' },
-        { value: 'Web', label: 'Web' },
-        { value: 'Web(SP)', label: 'Web(SP)' },
-        { value: 'iOS Native', label: 'iOS Native' },
-        { value: 'Android Native', label: 'Android Native' },
-      ],
+      type: 'custom',
+      defaultValue: '',
+      customRender: (value, onChange) => (
+        <MultiSelectCheckboxField
+          fieldName="platform"
+          value={value}
+          onChange={onChange}
+          options={[
+            { value: 'Web', label: 'Web' },
+            { value: 'Web(SP)', label: 'Web(SP)' },
+            { value: 'iOS Native', label: 'iOS Native' },
+            { value: 'Android Native', label: 'Android Native' },
+          ]}
+          emptyLabel="未選択"
+        />
+      ),
       cols: 1,
     },
     {
       name: 'device',
       label: '端末',
-      type: 'select',
-      placeholder: '端末を選択',
-      defaultValue: 'none',
-      options: [
-        { value: 'none', label: '端末を選択' },
-        { value: 'iPhone', label: 'iPhone' },
-        { value: 'Android', label: 'Android' },
-        { value: 'PC', label: 'PC' },
-      ],
+      type: 'custom',
+      defaultValue: '',
+      customRender: (value, onChange) => (
+        <MultiSelectCheckboxField
+          fieldName="device"
+          value={value}
+          onChange={onChange}
+          options={[
+            { value: 'iPhone', label: 'iPhone' },
+            { value: 'Android', label: 'Android' },
+            { value: 'PC', label: 'PC' },
+            { value: 'Chrome', label: 'Chrome' },
+            { value: 'Safari', label: 'Safari' },
+          ]}
+          emptyLabel="未選択"
+        />
+      ),
       cols: 1,
     },
     {
@@ -140,8 +228,13 @@ export function CreateTestRunDialog({
   ];
 
   const handleSubmit = async (formData: Record<string, string>) => {
+    const selectedEnvironments = parseMultiValueField(formData.environment);
+    const selectedAssignees = parseMultiValueField(formData.assignedToIds);
+    const selectedPlatforms = parseMultiValueField(formData.platform);
+    const selectedDevices = parseMultiValueField(formData.device);
+
     // Validate environment is selected
-    if (formData.environment === 'none' || !formData.environment) {
+    if (selectedEnvironments.length === 0) {
       throw new Error('環境を選択してください');
     }
 
@@ -153,12 +246,13 @@ export function CreateTestRunDialog({
       body: JSON.stringify({
         name: formData.name,
         description: formData.description || undefined,
-        environment: formData.environment,
+        environment: selectedEnvironments,
         version: formData.version || undefined,
-        assignedToId: formData.assignedToId && formData.assignedToId !== 'none' ? formData.assignedToId : undefined,
-        platform: formData.platform && formData.platform !== 'none' ? formData.platform : undefined,
-        device: formData.device && formData.device !== 'none' ? formData.device : undefined,
+        assignedToIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
+        platform: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,
+        device: selectedDevices.length > 0 ? selectedDevices : undefined,
         executionType: 'MANUAL',
+        testSuiteIds: testSuiteIds && testSuiteIds.length > 0 ? testSuiteIds : undefined,
       }),
     });
 
@@ -187,6 +281,8 @@ export function CreateTestRunDialog({
     },
     submitButtonName: 'Create Test Run Dialog - Create Test Run',
     cancelButtonName: 'Create Test Run Dialog - Cancel',
+    // 事前指定値（テストスイート起点の作成）がある場合は永続化値で上書きしない
+    disablePersistence: !!defaultName || !!(testSuiteIds && testSuiteIds.length > 0),
   };
 
   return <BaseDialog {...config} />;

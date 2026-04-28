@@ -4,6 +4,7 @@ import { ActionButtonGroup } from '@/frontend/reusable-components/layout/ActionB
 import { Play, Square, RotateCcw, User, Timer, Pencil } from 'lucide-react';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
+import { parseMultiValueField } from '../../utils/multiValueField';
 
 interface TestRunHeaderProps {
   testRun: {
@@ -19,6 +20,11 @@ interface TestRunHeaderProps {
       name: string;
       email: string;
     } | null;
+    assignedToList?: Array<{
+      id: string;
+      name: string;
+      email: string;
+    }>;
     project: {
       id: string;
     };
@@ -66,15 +72,15 @@ export function TestRunHeader({
   };
 
   const statusBadgeProps = getDynamicBadgeProps(testRun.status, statusOptions);
-  const environmentBadgeProps = testRun.environment 
-    ? getDynamicBadgeProps(testRun.environment, environmentOptions)
-    : null;
+  const environmentValues = parseMultiValueField(testRun.environment);
+  const platformValues = parseMultiValueField(testRun.platform);
+  const deviceValues = parseMultiValueField(testRun.device);
+  const assignedUsers = testRun.assignedToList && testRun.assignedToList.length > 0
+    ? testRun.assignedToList
+    : (testRun.assignedTo ? [testRun.assignedTo] : []);
 
   // Get labels from dropdown options
   const statusLabel = statusOptions.find(opt => opt.value === testRun.status)?.label || testRun.status.replace('_', ' ');
-  const environmentLabel = testRun.environment 
-    ? (environmentOptions.find(opt => opt.value === testRun.environment)?.label || testRun.environment.toUpperCase())
-    : null;
   const versionLabel = testRun.version?.trim() || '未設定';
 
   // Determine execution type badge color based on label
@@ -108,16 +114,25 @@ export function TestRunHeader({
               </Badge>
             </div>
           )}
-          {testRun.environment && environmentBadgeProps && (
+          {environmentValues.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-white/60">環境:</span>
-              <Badge
-                variant="outline"
-                className={environmentBadgeProps.className}
-                style={environmentBadgeProps.style}
-              >
-                {environmentLabel}
-              </Badge>
+              <div className="flex flex-wrap gap-2">
+                {environmentValues.map((environmentValue) => {
+                  const environmentBadgeProps = getDynamicBadgeProps(environmentValue, environmentOptions);
+                  const environmentLabel = environmentOptions.find(opt => opt.value === environmentValue)?.label || environmentValue.toUpperCase();
+                  return (
+                    <Badge
+                      key={`env-${environmentValue}`}
+                      variant="outline"
+                      className={environmentBadgeProps.className}
+                      style={environmentBadgeProps.style}
+                    >
+                      {environmentLabel}
+                    </Badge>
+                  );
+                })}
+              </div>
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -133,29 +148,41 @@ export function TestRunHeader({
               {versionLabel}
             </Badge>
           </div>
-          {testRun.platform && (
+          {platformValues.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-white/60">プラットフォーム:</span>
-              <Badge variant="outline" className="bg-cyan-500/10 text-cyan-500 border-cyan-500/20">
-                {testRun.platform}
-              </Badge>
+              <div className="flex flex-wrap gap-2">
+                {platformValues.map((platformValue) => (
+                  <Badge key={`platform-${platformValue}`} variant="outline" className="bg-cyan-500/10 text-cyan-500 border-cyan-500/20">
+                    {platformValue}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
-          {testRun.device && (
+          {deviceValues.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-white/60">端末:</span>
-              <Badge variant="outline" className="bg-teal-500/10 text-teal-500 border-teal-500/20">
-                {testRun.device}
-              </Badge>
+              <div className="flex flex-wrap gap-2">
+                {deviceValues.map((deviceValue) => (
+                  <Badge key={`device-${deviceValue}`} variant="outline" className="bg-teal-500/10 text-teal-500 border-teal-500/20">
+                    {deviceValue}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
-          {testRun.assignedTo && (
+          {assignedUsers.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-white/60">テスター:</span>
-              <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
-                <User className="w-3 h-3 mr-1" />
-                {testRun.assignedTo.name}
-              </Badge>
+              <div className="flex flex-wrap gap-2">
+                {assignedUsers.map((assignedUser) => (
+                  <Badge key={`assignee-${assignedUser.id}`} variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
+                    <User className="w-3 h-3 mr-1" />
+                    {assignedUser.name}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
           {totalExecutionTime > 0 && (

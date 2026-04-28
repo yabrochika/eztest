@@ -4,6 +4,7 @@ import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
 import {
   Edit,
   Folder,
+  PlayCircle,
   Trash2,
 } from 'lucide-react';
 import { TestSuite } from '../types';
@@ -14,7 +15,9 @@ interface TestSuiteCardProps {
   onToggleExpand?: (suiteId: string) => void;
   onView: (suiteId: string) => void;
   onDelete: (suite: TestSuite) => void;
+  onCreateTestRun?: (suite: TestSuite) => void;
   canDelete?: boolean;
+  canCreateTestRun?: boolean;
   isChild?: boolean;
 }
 
@@ -26,7 +29,9 @@ export function TestSuiteCard({
   onToggleExpand,
   onView,
   onDelete,
+  onCreateTestRun,
   canDelete = true,
+  canCreateTestRun = false,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isChild = false,
 }: TestSuiteCardProps) {
@@ -48,6 +53,13 @@ export function TestSuiteCard({
               label: 'View / Edit',
               icon: Edit,
               onClick: () => onView(suite.id),
+            },
+            {
+              label: 'テストランを作成',
+              icon: PlayCircle,
+              onClick: () => onCreateTestRun?.(suite),
+              show: canCreateTestRun && !!onCreateTestRun,
+              buttonName: 'Test Suite Card - Create Test Run',
             },
             {
               label: 'Delete',

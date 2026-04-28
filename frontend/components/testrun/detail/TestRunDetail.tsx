@@ -7,9 +7,16 @@ import { TestRunHeader } from './subcomponents/TestRunHeader';
 import { TestRunStatsCards } from './subcomponents/TestRunStatsCards';
 import { TestCasesListCard } from './subcomponents/TestCasesListCard';
 import { RecordResultDialog } from './subcomponents/RecordResultDialog';
+import { ViewResultDialog } from './subcomponents/ViewResultDialog';
 import { AddTestCasesDialog } from '@/frontend/components/common/dialogs/AddTestCasesDialog';
 import { AddTestSuitesDialog } from './subcomponents/AddTestSuitesDialog';
 import { CreateDefectDialog } from '@/frontend/components/defect/subcomponents/CreateDefectDialog';
+import { ShortcutEpicPickerDialog } from '@/frontend/components/defect/detail/subcomponents/ShortcutEpicPickerDialog';
+import { ShortcutStoryPickerDialog } from '@/frontend/components/defect/detail/subcomponents/ShortcutStoryPickerDialog';
+import {
+  extractEpicId,
+  resolveShortcutId,
+} from '@/frontend/components/defect/detail/subcomponents/shortcutEpicDetect';
 import { SendTestRunReportDialog } from './subcomponents/SendTestRunReportDialog';
 import {
   CheckCircle,
@@ -18,11 +25,14 @@ import {
   Circle,
   Upload,
 } from 'lucide-react';
-import { TestRun, TestCase, ResultFormData, TestRunStats, TestSuite } from './types';
+import { TestRun, TestCase, ResultFormData, TestRunStats, TestSuite, TestResult } from './types';
+import type { Attachment } from '@/lib/s3';
+import { uploadFileToS3, linkAttachments } from '@/lib/s3';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
 import { EditTestRunDialog } from '@/frontend/components/testrun/subcomponents/EditTestRunDialog';
+import { ConfirmDeleteDialog } from '@/frontend/reusable-components/dialogs/ConfirmDeleteDialog';
 
 interface TestRunDetailProps {
   testRunId: string;
@@ -38,6 +48,15 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [addSuitesDialogOpen, setAddSuitesDialogOpen] = useState(false);
   const [createDefectDialogOpen, setCreateDefectDialogOpen] = useState(false);
   const [selectedTestCaseForDefect, setSelectedTestCaseForDefect] = useState<string | null>(null);
+  // Shortcut Sub-task follow-up flow launched by "ストーリーを作成" in CreateDefectDialog.
+  // The pickers are kept here (not inside CreateDefectDialog) so they stay
+  // mounted after CreateDefectDialog closes/unmounts on successful submit.
+  const [defectForStory, setDefectForStory] =
+    useState<{ id: string; defectId: string; title: string } | null>(null);
+  const [shortcutEpicPickerOpen, setShortcutEpicPickerOpen] = useState(false);
+  const [shortcutStoryPickerOpen, setShortcutStoryPickerOpen] = useState(false);
+  const [shortcutResolvedEpic, setShortcutResolvedEpic] =
+    useState<{ id: number; name: string | null } | null>(null);
   const [selectedTestCase, setSelectedTestCase] = useState<{
     testCaseId: string;
     testCaseName: string;
@@ -55,6 +74,17 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [loadingSuites, setLoadingSuites] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [excludeTarget, setExcludeTarget] = useState<{
+    testCaseId: string;
+    title: string;
+    currentStatus: string;
+  } | null>(null);
+  const [excludeLoading, setExcludeLoading] = useState(false);
+  /** テスト結果コメントの添付（保存時に TestResult に紐づけ） */
+  const [resultCommentAttachments, setResultCommentAttachments] = useState<Attachment[]>([]);
+  /** 実行済みテストケースの結果（コメント・添付）を読み取り専用で表示するダイアログ */
+  const [viewResultDialogOpen, setViewResultDialogOpen] = useState(false);
+  const [viewingResult, setViewingResult] = useState<TestResult | null>(null);
 
   const [resultForm, setResultForm, clearResultForm] = useFormPersistence<ResultFormData>(
     `testrun-result-${testRunId}`,
@@ -117,7 +147,21 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     }
   }, [testRun]);
 
-  const fetchTestRun = async () => {
+  const mapResultAttachments = useCallback((result: TestResult | undefined): Attachment[] => {
+    if (!result?.attachments?.length) return [];
+    return result.attachments.map((a) => ({
+      id: a.id,
+      filename: a.filename,
+      originalName: a.originalName,
+      size: a.size,
+      mimeType: a.mimeType,
+      uploadedAt: typeof a.uploadedAt === 'string' ? a.uploadedAt : new Date(a.uploadedAt).toISOString(),
+      fieldName: a.fieldName || 'comment',
+      entityType: 'testresult' as const,
+    }));
+  }, []);
+
+  const fetchTestRun = async (): Promise<TestRun | null> => {
     try {
       setLoading(true);
       // Extract projectId from URL path or use from testRun data
@@ -137,12 +181,14 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       const data = await response.json();
       if (data.data) {
         setTestRun(data.data);
-      } else {
-        alert(data.error || 'テストランの取得に失敗しました');
+        return data.data as TestRun;
       }
+      alert(data.error || 'テストランの取得に失敗しました');
+      return null;
     } catch (error) {
       console.error('Error fetching test run:', error);
       alert('テストランの取得に失敗しました');
+      return null;
     } finally {
       setLoading(false);
     }
@@ -312,16 +358,32 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     }
   };
 
-  // RTC-ID昇順にソートしたテストケースリスト（ナビゲーション用）
+  const compareTestCasesByTcId = useCallback((a: TestCase, b: TestCase) => {
+    const tcCompare = (a.tcId || '').localeCompare(b.tcId || '', undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+    if (tcCompare !== 0) return tcCompare;
+
+    const rtcCompare = (a.rtcId || '').localeCompare(b.rtcId || '', undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+    if (rtcCompare !== 0) return rtcCompare;
+
+    return (a.title || a.name || '').localeCompare(b.title || b.name || '', undefined, {
+      sensitivity: 'base',
+    });
+  }, []);
+
+  // TC-ID昇順にソートしたテストケースリスト（ナビゲーション用）
   const sortedTestCases = useMemo(() => {
     if (!testRun?.results) return [];
     return [...testRun.results]
       .filter((r) => r.testCase)
       .map((r) => r.testCase)
-      .sort((a, b) =>
-        (a.rtcId || '').localeCompare(b.rtcId || '', undefined, { numeric: true })
-      );
-  }, [testRun?.results]);
+      .sort(compareTestCasesByTcId);
+  }, [compareTestCasesByTcId, testRun?.results]);
 
   // ◀▶ナビゲーション（前後切り替え）
   const navigateTestCase = useCallback((direction: 'prev' | 'next') => {
@@ -347,19 +409,22 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       status: resolvedStatus,
       comment: existingResult?.comment || '',
     });
-  }, [selectedTestCase, sortedTestCases, testRun?.results, setResultForm]);
+    setResultCommentAttachments(mapResultAttachments(existingResult));
+  }, [selectedTestCase, sortedTestCases, testRun?.results, setResultForm, mapResultAttachments]);
 
   // 次のテストケースに遷移するヘルパー（保存後・欠陥作成後に使用）
-  const navigateToNextTestCase = useCallback(() => {
+  const navigateToNextTestCase = useCallback((freshRun?: TestRun | null) => {
+    const run = freshRun ?? testRun;
     if (!selectedTestCase || sortedTestCases.length === 0) {
       setResultDialogOpen(false);
       setSelectedTestCase(null);
+      setResultCommentAttachments([]);
       return;
     }
     const currentIndex = sortedTestCases.findIndex(tc => tc.id === selectedTestCase.testCaseId);
     if (currentIndex >= 0 && currentIndex < sortedTestCases.length - 1) {
       const nextTestCase = sortedTestCases[currentIndex + 1];
-      const nextResult = testRun?.results.find((r) => r.testCaseId === nextTestCase.id);
+      const nextResult = run?.results.find((r) => r.testCaseId === nextTestCase.id);
       const resolvedStatus = !nextResult
         ? 'NOT_STARTED'
         : nextResult.status === 'SKIPPED' && !nextResult.comment
@@ -373,12 +438,14 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         status: resolvedStatus,
         comment: nextResult?.comment || '',
       });
+      setResultCommentAttachments(mapResultAttachments(nextResult));
       setResultDialogOpen(true);
     } else {
       setResultDialogOpen(false);
       setSelectedTestCase(null);
+      setResultCommentAttachments([]);
     }
-  }, [selectedTestCase, sortedTestCases, testRun?.results, setResultForm]);
+  }, [selectedTestCase, sortedTestCases, testRun, setResultForm, mapResultAttachments]);
 
   const handleOpenResultDialog = (testCase: TestCase) => {
     const existingResult = testRun?.results.find(
@@ -402,6 +469,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       comment: existingResult?.comment || '',
     });
 
+    setResultCommentAttachments(mapResultAttachments(existingResult));
     setResultDialogOpen(true);
   };
 
@@ -420,6 +488,27 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           projectId = pathSegments[projectIndex + 1];
         }
       }
+      if (!projectId) {
+        alert('プロジェクト情報を取得できませんでした');
+        return;
+      }
+
+      const uploadedToLink: Attachment[] = [];
+      for (const att of resultCommentAttachments) {
+        if (!att.id.startsWith('pending-')) continue;
+        const file = (att as Attachment & { _pendingFile?: File })._pendingFile;
+        if (!file) continue;
+        const up = await uploadFileToS3({
+          file,
+          fieldName: att.fieldName || 'comment',
+          entityType: 'testresult',
+          projectId,
+          onProgress: () => {},
+        });
+        if (up.success && up.attachment) {
+          uploadedToLink.push({ ...up.attachment, entityType: 'testresult' });
+        }
+      }
 
       const response = await fetch(`/api/projects/${projectId}/testruns/${testRunId}/results`, {
         method: 'POST',
@@ -435,8 +524,15 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       const data = await response.json();
 
       if (data.data) {
+        const testResultId = data.data.id as string;
+        if (uploadedToLink.length > 0) {
+          await linkAttachments(uploadedToLink, 'testResultId', testResultId);
+        }
+
         clearResultForm();
-        fetchTestRun();
+        setResultCommentAttachments([]);
+
+        const latestRun = await fetchTestRun();
 
         if (resultForm.status === 'FAILED' && selectedTestCase) {
           // FAILED → 結果記録を閉じて新規欠陥作成ダイアログを開く
@@ -445,7 +541,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           setCreateDefectDialogOpen(true);
         } else {
           // FAILED以外 → 次のテストケースへ遷移
-          navigateToNextTestCase();
+          navigateToNextTestCase(latestRun);
         }
       } else {
         alert(data.error || '結果の保存に失敗しました');
@@ -722,14 +818,84 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setCreateDefectDialogOpen(true);
   };
 
-  const handleDefectCreated = () => {
+  const handleCreateStoryForDefect = async (defect: { id: string; defectId: string; title: string }) => {
+    setDefectForStory(defect);
+
+    // Collect hints from the test case this defect was created against.
+    const tc = selectedTestCaseForDefect
+      ? (testRun?.results.find((r) => r.testCase.id === selectedTestCaseForDefect)?.testCase
+          ?? testRun?.testCases?.find((t) => t.id === selectedTestCaseForDefect)
+          ?? null)
+      : null;
+    const suiteNames =
+      tc?.testCaseSuites?.map((s) => s.testSuite?.name).filter(Boolean) ?? [];
+
+    const hint = extractEpicId(
+      defect.title,
+      testRun?.name,
+      tc?.title,
+      tc?.tcId,
+      ...suiteNames
+    );
+    if (hint) {
+      try {
+        const resolved = await resolveShortcutId(hint);
+        if (resolved.kind !== 'unknown' && resolved.epicId) {
+          setShortcutResolvedEpic({ id: resolved.epicId, name: resolved.epicName });
+          setShortcutStoryPickerOpen(true);
+          return;
+        }
+      } catch {
+        // Fall through to manual epic picker
+      }
+    }
+    setShortcutEpicPickerOpen(true);
+  };
+
+  const handleViewResult = (result: TestResult) => {
+    setViewingResult(result);
+    setViewResultDialogOpen(true);
+  };
+
+  const handleExcludeRequest = (testCase: TestCase, currentStatus: string) => {
+    setExcludeTarget({
+      testCaseId: testCase.id,
+      title: testCase.title || testCase.tcId || testCase.id,
+      currentStatus,
+    });
+  };
+
+  const handleConfirmExclude = async () => {
+    if (!excludeTarget || !testRun?.project?.id) return;
+
+    setExcludeLoading(true);
+    try {
+      const response = await fetch(
+        `/api/projects/${testRun.project.id}/testruns/${testRunId}/testcases/${excludeTarget.testCaseId}`,
+        { method: 'DELETE' }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.message || data?.error || 'テストケースの除外に失敗しました');
+      }
+      setFloatingAlert({ type: 'success', title: '除外しました', message: `「${excludeTarget.title}」をテストランから除外しました` });
+      setExcludeTarget(null);
+      await fetchTestRun();
+    } catch (error) {
+      setFloatingAlert({ type: 'error', title: '除外に失敗しました', message: error instanceof Error ? error.message : '不明なエラー' });
+    } finally {
+      setExcludeLoading(false);
+    }
+  };
+
+  const handleDefectCreated = async () => {
     setCreateDefectDialogOpen(false);
     setSelectedTestCaseForDefect(null);
     setDefectRefreshTrigger(prev => prev + 1);
-    fetchTestRun();
+    const latest = await fetchTestRun();
 
     // 欠陥作成後、次のテストケースの結果記録ダイアログを開く
-    navigateToNextTestCase();
+    navigateToNextTestCase(latest);
   };
 
   const getResultIcon = (status?: string) => {
@@ -855,7 +1021,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           onReopenTestRun={handleReopenTestRun}
           totalExecutionTime={
             testRun.results
-              ?.reduce((sum, r) => sum + (r.testCase?.estimatedTime || 0), 0) || 0
+              ?.reduce((sum, r) => sum + (r.duration || 0), 0) || 0
           }
         />
 
@@ -882,8 +1048,19 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           }}
           onExecuteTestCase={handleOpenResultDialog}
           onCreateDefect={handleCreateDefect}
+          onExcludeTestCase={handleExcludeRequest}
+          onViewResult={handleViewResult}
           forceShowDefectActions={showAutomationDefectActions}
           getResultIcon={getResultIcon}
+        />
+
+        <ViewResultDialog
+          open={viewResultDialogOpen}
+          onOpenChange={(open) => {
+            setViewResultDialogOpen(open);
+            if (!open) setViewingResult(null);
+          }}
+          result={viewingResult}
         />
 
         <RecordResultDialog
@@ -895,6 +1072,8 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           testRunPlatform={testRun.platform}
           testRunDevice={testRun.device}
           formData={resultForm}
+          commentAttachments={resultCommentAttachments}
+          onCommentAttachmentsChange={setResultCommentAttachments}
           onOpenChange={setResultDialogOpen}
           onFormChange={(data) => {
             const filteredData = Object.fromEntries(
@@ -903,6 +1082,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             setResultForm({ ...resultForm, ...filteredData } as ResultFormData);
           }}
           onSubmit={handleSubmitResult}
+          initialDurationSeconds={
+            selectedTestCase
+              ? testRun.results.find((r) => r.testCaseId === selectedTestCase.testCaseId)?.duration
+              : undefined
+          }
           refreshTrigger={defectRefreshTrigger}
           onNavigate={navigateTestCase}
           hasPrev={sortedTestCases.findIndex(tc => tc.id === selectedTestCase?.testCaseId) > 0}
@@ -970,6 +1154,43 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             testRunEnvironment={testRun.environment}
             testRunPlatform={testRun.platform}
             testRunDevice={testRun.device}
+            onCreateStoryAfterDefect={handleCreateStoryForDefect}
+          />
+        )}
+
+        {defectForStory && testRun.project?.id && (
+          <ShortcutEpicPickerDialog
+            projectId={testRun.project.id}
+            defectId={defectForStory.id}
+            open={shortcutEpicPickerOpen}
+            onOpenChange={setShortcutEpicPickerOpen}
+            persistToDefect={false}
+            onLinked={(epic) => {
+              setShortcutResolvedEpic({ id: epic.id, name: epic.name });
+              setShortcutEpicPickerOpen(false);
+              setShortcutStoryPickerOpen(true);
+            }}
+          />
+        )}
+
+        {defectForStory && shortcutResolvedEpic && testRun.project?.id && (
+          <ShortcutStoryPickerDialog
+            projectId={testRun.project.id}
+            defectId={defectForStory.id}
+            epicId={shortcutResolvedEpic.id}
+            epicName={shortcutResolvedEpic.name}
+            open={shortcutStoryPickerOpen}
+            onOpenChange={setShortcutStoryPickerOpen}
+            onAttached={(result) => {
+              setShortcutStoryPickerOpen(false);
+              setDefectForStory(null);
+              setShortcutResolvedEpic(null);
+              setFloatingAlert({
+                type: 'success',
+                title: 'Shortcut Story を作成しました',
+                message: `Story #${result.shortcutStoryId} を Sub-task として登録しました`,
+              });
+            }}
           />
         )}
 
@@ -1001,6 +1222,29 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           onTestRunUpdated={handleTestRunUpdated}
+        />
+
+        <ConfirmDeleteDialog
+          open={!!excludeTarget}
+          title="テストケースをテストランから除外"
+          description={(() => {
+            const status = excludeTarget?.currentStatus;
+            const isExecuted =
+              !!status && status !== 'SKIPPED' && status !== 'PENDING';
+            const base = `「${excludeTarget?.title || ''}」を、このテストランから除外します。`;
+            const warn = isExecuted
+              ? `\n現在のステータス: ${status}\n実行結果・コメント・添付ファイルも併せて削除されます。`
+              : '';
+            return `${base}${warn}\nこの操作は取り消せません。`;
+          })()}
+          confirmLabel="除外する"
+          cancelLabel="キャンセル"
+          isLoading={excludeLoading}
+          onOpenChange={(open) => {
+            if (!open) setExcludeTarget(null);
+          }}
+          onConfirm={handleConfirmExclude}
+          dialogName="Test Run Detail - Exclude Test Case"
         />
       </div>
 

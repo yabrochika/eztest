@@ -461,7 +461,7 @@ export default function DefectDetail({ projectId, defectId }: DefectDetailProps)
           </div>
 
           <div className="space-y-6">
-            <DefectInfoCard defect={defect} />
+            <DefectInfoCard defect={defect} onChanged={fetchDefect} />
           </div>
         </div>
 

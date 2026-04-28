@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, useRef, ReactNode } from 'react';
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
+import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/frontend/reusable-elements/dialogs/Dialog';
 import { Input } from '@/frontend/reusable-elements/inputs/Input';
 import { Textarea } from '@/frontend/reusable-elements/textareas/Textarea';
@@ -64,6 +65,19 @@ export interface BaseDialogConfig<T = unknown> {
   /** Button name for analytics tracking (defaults to title if not provided) */
   submitButtonName?: string;
   cancelButtonName?: string;
+  /**
+   * Optional secondary action rendered between Cancel and Submit.
+   * When clicked, runs the full form validation + onSubmit flow. On success
+   * the result is forwarded to `onAfterSubmit` instead of the default
+   * `onSuccess` handler. Use this for "Submit + do something else" flows
+   * (e.g. "Create Defect + open Shortcut story picker").
+   */
+  secondaryAction?: {
+    label: string;
+    icon?: ReactNode;
+    buttonName?: string;
+    onAfterSubmit: (result: T) => void | Promise<void>;
+  };
 }
 
 export const BaseDialog = <T = unknown,>({
@@ -82,12 +96,16 @@ export const BaseDialog = <T = unknown,>({
   disablePersistence = false,
   submitButtonName,
   cancelButtonName,
+  secondaryAction,
 }: BaseDialogConfig<T>) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  // Tracks which footer button initiated the current form submission.
+  // Using a ref avoids triggering re-renders between click and submit.
+  const submitModeRef = useRef<'primary' | 'secondary'>('primary');
 
   // Validate a single field
   const validateField = (field: BaseDialogField, value: string, currentFormData?: Record<string, string>): string | undefined => {
@@ -282,6 +300,7 @@ export const BaseDialog = <T = unknown,>({
     }
 
     setLoading(true);
+    const mode = submitModeRef.current;
 
     try {
       const result = await onSubmit(formData);
@@ -298,7 +317,9 @@ export const BaseDialog = <T = unknown,>({
       
       handleOpenChange(false);
 
-      if (onSuccess) {
+      if (mode === 'secondary' && secondaryAction?.onAfterSubmit) {
+        await secondaryAction.onAfterSubmit(result);
+      } else if (onSuccess) {
         onSuccess(result);
       }
     } catch (err) {
@@ -311,6 +332,8 @@ export const BaseDialog = <T = unknown,>({
       });
       setError(errorMessage);
     } finally {
+      // Always reset so a subsequent plain submit defaults to 'primary'.
+      submitModeRef.current = 'primary';
       setLoading(false);
     }
   };
@@ -492,11 +515,31 @@ export const BaseDialog = <T = unknown,>({
           >
             {cancelLabel}
           </Button>
+          {secondaryAction && (
+            <ButtonSecondary
+              type="submit"
+              form="base-dialog-form"
+              disabled={loading}
+              className="cursor-pointer"
+              onClick={() => {
+                submitModeRef.current = 'secondary';
+              }}
+              buttonName={
+                secondaryAction.buttonName || `${title} - ${secondaryAction.label}`
+              }
+            >
+              {secondaryAction.icon}
+              {secondaryAction.label}
+            </ButtonSecondary>
+          )}
           <ButtonPrimary
             type="submit"
             form="base-dialog-form"
             disabled={loading}
             className="cursor-pointer"
+            onClick={() => {
+              submitModeRef.current = 'primary';
+            }}
             buttonName={submitButtonName || `${title} - ${submitLabel}`}
           >
             {loading ? 'Loading...' : submitLabel}

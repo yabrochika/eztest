@@ -23,11 +23,17 @@ export function TestCaseInfoCard({ testCase }: TestCaseInfoCardProps) {
       />
 
       {testCase.suite && (
-        <div>
+        <div className="min-w-0">
           <h4 className="text-sm font-medium text-white/60 mb-1">
             Test Suite
           </h4>
-          <Badge variant="outline">{testCase.suite.name}</Badge>
+          <Badge
+            variant="outline"
+            title={testCase.suite.name}
+            className="max-w-full"
+          >
+            <span className="truncate">{testCase.suite.name}</span>
+          </Badge>
         </div>
       )}
 

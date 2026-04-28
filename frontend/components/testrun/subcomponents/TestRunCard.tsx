@@ -8,6 +8,7 @@ import { Calendar, Play, Trash2, User, Pencil } from 'lucide-react';
 import { TestRun } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
+import { parseMultiValueField } from '../utils/multiValueField';
 
 interface TestRunCardProps {
   testRun: TestRun;
@@ -88,17 +89,17 @@ export function TestRunCard({
 
   const passRate = calculatePassRate();
   const counts = getResultCounts();
+  const environmentValues = parseMultiValueField(testRun.environment);
+  const platformValues = parseMultiValueField(testRun.platform);
+  const deviceValues = parseMultiValueField(testRun.device);
+  const assignedUsers = testRun.assignedToList && testRun.assignedToList.length > 0
+    ? testRun.assignedToList
+    : (testRun.assignedTo ? [testRun.assignedTo] : []);
 
   const statusBadgeProps = getDynamicBadgeProps(testRun.status, statusOptions);
-  const environmentBadgeProps = testRun.environment 
-    ? getDynamicBadgeProps(testRun.environment, environmentOptions)
-    : null;
 
   // Get labels from dropdown options
   const statusLabel = statusOptions.find(opt => opt.value === testRun.status)?.label || testRun.status.replace('_', ' ');
-  const environmentLabel = testRun.environment 
-    ? (environmentOptions.find(opt => opt.value === testRun.environment)?.label || testRun.environment.toUpperCase())
-    : null;
 
   const executionTypeLabel =
     (testRun.executionType || 'MANUAL').toString().toUpperCase() === 'AUTOMATION'
@@ -122,30 +123,35 @@ export function TestRunCard({
       <Badge variant="outline" className={executionTypeBadgeClassName}>
         {executionTypeLabel}
       </Badge>
-      {testRun.environment && environmentBadgeProps && (
-        <Badge
-          variant="outline"
-          className={environmentBadgeProps.className}
-          style={environmentBadgeProps.style}
-        >
-          {environmentLabel}
-        </Badge>
-      )}
+      {environmentValues.map((environmentValue) => {
+        const environmentBadgeProps = getDynamicBadgeProps(environmentValue, environmentOptions);
+        const environmentLabel = environmentOptions.find(opt => opt.value === environmentValue)?.label || environmentValue.toUpperCase();
+        return (
+          <Badge
+            key={`env-${environmentValue}`}
+            variant="outline"
+            className={environmentBadgeProps.className}
+            style={environmentBadgeProps.style}
+          >
+            {environmentLabel}
+          </Badge>
+        );
+      })}
       {testRun.version && (
         <Badge variant="outline" className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
           {testRun.version}
         </Badge>
       )}
-      {testRun.platform && (
-        <Badge variant="outline" className="bg-cyan-500/10 text-cyan-500 border-cyan-500/20">
-          {testRun.platform}
+      {platformValues.map((platformValue) => (
+        <Badge key={`platform-${platformValue}`} variant="outline" className="bg-cyan-500/10 text-cyan-500 border-cyan-500/20">
+          {platformValue}
         </Badge>
-      )}
-      {testRun.device && (
-        <Badge variant="outline" className="bg-teal-500/10 text-teal-500 border-teal-500/20">
-          {testRun.device}
+      ))}
+      {deviceValues.map((deviceValue) => (
+        <Badge key={`device-${deviceValue}`} variant="outline" className="bg-teal-500/10 text-teal-500 border-teal-500/20">
+          {deviceValue}
         </Badge>
-      )}
+      ))}
     </>
   );
 
@@ -227,11 +233,11 @@ export function TestRunCard({
   const footer = (
     <CardFooter
       items={[
-        ...(testRun.assignedTo
+        ...(assignedUsers.length > 0
           ? [
               {
                 icon: User,
-                value: testRun.assignedTo.name,
+                value: assignedUsers.map((user) => user.name).join(', '),
               },
             ]
           : []),

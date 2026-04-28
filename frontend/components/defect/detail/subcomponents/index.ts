@@ -5,3 +5,5 @@ export { DeleteDefectDialog } from './DeleteDefectDialog';
 export { LinkedTestCasesCard } from './LinkedTestCasesCard';
 export { LinkTestCaseDialog } from './LinkTestCaseDialog';
 export { DefectCommentsCard } from './DefectCommentsCard';
+export { ShortcutEpicPickerDialog } from './ShortcutEpicPickerDialog';
+export { ShortcutStoryPickerDialog } from './ShortcutStoryPickerDialog';

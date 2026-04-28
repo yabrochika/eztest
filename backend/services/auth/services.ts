@@ -82,7 +82,10 @@ export class AuthService {
       throw new Error('User not found');
     }
 
-    // Verify current password
+    // Verify current password (Googleログインユーザーはパスワード未設定)
+    if (!user.password) {
+      throw new Error('This account uses Google login and has no password.');
+    }
     const isPasswordValid = await bcrypt.compare(data.currentPassword, user.password);
 
     if (!isPasswordValid) {

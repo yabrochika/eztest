@@ -1,4 +1,4 @@
-import { defectService } from '@/backend/services/defect/services';
+import { defectService, shortcutService } from '@/backend/services/defect/services';
 import { EmailService } from '@/backend/services/email/services';
 import { 
   createDefectSchema, 
@@ -128,6 +128,106 @@ export class DefectController {
     return {
       data: defect,
     };
+  }
+
+  /**
+   * Send defect to Shortcut (legacy: create new story)
+   */
+  async sendDefectToShortcut(req: CustomRequest, defectId: string) {
+    const appUrl = process.env.NEXTAUTH_URL || process.env.APP_URL || null;
+    try {
+      const result = await defectService.sendToShortcut(defectId, appUrl);
+      return {
+        data: result,
+        message: 'Defect has been sent to Shortcut',
+      };
+    } catch (error) {
+      throw new ValidationException(
+        error instanceof Error ? error.message : 'Failed to send defect to Shortcut'
+      );
+    }
+  }
+
+  /**
+   * Resolve an ambiguous Shortcut Public ID: it can be an epic id or a story id.
+   */
+  async resolveShortcutId(id: number) {
+    try {
+      const data = await shortcutService.resolveId(id);
+      return { data };
+    } catch (error) {
+      throw new ValidationException(
+        error instanceof Error ? error.message : 'Failed to resolve Shortcut id'
+      );
+    }
+  }
+
+  /**
+   * List Shortcut epics (for selection UI)
+   */
+  async listShortcutEpics() {
+    try {
+      const data = await shortcutService.listEpics();
+      return { data };
+    } catch (error) {
+      throw new ValidationException(
+        error instanceof Error ? error.message : 'Failed to list Shortcut epics'
+      );
+    }
+  }
+
+  /**
+   * List Shortcut stories under an epic
+   */
+  async listShortcutStoriesForEpic(epicId: number) {
+    try {
+      const data = await shortcutService.listStoriesForEpic(epicId);
+      return { data };
+    } catch (error) {
+      throw new ValidationException(
+        error instanceof Error ? error.message : 'Failed to list Shortcut stories'
+      );
+    }
+  }
+
+  /**
+   * Set or clear the Shortcut epic on a defect
+   */
+  async setDefectShortcutEpic(
+    req: CustomRequest,
+    defectId: string,
+    body: { epicId: number | null }
+  ) {
+    try {
+      const data = await shortcutService.setDefectEpic(defectId, body?.epicId ?? null);
+      return { data, message: 'Shortcut epic updated' };
+    } catch (error) {
+      throw new ValidationException(
+        error instanceof Error ? error.message : 'Failed to set Shortcut epic'
+      );
+    }
+  }
+
+  /**
+   * Attach defect info and attachments to a Shortcut story and add Bug label
+   */
+  async attachDefectToShortcutStory(
+    req: CustomRequest,
+    defectId: string,
+    storyId: number
+  ) {
+    const appUrl = process.env.NEXTAUTH_URL || process.env.APP_URL || null;
+    try {
+      const data = await shortcutService.attachDefectToStory(defectId, storyId, appUrl);
+      return {
+        data,
+        message: 'Defect attached to Shortcut story',
+      };
+    } catch (error) {
+      throw new ValidationException(
+        error instanceof Error ? error.message : 'Failed to attach defect to Shortcut story'
+      );
+    }
   }
 
   /**

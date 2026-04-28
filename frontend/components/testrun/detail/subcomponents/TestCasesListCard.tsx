@@ -330,8 +330,8 @@ export function TestCasesListCard({
                     onExecuteTestCase(row.testCase);
                   }}
                   className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 h-7 w-7 p-0 inline-flex items-center justify-center text-base leading-none"
-                  title={row.status && row.status !== 'SKIPPED' ? '結果を更新' : 'テストケースを実行'}
-                  aria-label={row.status && row.status !== 'SKIPPED' ? '結果を更新' : 'テストケースを実行'}
+                  title="テストを実行"
+                  aria-label="テストを実行"
                   buttonName={`Test Cases List Card - ${row.status && row.status !== 'SKIPPED' ? 'Update' : 'Execute'} (${row.testCase.title || row.testCase.id})`}
                 >
                   ▶

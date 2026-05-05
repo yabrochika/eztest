@@ -101,13 +101,19 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
     let filtered = [...testRuns];
 
     // Search filter
+    // テストラン名・説明に加えて、テストランに含まれる
+    // テストケースの TC番号(tcId) / タイトル(title) でも検索できるようにする。
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (tr) =>
-          tr.name.toLowerCase().includes(query) ||
-          tr.description?.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter((tr) => {
+        if (tr.name.toLowerCase().includes(query)) return true;
+        if (tr.description?.toLowerCase().includes(query)) return true;
+        return tr.results?.some((result) => {
+          const tcId = result.testCase?.tcId?.toLowerCase() || '';
+          const title = result.testCase?.title?.toLowerCase() || '';
+          return tcId.includes(query) || title.includes(query);
+        }) ?? false;
+      });
     }
 
     // Status filter

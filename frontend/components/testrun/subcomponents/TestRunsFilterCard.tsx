@@ -63,7 +63,7 @@ export function TestRunsFilterCard({
           <SearchInput
             value={filters.searchQuery}
             onChange={onSearchChange}
-            placeholder="テストランを検索..."
+            placeholder="テストラン名・説明・TC番号・テストタイトルで検索..."
           />
         </div>
 

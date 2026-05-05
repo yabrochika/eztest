@@ -372,6 +372,19 @@ export class TestRunService {
       where.OR = [
         { name: { contains: filters.search, mode: 'insensitive' } },
         { description: { contains: filters.search, mode: 'insensitive' } },
+        // テストケースの TC番号 / タイトルにも一致するテストランを含める
+        {
+          results: {
+            some: {
+              testCase: {
+                OR: [
+                  { tcId: { contains: filters.search, mode: 'insensitive' } },
+                  { title: { contains: filters.search, mode: 'insensitive' } },
+                ],
+              },
+            },
+          },
+        },
       ];
     }
 
@@ -394,6 +407,12 @@ export class TestRunService {
         results: {
           select: {
             status: true,
+            testCase: {
+              select: {
+                tcId: true,
+                title: true,
+              },
+            },
           },
         },
       },

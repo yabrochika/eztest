@@ -23,6 +23,10 @@ export interface TestRun {
   };
   results: Array<{
     status: string;
+    testCase?: {
+      tcId?: string | null;
+      title?: string | null;
+    } | null;
   }>;
   _count: {
     results: number;

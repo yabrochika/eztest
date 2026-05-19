@@ -15,6 +15,7 @@ import { TestCaseDetailsCard } from './subcomponents/TestCaseDetailsCard';
 import { TestStepsCard } from './subcomponents/TestStepsCard';
 import { TestCaseInfoCard } from './subcomponents/TestCaseInfoCard';
 import { TestCaseHistoryCard } from './subcomponents/TestCaseHistoryCard';
+import { TestCaseCommentsCard } from './subcomponents/TestCaseCommentsCard';
 import { LinkedDefectsCard } from './subcomponents/LinkedDefectsCard';
 import { DeleteTestCaseDialog } from './subcomponents/DeleteTestCaseDialog';
 import { attachmentStorage } from '@/lib/attachment-storage';
@@ -891,6 +892,11 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
             />
 
             <LinkedDefectsCard testCase={testCase} onRefresh={fetchTestCase} />
+
+            <TestCaseCommentsCard
+              projectId={testCase.project.id}
+              testCaseId={testCaseId}
+            />
 
             <TestCaseHistoryCard
               testCaseId={testCaseId}

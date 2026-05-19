@@ -418,6 +418,7 @@ model Comment {
 
   testCase    TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attachments Attachment[]
 
   @@index([testCaseId])
   @@index([userId])
@@ -434,15 +435,18 @@ model Attachment {
   testCaseId    String?
   testStepId    String?
   testResultId  String?
+  commentId     String?
   uploadedAt    DateTime @default(now())
 
   testCase      TestCase?   @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
   testStep      TestStep?   @relation(fields: [testStepId], references: [id], onDelete: Cascade)
   testResult    TestResult? @relation(fields: [testResultId], references: [id], onDelete: Cascade)
+  comment       Comment?    @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@index([testCaseId])
   @@index([testStepId])
   @@index([testResultId])
+  @@index([commentId])
 }
 
 // ====================================

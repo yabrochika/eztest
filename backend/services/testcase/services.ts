@@ -555,6 +555,7 @@ export class TestCaseService {
           select: {
             comments: true,
             attachments: true,
+            results: true,
           },
         },
       },
@@ -564,7 +565,44 @@ export class TestCaseService {
       throw new Error('Test case not found');
     }
 
-    return testCase;
+    // Aggregate counts surfaced on the test case detail page Information panel:
+    // - testresult comments (non-empty) + their attachments
+    // - test case comment thread attachments (linked via commentId)
+    const [
+      testResultCommentCount,
+      testResultAttachmentCount,
+      commentThreadAttachmentCount,
+    ] = await Promise.all([
+      prisma.testResult.count({
+        where: {
+          testCaseId,
+          comment: { not: null },
+          NOT: { comment: '' },
+        },
+      }),
+      prisma.attachment.count({
+        where: {
+          testResult: { testCaseId },
+        },
+      }),
+      prisma.attachment.count({
+        where: {
+          comment: { testCaseId },
+        },
+      }),
+    ]);
+
+    return {
+      ...testCase,
+      _count: {
+        ...testCase._count,
+        comments: (testCase._count?.comments ?? 0) + testResultCommentCount,
+        attachments:
+          (testCase._count?.attachments ?? 0) +
+          testResultAttachmentCount +
+          commentThreadAttachmentCount,
+      },
+    };
   }
 
   /**
@@ -1606,6 +1644,138 @@ export class TestCaseService {
     }
 
     return deleted;
+  }
+
+  /**
+   * Get all comments for a test case (with attachments)
+   */
+  async getTestCaseComments(testCaseId: string) {
+    const testCase = await prisma.testCase.findUnique({
+      where: { id: testCaseId },
+      select: { id: true },
+    });
+    if (!testCase) {
+      throw new Error('Test case not found');
+    }
+
+    const comments = await prisma.comment.findMany({
+      where: { testCaseId },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, avatar: true },
+        },
+        attachments: {
+          select: {
+            id: true,
+            filename: true,
+            originalName: true,
+            mimeType: true,
+            size: true,
+            uploadedAt: true,
+            fieldName: true,
+          },
+          orderBy: { uploadedAt: 'asc' },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return comments;
+  }
+
+  /**
+   * Add a comment to a test case
+   */
+  async addTestCaseComment(testCaseId: string, userId: string, content: string) {
+    const testCase = await prisma.testCase.findUnique({
+      where: { id: testCaseId },
+      select: { id: true },
+    });
+    if (!testCase) {
+      throw new Error('Test case not found');
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        testCaseId,
+        userId,
+        content,
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, avatar: true },
+        },
+        attachments: {
+          select: {
+            id: true,
+            filename: true,
+            originalName: true,
+            mimeType: true,
+            size: true,
+            uploadedAt: true,
+            fieldName: true,
+          },
+        },
+      },
+    });
+
+    return comment;
+  }
+
+  /**
+   * Delete a test case comment (and its attachments via cascade)
+   */
+  async deleteTestCaseComment(testCaseId: string, commentId: string, userId: string) {
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { id: true, userId: true, testCaseId: true },
+    });
+    if (!comment || comment.testCaseId !== testCaseId) {
+      throw new Error('Comment not found');
+    }
+    if (comment.userId !== userId) {
+      throw new Error('You can only delete your own comments');
+    }
+
+    await prisma.comment.delete({ where: { id: commentId } });
+    return { success: true };
+  }
+
+  /**
+   * Link an already-uploaded attachment to a test case comment
+   */
+  async createCommentAttachment(
+    commentId: string,
+    data: {
+      filename: string;
+      originalName: string;
+      mimeType: string;
+      size: number;
+      path: string;
+      fieldName?: string;
+    }
+  ) {
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { id: true, testCaseId: true },
+    });
+    if (!comment) {
+      throw new Error('Comment not found');
+    }
+
+    const attachment = await prisma.attachment.create({
+      data: {
+        filename: data.filename,
+        originalName: data.originalName,
+        mimeType: data.mimeType,
+        size: data.size,
+        path: data.path,
+        fieldName: data.fieldName ?? 'comment',
+        commentId: comment.id,
+      },
+    });
+
+    return attachment;
   }
 }
 

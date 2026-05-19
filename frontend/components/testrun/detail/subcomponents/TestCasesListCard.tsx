@@ -595,12 +595,10 @@ export function TestCasesListCard({
           groupConfig={groupConfig}
           defaultExpanded={true}
           onRowClick={(row) => {
-            // 実行済み行はコメント・添付ファイルを読み取り専用で表示。
-            // 未実行（NOT_STARTED 等）の行はこれまで通りテストケース詳細ページへ遷移する。
-            if (onViewResult && isExecutedRow(row)) {
-              onViewResult(row.result);
-              return;
-            }
+            // 行クリックは常にテストケース詳細ページに遷移する。
+            // テストケース詳細ページの Execution History カードで
+            // 各実行のコメント・添付ファイルを確認できる
+            // （その行をクリックすればさらに ViewResultDialog で詳細表示）。
             router.push(`/projects/${projectId}/testcases/${row.testCase.id}`);
           }}
           gridTemplateColumns="90px 1fr 100px 90px 120px 70px 140px 175px"

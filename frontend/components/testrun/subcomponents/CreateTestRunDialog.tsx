@@ -55,22 +55,32 @@ function MultiSelectCheckboxField({
     onChange(serializeMultiValueField(nextValues) || '');
   };
 
+  // 値に含まれるスペースや記号でも安定する HTML id を生成する
+  const makeId = (raw: string) =>
+    `${fieldName}-${raw.replace(/[^a-zA-Z0-9_-]/g, '_')}-checkbox`;
+
   return (
     <div className="rounded-md border border-[#334155] bg-[#0f172a] p-3 space-y-2">
       <div className="flex flex-wrap gap-3">
         {options.map((option) => {
-          const id = `${fieldName}-${option.value}-checkbox`;
+          const id = makeId(option.value);
           const isChecked = selectedValues.includes(option.value);
+          // Radix Checkbox（ネイティブ input ではなく button）を <label> で wrap すると
+          // ブラウザが htmlFor 経由でクリックを二重に dispatch してしまい
+          // 「チェックを外せない」状態になることがある。
+          // そのため label を checkbox の隣に配置するパターンに変更する。
           return (
-            <label key={option.value} htmlFor={id} className="flex items-center gap-2 text-sm text-white/90 cursor-pointer">
+            <div key={option.value} className="flex items-center gap-2 text-sm text-white/90">
               <Checkbox
                 id={id}
                 variant="glass"
                 checked={isChecked}
                 onCheckedChange={() => toggleValue(option.value)}
               />
-              <span>{option.label}</span>
-            </label>
+              <label htmlFor={id} className="cursor-pointer select-none">
+                {option.label}
+              </label>
+            </div>
           );
         })}
       </div>
@@ -170,11 +180,41 @@ export function CreateTestRunDialog({
       label: 'プラットフォーム',
       type: 'custom',
       defaultValue: '',
-      customRender: (value, onChange) => (
+      customRender: (value, onChange, ctx) => (
         <MultiSelectCheckboxField
           fieldName="platform"
           value={value}
-          onChange={onChange}
+          onChange={(nextValue) => {
+            // プラットフォームの選択を反映
+            onChange(nextValue);
+
+            // iOS Native / Android Native が「新しく」選択された場合に
+            // 対応する端末（iPhone / Android）を自動でチェックする
+            const prevPlatforms = parseMultiValueField(value);
+            const nextPlatforms = parseMultiValueField(nextValue);
+            const newlyAdded = nextPlatforms.filter((p) => !prevPlatforms.includes(p));
+
+            if (newlyAdded.length === 0 || !ctx) {
+              return;
+            }
+
+            const platformToDevice: Record<string, string> = {
+              'iOS Native': 'iPhone',
+              'Android Native': 'Android',
+            };
+
+            const currentDevices = parseMultiValueField(ctx.formData.device);
+            const devicesToAdd = newlyAdded
+              .map((p) => platformToDevice[p])
+              .filter((d): d is string => Boolean(d) && !currentDevices.includes(d));
+
+            if (devicesToAdd.length === 0) {
+              return;
+            }
+
+            const nextDevices = [...currentDevices, ...devicesToAdd];
+            ctx.setFieldValue('device', serializeMultiValueField(nextDevices) || '');
+          }}
           options={[
             { value: 'Web', label: 'Web' },
             { value: 'Web(SP)', label: 'Web(SP)' },

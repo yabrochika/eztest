@@ -15,6 +15,54 @@ interface ProjectMember {
   };
 }
 
+// プラットフォーム ⇄ 端末 の双方向リンク定義
+const PLATFORM_TO_DEVICE: Record<string, string> = {
+  'iOS Native': 'iPhone',
+  'Android Native': 'Android',
+};
+const DEVICE_TO_PLATFORM: Record<string, string> = {
+  iPhone: 'iOS Native',
+  Android: 'Android Native',
+};
+
+/**
+ * 1つのフィールド（source）の差分（追加/削除）を、リンク先フィールド（target）の値に反映する。
+ * - source に新規追加された項目で、リンク先が未選択なら追加
+ * - source から削除された項目で、リンク先が選択されているなら削除
+ *
+ * 変更が必要な場合は次の target 配列を返し、変更不要なら null を返す。
+ */
+function syncLinkedField(
+  prevSource: string[],
+  nextSource: string[],
+  currentTarget: string[],
+  link: Record<string, string>
+): string[] | null {
+  const added = nextSource.filter((v) => !prevSource.includes(v));
+  const removed = prevSource.filter((v) => !nextSource.includes(v));
+
+  let target = [...currentTarget];
+  let changed = false;
+
+  for (const v of added) {
+    const linked = link[v];
+    if (linked && !target.includes(linked)) {
+      target.push(linked);
+      changed = true;
+    }
+  }
+
+  for (const v of removed) {
+    const linked = link[v];
+    if (linked && target.includes(linked)) {
+      target = target.filter((item) => item !== linked);
+      changed = true;
+    }
+  }
+
+  return changed ? target : null;
+}
+
 interface CreateTestRunDialogProps {
   projectId: string;
   triggerOpen?: boolean;
@@ -188,32 +236,21 @@ export function CreateTestRunDialog({
             // プラットフォームの選択を反映
             onChange(nextValue);
 
-            // iOS Native / Android Native が「新しく」選択された場合に
-            // 対応する端末（iPhone / Android）を自動でチェックする
-            const prevPlatforms = parseMultiValueField(value);
-            const nextPlatforms = parseMultiValueField(nextValue);
-            const newlyAdded = nextPlatforms.filter((p) => !prevPlatforms.includes(p));
-
-            if (newlyAdded.length === 0 || !ctx) {
+            if (!ctx) {
               return;
             }
 
-            const platformToDevice: Record<string, string> = {
-              'iOS Native': 'iPhone',
-              'Android Native': 'Android',
-            };
+            // iOS Native ⇄ iPhone, Android Native ⇄ Android を双方向で連動させる
+            const nextDevices = syncLinkedField(
+              parseMultiValueField(value),
+              parseMultiValueField(nextValue),
+              parseMultiValueField(ctx.formData.device),
+              PLATFORM_TO_DEVICE
+            );
 
-            const currentDevices = parseMultiValueField(ctx.formData.device);
-            const devicesToAdd = newlyAdded
-              .map((p) => platformToDevice[p])
-              .filter((d): d is string => Boolean(d) && !currentDevices.includes(d));
-
-            if (devicesToAdd.length === 0) {
-              return;
+            if (nextDevices !== null) {
+              ctx.setFieldValue('device', serializeMultiValueField(nextDevices) || '');
             }
-
-            const nextDevices = [...currentDevices, ...devicesToAdd];
-            ctx.setFieldValue('device', serializeMultiValueField(nextDevices) || '');
           }}
           options={[
             { value: 'Web', label: 'Web' },
@@ -231,11 +268,30 @@ export function CreateTestRunDialog({
       label: '端末',
       type: 'custom',
       defaultValue: '',
-      customRender: (value, onChange) => (
+      customRender: (value, onChange, ctx) => (
         <MultiSelectCheckboxField
           fieldName="device"
           value={value}
-          onChange={onChange}
+          onChange={(nextValue) => {
+            // 端末の選択を反映
+            onChange(nextValue);
+
+            if (!ctx) {
+              return;
+            }
+
+            // iPhone ⇄ iOS Native, Android ⇄ Android Native を双方向で連動させる
+            const nextPlatforms = syncLinkedField(
+              parseMultiValueField(value),
+              parseMultiValueField(nextValue),
+              parseMultiValueField(ctx.formData.platform),
+              DEVICE_TO_PLATFORM
+            );
+
+            if (nextPlatforms !== null) {
+              ctx.setFieldValue('platform', serializeMultiValueField(nextPlatforms) || '');
+            }
+          }}
           options={[
             { value: 'iPhone', label: 'iPhone' },
             { value: 'Android', label: 'Android' },

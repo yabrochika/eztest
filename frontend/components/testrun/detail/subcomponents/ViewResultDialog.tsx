@@ -169,7 +169,7 @@ export function ViewResultDialog({ open, onOpenChange, result }: ViewResultDialo
           </div>
         </div>
 
-        <DialogFooter className="flex-shrink-0">
+        <DialogFooter className="flex-shrink-0 mt-[30px]">
           <Button
             variant="glass"
             onClick={() => onOpenChange(false)}

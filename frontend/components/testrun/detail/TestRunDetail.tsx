@@ -852,9 +852,22 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setShortcutEpicPickerOpen(true);
   };
 
-  const handleViewResult = (result: TestResult) => {
+  const handleViewResult = async (result: TestResult) => {
+    // まず現在の結果でダイアログを開き、その上で最新のテストランを再取得して
+    // 添付ファイル等のデータを更新する。これにより、保存直後など state が
+    // 古いまま参照されているケースでも、ダイアログ表示直後に最新の添付が
+    // 反映される。
     setViewingResult(result);
     setViewResultDialogOpen(true);
+    try {
+      const latestRun = await fetchTestRun();
+      const latest = latestRun?.results.find((r) => r.id === result.id);
+      if (latest) {
+        setViewingResult(latest);
+      }
+    } catch (error) {
+      console.error('Failed to refresh test result for view dialog:', error);
+    }
   };
 
   const handleExcludeRequest = (testCase: TestCase, currentStatus: string) => {

@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
-import { parseMultiValueField } from '../utils/multiValueField';
+import { parseMultiValueField, serializeMultiValueField } from '../utils/multiValueField';
+import { MultiSelectCheckboxField } from './MultiSelectCheckboxField';
 
 interface ProjectMember {
   user: {
@@ -23,6 +24,13 @@ interface EditTestRunDialogProps {
     version?: string;
     platform?: string;
     device?: string;
+    assignedToIds?: string[];
+    assignedToList?: Array<{
+      id: string;
+      name: string;
+      email: string;
+      avatar?: string;
+    }>;
     assignedTo?: {
       id: string;
     };
@@ -73,6 +81,20 @@ export function EditTestRunDialog({
     }
   }, [projectId]);
 
+  // テスター割り当ての初期値を assignedToIds / assignedToList / 旧 assignedTo の順で解決
+  const initialAssignedIds = (() => {
+    if (testRun?.assignedToIds && testRun.assignedToIds.length > 0) {
+      return testRun.assignedToIds;
+    }
+    if (testRun?.assignedToList && testRun.assignedToList.length > 0) {
+      return testRun.assignedToList.map((u) => u.id);
+    }
+    if (testRun?.assignedTo?.id) {
+      return [testRun.assignedTo.id];
+    }
+    return [];
+  })();
+
   const fields: BaseDialogField[] = [
     {
       name: 'name',
@@ -88,56 +110,79 @@ export function EditTestRunDialog({
     {
       name: 'environment',
       label: '環境',
-      type: 'select',
-      placeholder: '環境を選択',
-      defaultValue: parseMultiValueField(testRun?.environment)[0] || 'none',
-      options: [
-        { value: 'none', label: '環境を選択' },
-        ...environmentOptions.map((opt) => ({ value: opt.value, label: opt.label })),
-      ],
+      type: 'custom',
+      required: true,
+      defaultValue: serializeMultiValueField(parseMultiValueField(testRun?.environment)) || '',
+      customRender: (value, onChange) => (
+        <MultiSelectCheckboxField
+          fieldName="environment"
+          value={value}
+          onChange={onChange}
+          options={environmentOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
+          emptyLabel="環境を1つ以上選択してください"
+        />
+      ),
+      validate: (value) =>
+        parseMultiValueField(value).length === 0 ? '環境を1つ以上選択してください' : undefined,
       cols: 2,
     },
     {
-      name: 'assignedToId',
+      name: 'assignedToIds',
       label: 'テスター割り当て',
-      type: 'select',
-      placeholder: 'テスターを選択',
-      defaultValue: testRun?.assignedTo?.id || 'none',
-      options: [
-        { value: 'none', label: '未割り当て' },
-        ...memberOptions,
-      ],
+      type: 'custom',
+      defaultValue: serializeMultiValueField(initialAssignedIds) || '',
+      customRender: (value, onChange) => (
+        <MultiSelectCheckboxField
+          fieldName="assigned-to"
+          value={value}
+          onChange={onChange}
+          options={memberOptions}
+          emptyLabel="未割り当て"
+        />
+      ),
       cols: 2,
     },
     {
       name: 'platform',
       label: 'プラットフォーム',
-      type: 'select',
-      placeholder: 'プラットフォームを選択',
-      defaultValue: parseMultiValueField(testRun?.platform)[0] || 'none',
-      options: [
-        { value: 'none', label: 'プラットフォームを選択' },
-        { value: 'Web', label: 'Web' },
-        { value: 'Web(SP)', label: 'Web(SP)' },
-        { value: 'iOS Native', label: 'iOS Native' },
-        { value: 'Android Native', label: 'Android Native' },
-      ],
+      type: 'custom',
+      defaultValue: serializeMultiValueField(parseMultiValueField(testRun?.platform)) || '',
+      customRender: (value, onChange) => (
+        <MultiSelectCheckboxField
+          fieldName="platform"
+          value={value}
+          onChange={onChange}
+          options={[
+            { value: 'Web', label: 'Web' },
+            { value: 'Web(SP)', label: 'Web(SP)' },
+            { value: 'iOS Native', label: 'iOS Native' },
+            { value: 'Android Native', label: 'Android Native' },
+          ]}
+          emptyLabel="未選択"
+        />
+      ),
       cols: 1,
     },
     {
       name: 'device',
       label: '端末',
-      type: 'select',
-      placeholder: '端末を選択',
-      defaultValue: parseMultiValueField(testRun?.device)[0] || 'none',
-      options: [
-        { value: 'none', label: '端末を選択' },
-        { value: 'iPhone', label: 'iPhone' },
-        { value: 'Android', label: 'Android' },
-        { value: 'PC', label: 'PC' },
-        { value: 'Chrome', label: 'Chrome' },
-        { value: 'Safari', label: 'Safari' },
-      ],
+      type: 'custom',
+      defaultValue: serializeMultiValueField(parseMultiValueField(testRun?.device)) || '',
+      customRender: (value, onChange) => (
+        <MultiSelectCheckboxField
+          fieldName="device"
+          value={value}
+          onChange={onChange}
+          options={[
+            { value: 'iPhone', label: 'iPhone' },
+            { value: 'Android', label: 'Android' },
+            { value: 'PC', label: 'PC' },
+            { value: 'Chrome', label: 'Chrome' },
+            { value: 'Safari', label: 'Safari' },
+          ]}
+          emptyLabel="未選択"
+        />
+      ),
       cols: 1,
     },
     {
@@ -166,6 +211,15 @@ export function EditTestRunDialog({
       throw new Error('編集対象のテストランが見つかりません');
     }
 
+    const selectedEnvironments = parseMultiValueField(formData.environment);
+    const selectedAssignees = parseMultiValueField(formData.assignedToIds);
+    const selectedPlatforms = parseMultiValueField(formData.platform);
+    const selectedDevices = parseMultiValueField(formData.device);
+
+    if (selectedEnvironments.length === 0) {
+      throw new Error('環境を選択してください');
+    }
+
     const response = await fetch(`/api/projects/${projectId}/testruns/${testRun.id}`, {
       method: 'PUT',
       headers: {
@@ -174,11 +228,11 @@ export function EditTestRunDialog({
       body: JSON.stringify({
         name: formData.name,
         description: formData.description || undefined,
-        environment: formData.environment && formData.environment !== 'none' ? formData.environment : undefined,
+        environment: selectedEnvironments,
         version: formData.version || undefined,
-        assignedToId: formData.assignedToId && formData.assignedToId !== 'none' ? formData.assignedToId : undefined,
-        platform: formData.platform && formData.platform !== 'none' ? formData.platform : undefined,
-        device: formData.device && formData.device !== 'none' ? formData.device : undefined,
+        assignedToIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
+        platform: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,
+        device: selectedDevices.length > 0 ? selectedDevices : undefined,
       }),
     });
 

@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
-import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import { TestRun } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { parseMultiValueField, serializeMultiValueField } from '../utils/multiValueField';
+import { MultiSelectCheckboxField } from './MultiSelectCheckboxField';
 
 interface ProjectMember {
   user: {
@@ -25,13 +25,6 @@ const DEVICE_TO_PLATFORM: Record<string, string> = {
   Android: 'Android Native',
 };
 
-/**
- * 1つのフィールド（source）の差分（追加/削除）を、リンク先フィールド（target）の値に反映する。
- * - source に新規追加された項目で、リンク先が未選択なら追加
- * - source から削除された項目で、リンク先が選択されているなら削除
- *
- * 変更が必要な場合は次の target 配列を返し、変更不要なら null を返す。
- */
 function syncLinkedField(
   prevSource: string[],
   nextSource: string[],
@@ -63,6 +56,15 @@ function syncLinkedField(
   return changed ? target : null;
 }
 
+// チーム選択チェックボックスの定義（label: 表示名、members: 該当する user.name）
+const TESTER_TEAMS: Array<{ key: string; label: string; members: string[] }> = [
+  {
+    key: 'qa',
+    label: 'QAチーム',
+    members: ['いちむら', '下向仁', '春日井亮火', 'Misa Yamada', '野口裕太'],
+  },
+];
+
 interface CreateTestRunDialogProps {
   projectId: string;
   triggerOpen?: boolean;
@@ -79,65 +81,6 @@ interface CreateTestRunDialogProps {
   defaultName?: string;
 }
 
-interface MultiSelectCheckboxFieldProps {
-  fieldName: string;
-  value: string;
-  onChange: (nextValue: string) => void;
-  options: Array<{ value: string; label: string }>;
-  emptyLabel: string;
-}
-
-function MultiSelectCheckboxField({
-  fieldName,
-  value,
-  onChange,
-  options,
-  emptyLabel,
-}: MultiSelectCheckboxFieldProps) {
-  const selectedValues = parseMultiValueField(value);
-
-  const toggleValue = (targetValue: string) => {
-    const nextValues = selectedValues.includes(targetValue)
-      ? selectedValues.filter((item) => item !== targetValue)
-      : [...selectedValues, targetValue];
-    onChange(serializeMultiValueField(nextValues) || '');
-  };
-
-  // 値に含まれるスペースや記号でも安定する HTML id を生成する
-  const makeId = (raw: string) =>
-    `${fieldName}-${raw.replace(/[^a-zA-Z0-9_-]/g, '_')}-checkbox`;
-
-  return (
-    <div className="rounded-md border border-[#334155] bg-[#0f172a] p-3 space-y-2">
-      <div className="flex flex-wrap gap-3">
-        {options.map((option) => {
-          const id = makeId(option.value);
-          const isChecked = selectedValues.includes(option.value);
-          // Radix Checkbox（ネイティブ input ではなく button）を <label> で wrap すると
-          // ブラウザが htmlFor 経由でクリックを二重に dispatch してしまい
-          // 「チェックを外せない」状態になることがある。
-          // そのため label を checkbox の隣に配置するパターンに変更する。
-          return (
-            <div key={option.value} className="flex items-center gap-2 text-sm text-white/90">
-              <Checkbox
-                id={id}
-                variant="glass"
-                checked={isChecked}
-                onCheckedChange={() => toggleValue(option.value)}
-              />
-              <label htmlFor={id} className="cursor-pointer select-none">
-                {option.label}
-              </label>
-            </div>
-          );
-        })}
-      </div>
-      {selectedValues.length === 0 && (
-        <p className="text-xs text-white/50">{emptyLabel}</p>
-      )}
-    </div>
-  );
-}
 
 export function CreateTestRunDialog({
   projectId,
@@ -212,15 +155,91 @@ export function CreateTestRunDialog({
       label: 'テスター割り当て',
       type: 'custom',
       defaultValue: '',
-      customRender: (value, onChange) => (
-        <MultiSelectCheckboxField
-          fieldName="assigned-to"
-          value={value}
-          onChange={onChange}
-          options={memberOptions}
-          emptyLabel="未割り当て"
-        />
-      ),
+      customRender: (value, onChange) => {
+        const selectedIds = parseMultiValueField(value);
+
+        // 各チームについて、メンバー名 → 既知のユーザーID 群に解決する。
+        // ローカル/環境によってメンバーが揃わなくても UI は常に表示し、
+        // 見つかったメンバーのみ切り替える。
+        const teams = TESTER_TEAMS.map((team) => {
+          const memberIds = team.members
+            .map((name) => memberOptions.find((m) => m.label === name)?.value)
+            .filter((id): id is string => Boolean(id));
+          return { ...team, memberIds };
+        });
+
+        const toggleTeam = (memberIds: string[], allSelected: boolean) => {
+          if (memberIds.length === 0) {
+            return;
+          }
+          const next = allSelected
+            ? selectedIds.filter((id) => !memberIds.includes(id))
+            : Array.from(new Set([...selectedIds, ...memberIds]));
+          onChange(serializeMultiValueField(next) || '');
+        };
+
+        return (
+          <div className="space-y-2">
+            {teams.length > 0 && (
+              <div className="rounded-md border border-[#334155] bg-[#0f172a] p-3">
+                <p className="mb-2 text-xs text-white/50">
+                  チームをチェックすると、そのメンバーが自動で選択されます
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {teams.map((team) => {
+                    const id = `tester-team-${team.key}-checkbox`;
+                    const found = team.memberIds.length;
+                    const total = team.members.length;
+                    const allSelected =
+                      found > 0 &&
+                      team.memberIds.every((memberId) => selectedIds.includes(memberId));
+                    const disabled = found === 0;
+                    return (
+                      <div
+                        key={team.key}
+                        className="flex items-center gap-2 text-sm text-white/90"
+                        title={
+                          disabled
+                            ? `${team.label} の対象メンバーがプロジェクトに存在しません`
+                            : found < total
+                              ? `${team.label} の対象 ${total} 名中、このプロジェクトには ${found} 名のみ`
+                              : undefined
+                        }
+                      >
+                        <Checkbox
+                          id={id}
+                          variant="glass"
+                          checked={allSelected}
+                          disabled={disabled}
+                          onCheckedChange={() => toggleTeam(team.memberIds, allSelected)}
+                        />
+                        <label
+                          htmlFor={id}
+                          className={`select-none ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                        >
+                          {team.label}
+                          {found < total && (
+                            <span className="ml-1 text-xs text-white/40">
+                              ({found}/{total})
+                            </span>
+                          )}
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            <MultiSelectCheckboxField
+              fieldName="assigned-to"
+              value={value}
+              onChange={onChange}
+              options={memberOptions}
+              emptyLabel="未割り当て"
+            />
+          </div>
+        );
+      },
       cols: 2,
     },
     {

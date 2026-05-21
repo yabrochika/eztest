@@ -183,7 +183,7 @@ export function TestCasesListCard({
     {
       key: 'tcId',
       label: 'ID',
-      width: '70px',
+      width: '90px',
       renderHeader: () => renderSortableHeader('tcId', 'ID'),
       render: (row: ResultRow) => (
         <p className="text-xs font-mono text-white/70 truncate">{row.testCase.tcId || '-'}</p>
@@ -433,14 +433,13 @@ export function TestCasesListCard({
     }));
 
   /**
-   * 実行済みテストケース（コメント/添付ファイルが記録され得る行）かを判定する。
-   * NOT_STARTED や、コメントが無い空の SKIPPED プレースホルダーは未実行として扱う。
+   * 結果モーダル（ViewResultDialog）を開くべき行かを判定する。
+   * ステータスが入力済み（NOT_STARTED 以外）の実行済み行はクリック時に
+   * モーダルを開いてコメント・添付ファイルを読み取り専用で表示する。
+   * 未実行行はこれまで通りテストケース詳細ページへ遷移させる。
    */
   const isExecutedRow = (row: ResultRow): boolean => {
     if (!row.status || row.status === 'NOT_STARTED') return false;
-    if (row.status === 'SKIPPED' && !row.comment && !(row.result.attachments?.length)) {
-      return false;
-    }
     return true;
   };
 
@@ -596,15 +595,13 @@ export function TestCasesListCard({
           groupConfig={groupConfig}
           defaultExpanded={true}
           onRowClick={(row) => {
-            // 実行済み行はコメント・添付ファイルを読み取り専用で表示。
-            // 未実行（NOT_STARTED 等）の行はこれまで通りテストケース詳細ページへ遷移する。
-            if (onViewResult && isExecutedRow(row)) {
-              onViewResult(row.result);
-              return;
-            }
+            // 行クリックは常にテストケース詳細ページに遷移する。
+            // テストケース詳細ページの Execution History カードで
+            // 各実行のコメント・添付ファイルを確認できる
+            // （その行をクリックすればさらに ViewResultDialog で詳細表示）。
             router.push(`/projects/${projectId}/testcases/${row.testCase.id}`);
           }}
-          gridTemplateColumns="70px 1fr 100px 90px 120px 70px 140px 175px"
+          gridTemplateColumns="90px 1fr 100px 90px 120px 70px 140px 175px"
           emptyMessage="テストケースはありません"
         />
       )}

@@ -608,6 +608,119 @@ evidence: validatedData.evidence,
       throw new InternalServerException('Failed to delete attachment');
     }
   }
+
+  /**
+   * GET /api/testcases/[id]/comments
+   */
+  async getTestCaseComments(req: CustomRequest, testCaseId: string) {
+    try {
+      const comments = await testCaseService.getTestCaseComments(testCaseId);
+      return { data: comments };
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Test case not found') {
+        throw new NotFoundException('Test case not found');
+      }
+      console.error('Failed to fetch test case comments:', error);
+      throw new InternalServerException('Failed to fetch comments');
+    }
+  }
+
+  /**
+   * POST /api/testcases/[id]/comments
+   */
+  async addTestCaseComment(req: CustomRequest, testCaseId: string, body: unknown) {
+    if (!body || typeof body !== 'object' || !('content' in body)) {
+      throw new ValidationException('Comment content is required');
+    }
+    const { content } = body as { content: string };
+    if (typeof content !== 'string') {
+      throw new ValidationException('Comment content must be a string');
+    }
+
+    const userId = req.userInfo?.id;
+    if (!userId) {
+      throw new ValidationException('User not authenticated');
+    }
+
+    try {
+      const comment = await testCaseService.addTestCaseComment(testCaseId, userId, content.trim());
+      return { data: comment, statusCode: 201 };
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Test case not found') {
+        throw new NotFoundException('Test case not found');
+      }
+      throw new InternalServerException('Failed to add comment');
+    }
+  }
+
+  /**
+   * DELETE /api/testcases/[id]/comments/[commentId]
+   */
+  async deleteTestCaseComment(
+    req: CustomRequest,
+    testCaseId: string,
+    commentId: string
+  ) {
+    const userId = req.userInfo?.id;
+    if (!userId) {
+      throw new ValidationException('User not authenticated');
+    }
+    try {
+      const result = await testCaseService.deleteTestCaseComment(testCaseId, commentId, userId);
+      return { data: result };
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Comment not found') {
+        throw new NotFoundException('Comment not found');
+      }
+      if (error instanceof Error && error.message.includes('your own')) {
+        throw new ValidationException(error.message);
+      }
+      throw new InternalServerException('Failed to delete comment');
+    }
+  }
+
+  /**
+   * POST /api/testcases/[id]/comments/[commentId]/attachments
+   * Link an uploaded file to a test case comment
+   */
+  async createCommentAttachment(
+    req: CustomRequest,
+    commentId: string,
+    body: unknown
+  ) {
+    if (!body || typeof body !== 'object') {
+      throw new ValidationException('Request body is required');
+    }
+    const { filename, originalName, mimeType, size, path, fieldName } = body as {
+      filename?: string;
+      originalName?: string;
+      mimeType?: string;
+      size?: number;
+      path?: string;
+      fieldName?: string;
+    };
+
+    if (!filename || !originalName || !mimeType || !size || !path) {
+      throw new ValidationException('Missing required attachment fields');
+    }
+
+    try {
+      const attachment = await testCaseService.createCommentAttachment(commentId, {
+        filename,
+        originalName,
+        mimeType,
+        size,
+        path,
+        fieldName,
+      });
+      return { data: attachment, statusCode: 201 };
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Comment not found') {
+        throw new NotFoundException('Comment not found');
+      }
+      throw new InternalServerException('Failed to link attachment');
+    }
+  }
 }
 
 export const testCaseController = new TestCaseController();

@@ -183,7 +183,7 @@ export function TestCasesListCard({
     {
       key: 'tcId',
       label: 'ID',
-      width: '70px',
+      width: '90px',
       renderHeader: () => renderSortableHeader('tcId', 'ID'),
       render: (row: ResultRow) => (
         <p className="text-xs font-mono text-white/70 truncate">{row.testCase.tcId || '-'}</p>
@@ -604,7 +604,7 @@ export function TestCasesListCard({
             }
             router.push(`/projects/${projectId}/testcases/${row.testCase.id}`);
           }}
-          gridTemplateColumns="70px 1fr 100px 90px 120px 70px 140px 175px"
+          gridTemplateColumns="90px 1fr 100px 90px 120px 70px 140px 175px"
           emptyMessage="テストケースはありません"
         />
       )}

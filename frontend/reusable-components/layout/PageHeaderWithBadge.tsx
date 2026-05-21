@@ -12,6 +12,7 @@ export interface PageHeaderWithBadgeProps {
   titleClassName?: string;
   descriptionClassName?: string;
   className?: string;
+  titleSuffix?: React.ReactNode;
 }
 
 export function PageHeaderWithBadge({
@@ -22,6 +23,7 @@ export function PageHeaderWithBadge({
   titleClassName,
   descriptionClassName,
   className,
+  titleSuffix,
 }: PageHeaderWithBadgeProps) {
   return (
     <div className={cn('shrink-0', className)}>
@@ -40,6 +42,7 @@ export function PageHeaderWithBadge({
         <h1 className={cn('text-2xl font-bold text-white', titleClassName)}>
           {title}
         </h1>
+        {titleSuffix}
       </div>
       {description && (
         <p className={cn('text-white/70 text-sm mb-2', descriptionClassName)}>

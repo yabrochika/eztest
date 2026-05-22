@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
-import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import { TestRun } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { parseMultiValueField, serializeMultiValueField } from '../utils/multiValueField';
+import { MultiSelectCheckboxField } from './MultiSelectCheckboxField';
 
 interface ProjectMember {
   user: {
@@ -13,6 +13,47 @@ interface ProjectMember {
     name: string;
     email: string;
   };
+}
+
+// プラットフォーム ⇄ 端末 の双方向リンク定義
+const PLATFORM_TO_DEVICE: Record<string, string> = {
+  'iOS Native': 'iPhone',
+  'Android Native': 'Android',
+};
+const DEVICE_TO_PLATFORM: Record<string, string> = {
+  iPhone: 'iOS Native',
+  Android: 'Android Native',
+};
+
+function syncLinkedField(
+  prevSource: string[],
+  nextSource: string[],
+  currentTarget: string[],
+  link: Record<string, string>
+): string[] | null {
+  const added = nextSource.filter((v) => !prevSource.includes(v));
+  const removed = prevSource.filter((v) => !nextSource.includes(v));
+
+  let target = [...currentTarget];
+  let changed = false;
+
+  for (const v of added) {
+    const linked = link[v];
+    if (linked && !target.includes(linked)) {
+      target.push(linked);
+      changed = true;
+    }
+  }
+
+  for (const v of removed) {
+    const linked = link[v];
+    if (linked && target.includes(linked)) {
+      target = target.filter((item) => item !== linked);
+      changed = true;
+    }
+  }
+
+  return changed ? target : null;
 }
 
 // チーム選択チェックボックスの定義（label: 表示名、members: 該当する user.name）
@@ -40,55 +81,6 @@ interface CreateTestRunDialogProps {
   defaultName?: string;
 }
 
-interface MultiSelectCheckboxFieldProps {
-  fieldName: string;
-  value: string;
-  onChange: (nextValue: string) => void;
-  options: Array<{ value: string; label: string }>;
-  emptyLabel: string;
-}
-
-function MultiSelectCheckboxField({
-  fieldName,
-  value,
-  onChange,
-  options,
-  emptyLabel,
-}: MultiSelectCheckboxFieldProps) {
-  const selectedValues = parseMultiValueField(value);
-
-  const toggleValue = (targetValue: string) => {
-    const nextValues = selectedValues.includes(targetValue)
-      ? selectedValues.filter((item) => item !== targetValue)
-      : [...selectedValues, targetValue];
-    onChange(serializeMultiValueField(nextValues) || '');
-  };
-
-  return (
-    <div className="rounded-md border border-[#334155] bg-[#0f172a] p-3 space-y-2">
-      <div className="flex flex-wrap gap-3">
-        {options.map((option) => {
-          const id = `${fieldName}-${option.value}-checkbox`;
-          const isChecked = selectedValues.includes(option.value);
-          return (
-            <label key={option.value} htmlFor={id} className="flex items-center gap-2 text-sm text-white/90 cursor-pointer">
-              <Checkbox
-                id={id}
-                variant="glass"
-                checked={isChecked}
-                onCheckedChange={() => toggleValue(option.value)}
-              />
-              <span>{option.label}</span>
-            </label>
-          );
-        })}
-      </div>
-      {selectedValues.length === 0 && (
-        <p className="text-xs text-white/50">{emptyLabel}</p>
-      )}
-    </div>
-  );
-}
 
 export function CreateTestRunDialog({
   projectId,
@@ -255,11 +247,30 @@ export function CreateTestRunDialog({
       label: 'プラットフォーム',
       type: 'custom',
       defaultValue: '',
-      customRender: (value, onChange) => (
+      customRender: (value, onChange, ctx) => (
         <MultiSelectCheckboxField
           fieldName="platform"
           value={value}
-          onChange={onChange}
+          onChange={(nextValue) => {
+            // プラットフォームの選択を反映
+            onChange(nextValue);
+
+            if (!ctx) {
+              return;
+            }
+
+            // iOS Native ⇄ iPhone, Android Native ⇄ Android を双方向で連動させる
+            const nextDevices = syncLinkedField(
+              parseMultiValueField(value),
+              parseMultiValueField(nextValue),
+              parseMultiValueField(ctx.formData.device),
+              PLATFORM_TO_DEVICE
+            );
+
+            if (nextDevices !== null) {
+              ctx.setFieldValue('device', serializeMultiValueField(nextDevices) || '');
+            }
+          }}
           options={[
             { value: 'Web', label: 'Web' },
             { value: 'Web(SP)', label: 'Web(SP)' },
@@ -276,11 +287,30 @@ export function CreateTestRunDialog({
       label: '端末',
       type: 'custom',
       defaultValue: '',
-      customRender: (value, onChange) => (
+      customRender: (value, onChange, ctx) => (
         <MultiSelectCheckboxField
           fieldName="device"
           value={value}
-          onChange={onChange}
+          onChange={(nextValue) => {
+            // 端末の選択を反映
+            onChange(nextValue);
+
+            if (!ctx) {
+              return;
+            }
+
+            // iPhone ⇄ iOS Native, Android ⇄ Android Native を双方向で連動させる
+            const nextPlatforms = syncLinkedField(
+              parseMultiValueField(value),
+              parseMultiValueField(nextValue),
+              parseMultiValueField(ctx.formData.platform),
+              DEVICE_TO_PLATFORM
+            );
+
+            if (nextPlatforms !== null) {
+              ctx.setFieldValue('platform', serializeMultiValueField(nextPlatforms) || '');
+            }
+          }}
           options={[
             { value: 'iPhone', label: 'iPhone' },
             { value: 'Android', label: 'Android' },

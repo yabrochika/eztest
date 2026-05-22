@@ -38,7 +38,14 @@ export interface BaseDialogField {
   min?: number; // For number type
   max?: number; // For number type
   readOnly?: boolean; // Make field read-only
-  customRender?: (value: string, onChange: (value: string) => void) => React.ReactNode; // Custom field renderer
+  customRender?: (
+    value: string,
+    onChange: (value: string) => void,
+    ctx?: {
+      formData: Record<string, string>;
+      setFieldValue: (name: string, value: string) => void;
+    }
+  ) => React.ReactNode; // Custom field renderer
   // For textarea-with-attachments type
   attachments?: Attachment[];
   onAttachmentsChange?: (attachments: Attachment[]) => void;
@@ -360,15 +367,25 @@ export const BaseDialog = <T = unknown,>({
     const errorBorderClass = hasError ? 'border-red-500' : '';
 
     if (field.type === 'custom' && field.customRender) {
-      return field.customRender(formData[field.name] || '', (value: string) => {
-        const syntheticEvent = {
-          target: {
-            name: field.name,
-            value: value,
-          },
-        } as unknown as React.ChangeEvent<HTMLInputElement>;
-        handleInputChange(syntheticEvent);
-      });
+      const setFieldValue = (name: string, value: string) => {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+      };
+      return field.customRender(
+        formData[field.name] || '',
+        (value: string) => {
+          const syntheticEvent = {
+            target: {
+              name: field.name,
+              value: value,
+            },
+          } as unknown as React.ChangeEvent<HTMLInputElement>;
+          handleInputChange(syntheticEvent);
+        },
+        { formData, setFieldValue }
+      );
     }
 
     if (field.type === 'textarea') {

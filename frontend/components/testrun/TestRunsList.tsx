@@ -6,7 +6,7 @@ import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimar
 import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
 import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
-import { Plus, Upload, FileCode } from 'lucide-react';
+import { Plus, Upload, FileCode, ArrowUp, ArrowDown } from 'lucide-react';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
 import { HeaderWithFilters } from '@/frontend/reusable-components/layout/HeaderWithFilters';
@@ -22,6 +22,7 @@ import { TestRun, Project, TestRunFilters } from './types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
 import { includesMultiValueField } from './utils/multiValueField';
+import { sortTestRunsByPrefix, type SortDirection } from './utils/sortByPrefix';
 
 interface TestRunsListProps {
   projectId: string;
@@ -41,6 +42,8 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [uploadXMLDialogOpen, setUploadXMLDialogOpen] = useState(false);
   const [selectedTestRun, setSelectedTestRun] = useState<TestRun | null>(null);
+
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const [filters, setFilters] = useState<TestRunFilters>({
     searchQuery: '',
@@ -68,7 +71,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
   useEffect(() => {
     applyFilters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [testRuns, filters]);
+  }, [testRuns, filters, sortDirection]);
 
   const fetchProject = async () => {
     try {
@@ -153,7 +156,9 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
       }
     }
 
-    setFilteredTestRuns(filtered);
+    // 並び順をプレフィックス順（SM → CR → EZ → EX、その他はアルファベット順）に統一する。
+    // 番号部分は自然順（SM01 → SM02 → SM10）で比較。降順の場合は全体を反転。
+    setFilteredTestRuns(sortTestRunsByPrefix(filtered, sortDirection));
   };
 
   const handleTestRunCreated = (newTestRun: TestRun) => {
@@ -310,6 +315,31 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
               badge={project?.key}
               title="テストラン"
               description="テスト実行の進捗を管理・追跡します"
+              titleSuffix={
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                  }
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-white/15 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 transition-colors text-xs cursor-pointer"
+                  title={
+                    sortDirection === 'asc'
+                      ? '昇順（SM → CR → EZ → EX）クリックで降順に切替'
+                      : '降順 クリックで昇順に切替'
+                  }
+                  aria-label={
+                    sortDirection === 'asc' ? '昇順 / クリックで降順' : '降順 / クリックで昇順'
+                  }
+                  data-button-name="Test Runs List - Toggle Sort Direction"
+                >
+                  {sortDirection === 'asc' ? (
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  )}
+                  <span>{sortDirection === 'asc' ? '昇順' : '降順'}</span>
+                </button>
+              }
             />
           }
           filters={

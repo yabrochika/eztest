@@ -50,12 +50,16 @@ export function TestRunCard({
     }
   };
 
-  const calculatePassRate = () => {
+  const calculateProgressRate = () => {
     const total = testRun._count.results;
     if (total === 0) return 0;
 
-    const passed = testRun.results.filter((r) => r.status === 'PASSED').length;
-    return Math.round((passed / total) * 100);
+    // Progress = tests that have been executed (passed, failed, blocked)
+    // Skipped / NOT_STARTED tests are NOT considered executed
+    const executed = testRun.results.filter(
+      (r) => r.status === 'PASSED' || r.status === 'FAILED' || r.status === 'BLOCKED'
+    ).length;
+    return Math.round((executed / total) * 100);
   };
 
   const getResultCounts = () => {
@@ -87,7 +91,7 @@ export function TestRunCard({
     return counts;
   };
 
-  const passRate = calculatePassRate();
+  const progressRate = calculateProgressRate();
   const counts = getResultCounts();
   const environmentValues = parseMultiValueField(testRun.environment);
   const platformValues = parseMultiValueField(testRun.platform);
@@ -190,8 +194,8 @@ export function TestRunCard({
       {/* Progress */}
       {testRun._count.results > 0 && (
         <ProgressBarWithLabel
-          label="合格率"
-          value={passRate}
+          label="進捗率"
+          value={progressRate}
           fillClassName="bg-green-400/30 border border-green-400/30"
         />
       )}

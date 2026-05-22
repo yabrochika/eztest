@@ -968,9 +968,6 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const executed = stats.passed + stats.failed + stats.blocked;
   const progressPercentage =
     stats.total > 0 ? Math.round((executed / stats.total) * 100) : 0;
-  // Pass rate = passed tests / executed tests (excluding skipped)
-  const passRate =
-    executed > 0 ? Math.round((stats.passed / executed) * 100) : 0;
 
   if (loading || permissionsLoading) {
     return <Loader fullScreen text="テストランを読み込み中..." />;
@@ -1028,7 +1025,6 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         <TestRunStatsCards
           stats={stats}
           progressPercentage={progressPercentage}
-          passRate={passRate}
           testRun={testRun}
         />
 

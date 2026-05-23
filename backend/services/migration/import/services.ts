@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { ParsedRow } from '@/lib/file-parser';
 import { ValidationException } from '@/backend/utils/exceptions';
 import { defectService } from '@/backend/services/defect/services';
+import { testSuiteService } from '@/backend/services/testsuite/services';
 
 export type ImportType = 'testcases' | 'defects';
 
@@ -374,9 +375,11 @@ export class ImportService {
           );
 
           if (!foundSuite) {
-            // Create suite
+            // Create suite (generate TS-### style id matching the standard create flow)
+            const tsId = await testSuiteService.generateTestSuiteId(projectId);
             foundSuite = await prisma.testSuite.create({
               data: {
+                tsId,
                 name: suiteName,
                 projectId,
               },

@@ -1,5 +1,6 @@
 export interface TestSuite {
   id: string;
+  tsId: string;
   name: string;
   description?: string;
   order: number;

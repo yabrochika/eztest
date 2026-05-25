@@ -60,6 +60,8 @@ export interface TestRun {
   version?: string;
   status: 'NOT_STARTED' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   environment?: string;
+  verificationEnvironment?: string;
+  verificationEnvironmentNote?: string | null;
   platform?: string;
   device?: string;
   assignedToIds?: string[];

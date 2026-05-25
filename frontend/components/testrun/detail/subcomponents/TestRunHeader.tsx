@@ -12,6 +12,8 @@ interface TestRunHeaderProps {
     description?: string;
     status: 'NOT_STARTED' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
     environment?: string;
+    verificationEnvironment?: string;
+    verificationEnvironmentNote?: string | null;
     version?: string;
     platform?: string;
     device?: string;
@@ -52,6 +54,10 @@ export function TestRunHeader({
 }: TestRunHeaderProps) {
   const { options: statusOptions } = useDropdownOptions('TestRun', 'status');
   const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
+  const { options: verificationEnvironmentOptions } = useDropdownOptions(
+    'TestRun',
+    'verificationEnvironment'
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getStatusColor = (status: string) => {
@@ -73,6 +79,7 @@ export function TestRunHeader({
 
   const statusBadgeProps = getDynamicBadgeProps(testRun.status, statusOptions);
   const environmentValues = parseMultiValueField(testRun.environment);
+  const verificationEnvironmentValues = parseMultiValueField(testRun.verificationEnvironment);
   const platformValues = parseMultiValueField(testRun.platform);
   const deviceValues = parseMultiValueField(testRun.device);
   const assignedUsers = testRun.assignedToList && testRun.assignedToList.length > 0
@@ -133,6 +140,37 @@ export function TestRunHeader({
                   );
                 })}
               </div>
+            </div>
+          )}
+          {verificationEnvironmentValues.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-white/60">検証環境:</span>
+              <div className="flex flex-wrap gap-2">
+                {verificationEnvironmentValues.map((value) => {
+                  const badgeProps = getDynamicBadgeProps(value, verificationEnvironmentOptions);
+                  const label =
+                    verificationEnvironmentOptions.find((opt) => opt.value === value)?.label ||
+                    value;
+                  return (
+                    <Badge
+                      key={`verification-env-${value}`}
+                      variant="outline"
+                      className={badgeProps.className}
+                      style={badgeProps.style}
+                    >
+                      {label}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {testRun.verificationEnvironmentNote && testRun.verificationEnvironmentNote.trim() && (
+            <div className="flex items-start gap-2 basis-full">
+              <span className="text-white/60 shrink-0">検証環境メモ:</span>
+              <span className="text-white/90 whitespace-pre-wrap break-words">
+                {testRun.verificationEnvironmentNote}
+              </span>
             </div>
           )}
           <div className="flex items-center gap-2">

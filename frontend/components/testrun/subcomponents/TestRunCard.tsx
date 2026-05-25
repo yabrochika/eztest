@@ -31,6 +31,10 @@ export function TestRunCard({
 }: TestRunCardProps) {
   const { options: statusOptions } = useDropdownOptions('TestRun', 'status');
   const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
+  const { options: verificationEnvironmentOptions } = useDropdownOptions(
+    'TestRun',
+    'verificationEnvironment'
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getStatusColor = (status: string) => {
@@ -90,6 +94,7 @@ export function TestRunCard({
   const progressRate = calculateProgressRate();
   const counts = getResultCounts();
   const environmentValues = parseMultiValueField(testRun.environment);
+  const verificationEnvironmentValues = parseMultiValueField(testRun.verificationEnvironment);
   const platformValues = parseMultiValueField(testRun.platform);
   const deviceValues = parseMultiValueField(testRun.device);
   const assignedUsers = testRun.assignedToList && testRun.assignedToList.length > 0
@@ -134,6 +139,22 @@ export function TestRunCard({
             style={environmentBadgeProps.style}
           >
             {environmentLabel}
+          </Badge>
+        );
+      })}
+      {verificationEnvironmentValues.map((value) => {
+        const badgeProps = getDynamicBadgeProps(value, verificationEnvironmentOptions);
+        const label =
+          verificationEnvironmentOptions.find((opt) => opt.value === value)?.label || value;
+        return (
+          <Badge
+            key={`verification-env-${value}`}
+            variant="outline"
+            className={badgeProps.className}
+            style={badgeProps.style}
+            title="検証環境"
+          >
+            検証: {label}
           </Badge>
         );
       })}

@@ -326,6 +326,8 @@ model TestRun {
   assignedToId  String?
   assignedToIds String?  // Comma-separated tester IDs for multi assignment
   environment   String?  // Dynamic dropdown value e.g., "Production", "Staging", "QA"
+  verificationEnvironment String?  // Dynamic dropdown value for verification environment (検証環境). May contain comma-separated multiple values.
+  verificationEnvironmentNote String?  // Free-text note describing the verification environment (URL, host name, build, etc.)
   version       String?  // Arbitrary version label (e.g., v1.2.3, build-2026.02)
   platform      String?  // Web, Web(SP), iOS Native, Android Native
   device        String?  // iPhone, Android, PC
@@ -347,6 +349,7 @@ model TestRun {
   @@index([createdById])
   @@index([status])
   @@index([environment])
+  @@index([verificationEnvironment])
   @@index([executionType])
 }
 

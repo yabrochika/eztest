@@ -75,6 +75,13 @@ export async function seedDropdownOptions() {
     { entity: 'TestRun', field: 'environment', value: 'QA', label: 'QA', order: 3 },
     { entity: 'TestRun', field: 'environment', value: 'Development', label: 'DEVELOPMENT', order: 4 },
 
+    // Verification Environment options for TestRun (検証環境)
+    { entity: 'TestRun', field: 'verificationEnvironment', value: 'Production', label: '本番', order: 1 },
+    { entity: 'TestRun', field: 'verificationEnvironment', value: 'Staging', label: 'ステージング', order: 2 },
+    { entity: 'TestRun', field: 'verificationEnvironment', value: 'QA', label: 'QA', order: 3 },
+    { entity: 'TestRun', field: 'verificationEnvironment', value: 'Development', label: '開発', order: 4 },
+    { entity: 'TestRun', field: 'verificationEnvironment', value: 'Local', label: 'ローカル', order: 5 },
+
     // Environment options for Defect
     { entity: 'Defect', field: 'environment', value: 'Production', label: 'PRODUCTION', order: 1 },
     { entity: 'Defect', field: 'environment', value: 'Staging', label: 'STAGING', order: 2 },

@@ -6,6 +6,7 @@ import { TestRun } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { parseMultiValueField, serializeMultiValueField } from '../utils/multiValueField';
 import { MultiSelectCheckboxField } from './MultiSelectCheckboxField';
+import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 
 interface ProjectMember {
   user: {

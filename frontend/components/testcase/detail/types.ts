@@ -1,3 +1,7 @@
+import { TestLayer } from '../types';
+
+export type { TestLayer };
+
 export interface TestStep {
   id?: string;
   stepNumber: number;
@@ -57,11 +61,23 @@ export interface TestCase {
     comments?: number;
     attachments?: number;
   };
+  // Enhanced test case fields
+  rtcId?: string;
+  flowId?: string;
+  layer?: TestLayer;
+  testType?: TestType;
+  evidence?: string;
+  notes?: string;
+  platform?: 'Web' | 'Web(SP)' | 'iOS Native' | 'Android Native' | null;
+  device?: 'iPhone' | 'Android' | 'PC' | null;
+  domain?: string | null;
+  functionName?: string | null;
+  executionType?: '手動' | '自動' | null;
+  automationStatus?: '自動化済' | '自動化対象' | '自動化対象外' | '検討中' | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export type TestLayer = 'SMOKE' | 'CORE' | 'EXTENDED' | 'UNKNOWN';
 export type TestType = 'NORMAL' | 'ABNORMAL' | 'NON_FUNCTIONAL' | 'REGRESSION' | 'DATA_INTEGRITY' | 'STATE_TRANSITION' | 'OPERATIONAL' | 'FAILURE';
 
 export interface TestCaseFormData {

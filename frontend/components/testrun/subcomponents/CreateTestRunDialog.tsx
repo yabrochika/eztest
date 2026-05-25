@@ -177,7 +177,7 @@ export function CreateTestRunDialog({
     {
       name: 'verificationEnvironmentNote',
       label: '検証環境メモ',
-      placeholder: '例: https://stg.example.com / iPhone 15 Pro / build #1234',
+      placeholder: '例：devXX',
       type: 'textarea',
       rows: 3,
       cols: 2,

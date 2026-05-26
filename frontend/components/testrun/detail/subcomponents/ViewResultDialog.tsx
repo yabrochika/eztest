@@ -9,6 +9,7 @@ import {
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/frontend/reusable-elements/avatars/Avatar';
+import { getAvatarColorClass } from '@/lib/avatar-color-utils';
 import { AttachmentDisplay } from '@/frontend/reusable-components/attachments/AttachmentDisplay';
 import { formatDateTime } from '@/lib/date-utils';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
@@ -108,13 +109,20 @@ export function ViewResultDialog({ open, onOpenChange, result }: ViewResultDialo
             <div>
               <p className="text-xs font-medium text-white/40 mb-1">実行者</p>
               {user?.name ? (
-                <div className="flex items-center gap-2">
-                  <Avatar className="size-7">
-                    {user.avatar ? <AvatarImage src={user.avatar} alt={user.name} /> : null}
-                    <AvatarFallback className="text-[10px]">{initials || '?'}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm text-white/80 truncate">{user.name}</span>
-                </div>
+                (() => {
+                  const colorClass = getAvatarColorClass(user.email || user.name);
+                  return (
+                    <div className="flex items-center gap-2">
+                      <Avatar className={`size-7 ${colorClass}`}>
+                        {user.avatar ? <AvatarImage src={user.avatar} alt={user.name} /> : null}
+                        <AvatarFallback className={`text-sm font-extrabold tracking-tight ${colorClass}`}>
+                          {initials || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-white/80 truncate">{user.name}</span>
+                    </div>
+                  );
+                })()
               ) : (
                 <span className="text-sm text-white/50">-</span>
               )}

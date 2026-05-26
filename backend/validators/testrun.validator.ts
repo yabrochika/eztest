@@ -16,6 +16,11 @@ export const createTestRunSchema = z.object({
   assignedToId: z.string().min(1, 'Invalid user ID format').optional(),
   assignedToIds: z.array(z.string().min(1, 'Invalid user ID format')).optional(),
   environment: stringOrStringArraySchema.optional(),
+  verificationEnvironment: stringOrStringArraySchema.optional(),
+  verificationEnvironmentNote: z
+    .string()
+    .max(500, 'Verification environment note must not exceed 500 characters')
+    .optional(),
   version: z.string().max(100, 'Version must not exceed 100 characters').optional(),
   platform: stringOrStringArraySchema.optional(),
   device: stringOrStringArraySchema.optional(),
@@ -40,6 +45,11 @@ export const updateTestRunSchema = z.object({
   assignedToId: z.string().min(1, 'Invalid user ID format').optional(),
   assignedToIds: z.array(z.string().min(1, 'Invalid user ID format')).optional(),
   environment: stringOrStringArraySchema.optional(),
+  verificationEnvironment: stringOrStringArraySchema.optional(),
+  verificationEnvironmentNote: z
+    .string()
+    .max(500, 'Verification environment note must not exceed 500 characters')
+    .optional(),
   version: z.string().max(100, 'Version must not exceed 100 characters').optional(),
   platform: stringOrStringArraySchema.optional(),
   device: stringOrStringArraySchema.optional(),

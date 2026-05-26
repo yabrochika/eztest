@@ -93,6 +93,10 @@ export function CreateTestRunDialog({
 }: CreateTestRunDialogProps) {
   // Fetch dynamic dropdown options
   const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
+  const { options: verificationEnvironmentOptions } = useDropdownOptions(
+    'TestRun',
+    'verificationEnvironment'
+  );
 
   // Fetch project members for tester assignment
   const [memberOptions, setMemberOptions] = useState<{ value: string; label: string }[]>([]);
@@ -150,6 +154,34 @@ export function CreateTestRunDialog({
       validate: (value) =>
         parseMultiValueField(value).length === 0 ? '環境を1つ以上選択してください' : undefined,
       cols: 2,
+    },
+    {
+      name: 'verificationEnvironment',
+      label: '検証環境',
+      type: 'custom',
+      defaultValue: '',
+      customRender: (value, onChange) => (
+        <MultiSelectCheckboxField
+          fieldName="verificationEnvironment"
+          value={value}
+          onChange={onChange}
+          options={verificationEnvironmentOptions.map((opt) => ({
+            value: opt.value,
+            label: opt.label,
+          }))}
+          emptyLabel="未選択"
+        />
+      ),
+      cols: 2,
+    },
+    {
+      name: 'verificationEnvironmentNote',
+      label: '検証環境メモ',
+      placeholder: '例：devXX',
+      type: 'textarea',
+      rows: 3,
+      cols: 2,
+      maxLength: 500,
     },
     {
       name: 'assignedToIds',
@@ -345,6 +377,9 @@ export function CreateTestRunDialog({
 
   const handleSubmit = async (formData: Record<string, string>) => {
     const selectedEnvironments = parseMultiValueField(formData.environment);
+    const selectedVerificationEnvironments = parseMultiValueField(
+      formData.verificationEnvironment
+    );
     const selectedAssignees = parseMultiValueField(formData.assignedToIds);
     const selectedPlatforms = parseMultiValueField(formData.platform);
     const selectedDevices = parseMultiValueField(formData.device);
@@ -363,6 +398,9 @@ export function CreateTestRunDialog({
         name: formData.name,
         description: formData.description || undefined,
         environment: selectedEnvironments,
+        verificationEnvironment:
+          selectedVerificationEnvironments.length > 0 ? selectedVerificationEnvironments : undefined,
+        verificationEnvironmentNote: formData.verificationEnvironmentNote?.trim() || undefined,
         version: formData.version || undefined,
         assignedToIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
         platform: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,

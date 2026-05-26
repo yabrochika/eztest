@@ -314,6 +314,8 @@ interface CreateTestRunInput {
   assignedToId?: string;
   assignedToIds?: string[];
   environment?: string;
+  verificationEnvironment?: string;
+  verificationEnvironmentNote?: string;
   version?: string;
   platform?: string;
   device?: string;
@@ -331,6 +333,8 @@ interface UpdateTestRunInput {
   assignedToId?: string;
   assignedToIds?: string[];
   environment?: string;
+  verificationEnvironment?: string;
+  verificationEnvironmentNote?: string | null;
   version?: string;
   platform?: string;
   device?: string;
@@ -650,6 +654,8 @@ export class TestRunService {
         description: data.description,
         assignedToId: primaryAssignedToId,
         environment: data.environment,
+        verificationEnvironment: data.verificationEnvironment || null,
+        verificationEnvironmentNote: data.verificationEnvironmentNote || null,
         platform: data.platform || null,
         device: data.device || null,
         status,

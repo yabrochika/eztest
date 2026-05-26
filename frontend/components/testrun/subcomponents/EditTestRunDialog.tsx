@@ -21,6 +21,8 @@ interface EditTestRunDialogProps {
     name: string;
     description?: string;
     environment?: string;
+    verificationEnvironment?: string;
+    verificationEnvironmentNote?: string | null;
     version?: string;
     platform?: string;
     device?: string;
@@ -49,6 +51,10 @@ export function EditTestRunDialog({
 }: EditTestRunDialogProps) {
   const [key, setKey] = useState(0);
   const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
+  const { options: verificationEnvironmentOptions } = useDropdownOptions(
+    'TestRun',
+    'verificationEnvironment'
+  );
   const [memberOptions, setMemberOptions] = useState<{ value: string; label: string }[]>([]);
 
   useEffect(() => {
@@ -125,6 +131,36 @@ export function EditTestRunDialog({
       validate: (value) =>
         parseMultiValueField(value).length === 0 ? '環境を1つ以上選択してください' : undefined,
       cols: 2,
+    },
+    {
+      name: 'verificationEnvironment',
+      label: '検証環境',
+      type: 'custom',
+      defaultValue:
+        serializeMultiValueField(parseMultiValueField(testRun?.verificationEnvironment)) || '',
+      customRender: (value, onChange) => (
+        <MultiSelectCheckboxField
+          fieldName="verificationEnvironment"
+          value={value}
+          onChange={onChange}
+          options={verificationEnvironmentOptions.map((opt) => ({
+            value: opt.value,
+            label: opt.label,
+          }))}
+          emptyLabel="未選択"
+        />
+      ),
+      cols: 2,
+    },
+    {
+      name: 'verificationEnvironmentNote',
+      label: '検証環境メモ',
+      placeholder: '例：devXX',
+      type: 'textarea',
+      rows: 3,
+      cols: 2,
+      maxLength: 500,
+      defaultValue: testRun?.verificationEnvironmentNote || '',
     },
     {
       name: 'assignedToIds',
@@ -212,6 +248,9 @@ export function EditTestRunDialog({
     }
 
     const selectedEnvironments = parseMultiValueField(formData.environment);
+    const selectedVerificationEnvironments = parseMultiValueField(
+      formData.verificationEnvironment
+    );
     const selectedAssignees = parseMultiValueField(formData.assignedToIds);
     const selectedPlatforms = parseMultiValueField(formData.platform);
     const selectedDevices = parseMultiValueField(formData.device);
@@ -229,6 +268,9 @@ export function EditTestRunDialog({
         name: formData.name,
         description: formData.description || undefined,
         environment: selectedEnvironments,
+        verificationEnvironment: selectedVerificationEnvironments,
+        // Send empty string (not undefined) so the backend treats it as an explicit clear.
+        verificationEnvironmentNote: formData.verificationEnvironmentNote ?? '',
         version: formData.version || undefined,
         assignedToIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
         platform: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,

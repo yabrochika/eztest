@@ -96,6 +96,11 @@ export class TestRunController {
     const validatedData = validationResult.data;
     const assignedToIds = normalizeIdArray(validatedData.assignedToIds);
     const environment = normalizeMultiSelectInput(validatedData.environment);
+    const verificationEnvironment = normalizeMultiSelectInput(
+      validatedData.verificationEnvironment
+    );
+    const verificationEnvironmentNote =
+      validatedData.verificationEnvironmentNote?.trim() || undefined;
     const platform = normalizeMultiSelectInput(validatedData.platform);
     const device = normalizeMultiSelectInput(validatedData.device);
 
@@ -113,6 +118,8 @@ export class TestRunController {
       assignedToId,
       assignedToIds,
       environment,
+      verificationEnvironment,
+      verificationEnvironmentNote,
       version: validatedData.version,
       platform,
       device,
@@ -143,6 +150,15 @@ export class TestRunController {
     const validatedData = validationResult.data;
     const assignedToIds = normalizeIdArray(validatedData.assignedToIds);
     const environment = normalizeMultiSelectInput(validatedData.environment);
+    const verificationEnvironment = normalizeMultiSelectInput(
+      validatedData.verificationEnvironment
+    );
+    // Use null when explicitly cleared (empty string) so Prisma sets it to NULL.
+    // Use undefined when not provided so Prisma leaves it untouched.
+    const verificationEnvironmentNote =
+      validatedData.verificationEnvironmentNote === undefined
+        ? undefined
+        : validatedData.verificationEnvironmentNote.trim() || null;
     const platform = normalizeMultiSelectInput(validatedData.platform);
     const device = normalizeMultiSelectInput(validatedData.device);
 
@@ -151,6 +167,8 @@ export class TestRunController {
       assignedToId: validatedData.assignedToId || assignedToIds?.[0],
       assignedToIds,
       environment,
+      verificationEnvironment,
+      verificationEnvironmentNote,
       platform,
       device,
     });

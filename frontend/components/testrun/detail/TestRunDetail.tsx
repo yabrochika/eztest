@@ -26,6 +26,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { TestRun, TestCase, ResultFormData, TestRunStats, TestSuite, TestResult } from './types';
+import { compareTestCasesByDisplayOrder } from './lib/testCaseDisplayOrder';
 import type { Attachment } from '@/lib/s3';
 import { uploadFileToS3, linkAttachments } from '@/lib/s3';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -358,32 +359,16 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     }
   };
 
-  const compareTestCasesByTcId = useCallback((a: TestCase, b: TestCase) => {
-    const tcCompare = (a.tcId || '').localeCompare(b.tcId || '', undefined, {
-      numeric: true,
-      sensitivity: 'base',
-    });
-    if (tcCompare !== 0) return tcCompare;
-
-    const rtcCompare = (a.rtcId || '').localeCompare(b.rtcId || '', undefined, {
-      numeric: true,
-      sensitivity: 'base',
-    });
-    if (rtcCompare !== 0) return rtcCompare;
-
-    return (a.title || a.name || '').localeCompare(b.title || b.name || '', undefined, {
-      sensitivity: 'base',
-    });
-  }, []);
-
-  // TC-ID昇順にソートしたテストケースリスト（ナビゲーション用）
+  // 一覧表示と同じ規定の表示順（モジュール → Layer → タイトル番号 → tcId）に並べた
+  // テストケースリスト。RecordResultDialog の前後（◀▶）ナビゲーションも
+  // この順序で遷移し、画面表示と一致させる。
   const sortedTestCases = useMemo(() => {
     if (!testRun?.results) return [];
     return [...testRun.results]
       .filter((r) => r.testCase)
       .map((r) => r.testCase)
-      .sort(compareTestCasesByTcId);
-  }, [compareTestCasesByTcId, testRun?.results]);
+      .sort(compareTestCasesByDisplayOrder);
+  }, [testRun?.results]);
 
   // ◀▶ナビゲーション（前後切り替え）
   const navigateTestCase = useCallback((direction: 'prev' | 'next') => {

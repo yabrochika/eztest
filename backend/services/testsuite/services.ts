@@ -42,6 +42,48 @@ const TEST_SUITE_TEST_CASE_SELECT = {
 
 export class TestSuiteService {
   /**
+   * Generate the next sequential test suite ID (TS-###) for a project.
+   * Format is zero-padded to 3 digits; once a project exceeds 999 suites the
+   * padding is dropped automatically (TS-1000, TS-1001, ...).
+   */
+  async generateTestSuiteId(projectId: string): Promise<string> {
+    const existingSuites = await prisma.testSuite.findMany({
+      where: { projectId },
+      select: { tsId: true },
+    });
+
+    let nextNumber = 1;
+    if (existingSuites.length > 0) {
+      const maxNumber = existingSuites.reduce((max, suite) => {
+        const match = suite.tsId.match(/\d+/);
+        if (!match) return max;
+        const num = parseInt(match[0], 10);
+        return num > max ? num : max;
+      }, 0);
+      nextNumber = maxNumber + 1;
+    }
+
+    const buildTsId = (n: number) => `TS-${String(n).padStart(3, '0')}`;
+    let tsId = buildTsId(nextNumber);
+
+    // Defensive uniqueness check (handles concurrent inserts and any prior gaps).
+    let exists = await prisma.testSuite.findFirst({
+      where: { projectId, tsId },
+      select: { id: true },
+    });
+    while (exists) {
+      nextNumber++;
+      tsId = buildTsId(nextNumber);
+      exists = await prisma.testSuite.findFirst({
+        where: { projectId, tsId },
+        select: { id: true },
+      });
+    }
+
+    return tsId;
+  }
+
+  /**
    * Get all test suites for a project with hierarchical structure
    */
   async getProjectTestSuites(projectId: string) {
@@ -186,23 +228,42 @@ export class TestSuiteService {
     parentId?: string;
     order?: number;
   }) {
-    const suite = await prisma.testSuite.create({
-      data: {
-        projectId: data.projectId,
-        name: data.name,
-        description: data.description,
-        parentId: data.parentId,
-        order: data.order ?? 0,
-      },
-      include: {
-        parent: true,
-        _count: {
-          select: { testCaseSuites: true },
-        },
-      },
-    });
+    // Retry on the rare race where a concurrent insert claims the generated ID.
+    const maxAttempts = 5;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const tsId = await this.generateTestSuiteId(data.projectId);
+      try {
+        const suite = await prisma.testSuite.create({
+          data: {
+            tsId,
+            projectId: data.projectId,
+            name: data.name,
+            description: data.description,
+            parentId: data.parentId,
+            order: data.order ?? 0,
+          },
+          include: {
+            parent: true,
+            _count: {
+              select: { testCaseSuites: true },
+            },
+          },
+        });
 
-    return suite;
+        return suite;
+      } catch (error: unknown) {
+        const isUniqueViolation =
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          (error as { code?: string }).code === 'P2002';
+        if (!isUniqueViolation || attempt === maxAttempts - 1) {
+          throw error;
+        }
+      }
+    }
+
+    throw new Error('Failed to allocate a unique test suite ID after multiple attempts');
   }
 
   /**

@@ -976,9 +976,9 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   };
 
   const stats = calculateStats();
-  // Progress = tests that have been executed (passed, failed, blocked, retest)
-  // Skipped tests are NOT considered executed
-  const executed = stats.passed + stats.failed + stats.blocked;
+  // Progress = tests that have been executed (passed, failed, blocked, skipped)
+  // Skipped tests are considered executed (intentionally not run)
+  const executed = stats.passed + stats.failed + stats.blocked + stats.skipped;
   const progressPercentage =
     stats.total > 0 ? Math.round((executed / stats.total) * 100) : 0;
 

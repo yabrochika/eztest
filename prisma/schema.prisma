@@ -210,6 +210,7 @@ model Module {
 
 model TestSuite {
   id          String   @id @default(cuid())
+  tsId        String   // Test suite ID like TS-001, TS-002, etc. (unique per project)
   projectId   String
   name        String
   description String?
@@ -225,6 +226,7 @@ model TestSuite {
   testCaseSuites TestCaseSuite[] // New many-to-many relation
   testRuns    TestRunSuite[]
 
+  @@unique([projectId, tsId])
   @@index([projectId])
   @@index([parentId])
 }

@@ -236,6 +236,7 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-xs font-semibold text-white/60">
+                  <th className="px-3 py-2 text-left w-24">ID</th>
                   <th className="px-3 py-2 text-left">名前</th>
                   <th className="px-3 py-2 text-left">説明</th>
                   <th className="px-3 py-2 text-center">テストケース数</th>
@@ -251,6 +252,9 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
                     className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
                     onClick={() => handleViewSuite(suite.id)}
                   >
+                    <td className="px-3 py-3 font-mono text-xs text-white/70 whitespace-nowrap">
+                      {suite.tsId}
+                    </td>
                     <td className="px-3 py-3 font-medium text-white">
                       {suite.name}
                     </td>

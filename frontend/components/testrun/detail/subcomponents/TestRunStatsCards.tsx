@@ -7,7 +7,6 @@ import { TestRunStats } from '../types';
 interface TestRunStatsCardsProps {
   stats: TestRunStats;
   progressPercentage: number;
-  passRate: number;
   testRun: {
     assignedTo?: {
       name: string;
@@ -20,7 +19,6 @@ interface TestRunStatsCardsProps {
 export function TestRunStatsCards({
   stats,
   progressPercentage,
-  passRate,
   testRun,
 }: TestRunStatsCardsProps) {
   return (
@@ -39,7 +37,7 @@ export function TestRunStatsCards({
         icon={<CheckCircle className="w-5 h-5" />}
         label="合格"
         value={stats.passed}
-        helpText={`合格率 ${passRate}%`}
+        helpText={`進捗率 ${progressPercentage}%`}
         borderColor="border-l-green-500/30"
       />
 

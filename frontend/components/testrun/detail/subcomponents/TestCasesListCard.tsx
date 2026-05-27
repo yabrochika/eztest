@@ -41,6 +41,8 @@ interface TestCasesListCardProps {
 interface ResultRow {
   id: string;
   testCase: TestCase;
+  testCaseId: string | null;
+  testCaseDeleted: boolean;
   status: string;
   comment?: string;
   duration?: number;
@@ -196,7 +198,17 @@ export function TestCasesListCard({
       renderHeader: () => renderSortableHeader('testCase', 'テストケース'),
       render: (row: ResultRow) => (
         <div className="min-w-0 overflow-hidden">
-          <p className="font-medium text-white/90 truncate block">{row.testCase.title}</p>
+          <div className="flex items-center gap-2 min-w-0">
+            <p className="font-medium text-white/90 truncate block">{row.testCase.title}</p>
+            {row.testCaseDeleted && (
+              <span
+                className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30"
+                title="マスターのテストケースは削除されました。スナップショットを表示しています。"
+              >
+                削除済み
+              </span>
+            )}
+          </div>
           {row.comment && (
             <p className="text-xs text-white/60 mt-1 truncate">
               {row.comment}
@@ -424,6 +436,8 @@ export function TestCasesListCard({
     .map((result) => ({
       id: result.testCase.id,
       testCase: result.testCase,
+      testCaseId: result.testCaseId ?? null,
+      testCaseDeleted: result.testCaseDeleted === true || result.testCaseId == null,
       status: result.status,
       comment: result.comment,
       duration: result.duration,
@@ -595,6 +609,9 @@ export function TestCasesListCard({
           groupConfig={groupConfig}
           defaultExpanded={true}
           onRowClick={(row) => {
+            // マスターのテストケースが削除されている場合は遷移しない（404 を避ける）。
+            // スナップショットの表示はテストラン側で完結している。
+            if (row.testCaseDeleted || !row.testCaseId) return;
             // 行クリックは常にテストケース詳細ページに遷移する。
             // テストケース詳細ページの Execution History カードで
             // 各実行のコメント・添付ファイルを確認できる

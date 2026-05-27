@@ -22,7 +22,7 @@ import {
 } from '@/frontend/reusable-elements/selects/Select';
 import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import { CheckCircle, XCircle, AlertCircle, Circle, Bug, Timer, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { ResultFormData } from '../types';
+import { ResultFormData, type TestCaseSnapshot } from '../types';
 import { CreateDefectDialog } from '@/frontend/components/defect/subcomponents/CreateDefectDialog';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 
@@ -67,6 +67,13 @@ interface RecordResultDialogProps {
   testRunEnvironment?: string; // Environment from test run
   testRunPlatform?: string;
   testRunDevice?: string;
+  /**
+   * テストランへの追加時点で取られたテストケースのスナップショット。
+   * 渡された場合はライブのテストケース取得 (`/api/testcases/[id]`) より
+   * 優先して使用する。マスター側のテストケースが編集されても、テストランの
+   * 表示は固定される。
+   */
+  testCaseSnapshot?: TestCaseSnapshot | null;
   formData: ResultFormData;
   commentAttachments: Attachment[];
   onCommentAttachmentsChange: (attachments: Attachment[]) => void;
@@ -88,6 +95,7 @@ export function RecordResultDialog({
   testRunEnvironment,
   testRunPlatform,
   testRunDevice,
+  testCaseSnapshot,
   formData,
   commentAttachments,
   onCommentAttachmentsChange,
@@ -197,6 +205,26 @@ export function RecordResultDialog({
       const fetchTestCaseDetail = async () => {
         setLoadingTestCase(true);
         try {
+          // スナップショットが渡されている場合は API 取得をスキップし、
+          // テストランへの追加時点の固定内容を使う（過去のエビデンスとして固定表示）
+          if (testCaseSnapshot && testCaseSnapshot.id === testCaseId) {
+            setTestCaseDetail({
+              id: testCaseSnapshot.id,
+              tcId: testCaseSnapshot.tcId || '',
+              rtcId: testCaseSnapshot.rtcId ?? null,
+              title: testCaseSnapshot.title,
+              description: testCaseSnapshot.description ?? undefined,
+              expectedResult: testCaseSnapshot.expectedResult ?? undefined,
+              preconditions: testCaseSnapshot.preconditions ?? undefined,
+              postconditions: testCaseSnapshot.postconditions ?? undefined,
+              testData: testCaseSnapshot.testData ?? undefined,
+              priority: testCaseSnapshot.priority ?? '',
+              status: testCaseSnapshot.status ?? '',
+              estimatedTime: testCaseSnapshot.estimatedTime ?? null,
+              steps: testCaseSnapshot.steps,
+            });
+            return;
+          }
           const response = await fetch(`/api/testcases/${testCaseId}`);
           const data = await response.json();
           if (data.data) {
@@ -222,7 +250,7 @@ export function RecordResultDialog({
       setTimerStartTime(null);
       setTestCaseDetail(null);
     }
-  }, [open, testCaseId, initialDurationSeconds, persistElapsedForTestCase]);
+  }, [open, testCaseId, initialDurationSeconds, persistElapsedForTestCase, testCaseSnapshot]);
 
   useEffect(() => {
     if (open && timerStartTime) {

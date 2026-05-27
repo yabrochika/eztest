@@ -8,11 +8,42 @@ export interface TestResultAttachment {
   uploadedAt: string;
 }
 
+export interface TestCaseStepSnapshot {
+  id: string;
+  stepNumber: number;
+  action: string;
+  expectedResult: string;
+}
+
+export interface TestCaseSnapshot {
+  id: string;
+  tcId?: string | null;
+  rtcId?: string | null;
+  title: string;
+  description?: string | null;
+  expectedResult?: string | null;
+  preconditions?: string | null;
+  postconditions?: string | null;
+  testData?: string | null;
+  priority?: string | null;
+  status?: string | null;
+  estimatedTime?: number | null;
+  layer?: string | null;
+  testType?: string | null;
+  steps: TestCaseStepSnapshot[];
+  capturedAt: string;
+}
+
 export interface TestResult {
   id: string;
   status: 'NOT_STARTED' | 'PASSED' | 'FAILED' | 'BLOCKED' | 'SKIPPED' | 'RETEST';
-  testCaseId: string;
+  /** マスターのテストケースが削除されている場合は null になる */
+  testCaseId: string | null;
   testCase: TestCase;
+  /** テストランへの追加時点で固定されたテストケースの内容（編集の影響を受けない） */
+  testCaseSnapshot?: TestCaseSnapshot | null;
+  /** マスターのテストケースが削除されている場合 true（snapshot から testCase を再構築している） */
+  testCaseDeleted?: boolean;
   comment?: string;
   duration?: number;
   executedAt?: string;

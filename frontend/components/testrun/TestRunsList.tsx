@@ -209,6 +209,97 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
     }
   };
 
+  /**
+   * テストランを複製する。
+   * 既存テストランの詳細を取得し、設定値（説明・環境・端末・アサイン・テストケース等）を
+   * そのまま流用した新規テストランを作成する。ステータスは NOT_STARTED に戻し、
+   * 名前末尾に「 (コピー)」を付与する。作成後は新テストランの詳細ページへ遷移する。
+   */
+  const handleDuplicateTestRun = async (sourceTestRun: TestRun) => {
+    try {
+      // 完全なテストケースID一覧を得るために詳細を取得する（一覧 API には testCaseId が含まれない）
+      const detailRes = await fetch(
+        `/api/projects/${projectId}/testruns/${sourceTestRun.id}`
+      );
+      const detailJson = await detailRes.json();
+      if (!detailRes.ok || !detailJson?.data) {
+        setAlert({
+          type: 'error',
+          title: '複製に失敗しました',
+          message: detailJson?.error || 'テストラン詳細の取得に失敗しました',
+        });
+        return;
+      }
+      const detail = detailJson.data as {
+        results?: Array<{ testCaseId?: string; testCase?: { id?: string } }>;
+      };
+
+      const testCaseIds = Array.from(
+        new Set(
+          (detail.results || [])
+            .map((r) => r.testCaseId || r.testCase?.id)
+            .filter((id): id is string => typeof id === 'string' && id.length > 0)
+        )
+      );
+
+      const newName = `${sourceTestRun.name} (コピー)`;
+
+      const payload: Record<string, unknown> = {
+        name: newName,
+        description: sourceTestRun.description ?? undefined,
+        executionType: sourceTestRun.executionType ?? 'MANUAL',
+        version: sourceTestRun.version ?? undefined,
+        environment: sourceTestRun.environment ?? undefined,
+        verificationEnvironment: sourceTestRun.verificationEnvironment ?? undefined,
+        verificationEnvironmentNote: sourceTestRun.verificationEnvironmentNote ?? undefined,
+        platform: sourceTestRun.platform ?? undefined,
+        device: sourceTestRun.device ?? undefined,
+        assignedToId: sourceTestRun.assignedTo?.id ?? undefined,
+        assignedToIds:
+          sourceTestRun.assignedToIds && sourceTestRun.assignedToIds.length > 0
+            ? sourceTestRun.assignedToIds
+            : sourceTestRun.assignedTo?.id
+              ? [sourceTestRun.assignedTo.id]
+              : undefined,
+        status: 'NOT_STARTED',
+        testCaseIds,
+      };
+
+      const createRes = await fetch(`/api/projects/${projectId}/testruns`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const createJson = await createRes.json();
+      if (!createRes.ok || !createJson?.data) {
+        setAlert({
+          type: 'error',
+          title: '複製に失敗しました',
+          message: createJson?.error || 'テストランの作成に失敗しました',
+        });
+        return;
+      }
+
+      setAlert({
+        type: 'success',
+        title: '成功',
+        message: `テストラン「${newName}」を作成しました`,
+      });
+      setTimeout(() => setAlert(null), 5000);
+
+      const newId = (createJson.data as { id?: string }).id;
+      if (newId) {
+        router.push(`/projects/${projectId}/testruns/${newId}`);
+      } else {
+        fetchTestRuns();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '不明なエラーが発生しました';
+      setAlert({ type: 'error', title: '接続エラー', message });
+      console.error('Error duplicating test run:', error);
+    }
+  };
+
   const handleTestRunUpdated = (updatedTestRun: { id: string; name: string }) => {
     setEditDialogOpen(false);
     setSelectedTestRun(null);
@@ -389,6 +480,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
                 testRun={testRun}
                 canUpdate={canUpdateTestRun}
                 canDelete={canDeleteTestRun}
+                canDuplicate={canCreateTestRun}
                 onCardClick={() =>
                   router.push(`/projects/${projectId}/testruns/${testRun.id}`)
                 }
@@ -403,6 +495,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
                   setSelectedTestRun(testRun);
                   setDeleteDialogOpen(true);
                 }}
+                onDuplicate={() => handleDuplicateTestRun(testRun)}
               />
             ))}
           </ResponsiveGrid>

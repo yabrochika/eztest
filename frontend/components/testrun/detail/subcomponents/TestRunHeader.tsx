@@ -10,7 +10,7 @@ interface TestRunHeaderProps {
   testRun: {
     name: string;
     description?: string;
-    status: 'NOT_STARTED' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+    status: 'NOT_STARTED' | 'PLANNED' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
     environment?: string;
     verificationEnvironment?: string;
     verificationEnvironmentNote?: string | null;

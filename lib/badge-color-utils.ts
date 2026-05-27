@@ -40,6 +40,7 @@ const STATIC_BADGE_COLORS: Record<string, { bg: string; text: string; border: st
   // Note: IN_PROGRESS is already defined above for Defect Status (purple)
   // For TestRun, IN_PROGRESS should be yellow, but since it shares the same value with Defect,
   // we'll keep it as purple. If needed, we can add a separate mapping later.
+  'PAUSED': { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
   'COMPLETED': { bg: 'bg-green-500/10', text: 'text-green-500', border: 'border-green-500/20' },
   'CANCELLED': { bg: 'bg-gray-500/10', text: 'text-gray-500', border: 'border-gray-500/20' },
   

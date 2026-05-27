@@ -58,7 +58,7 @@ export interface TestRun {
   description?: string;
   executionType?: 'MANUAL' | 'AUTOMATION' | string;
   version?: string;
-  status: 'NOT_STARTED' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'NOT_STARTED' | 'PLANNED' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
   environment?: string;
   verificationEnvironment?: string;
   verificationEnvironmentNote?: string | null;

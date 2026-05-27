@@ -32,6 +32,7 @@ export interface TestCase {
   id: string;
   tcId?: string;
   rtcId?: string | null;
+  flowId?: string | null;
   name?: string;
   title?: string;
   description?: string;

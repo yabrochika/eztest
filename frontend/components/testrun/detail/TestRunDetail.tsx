@@ -8,6 +8,7 @@ import { TestRunStatsCards } from './subcomponents/TestRunStatsCards';
 import { TestCasesListCard } from './subcomponents/TestCasesListCard';
 import { RecordResultDialog } from './subcomponents/RecordResultDialog';
 import { ViewResultDialog } from './subcomponents/ViewResultDialog';
+import { BulkUpdateResultsDialog } from './subcomponents/BulkUpdateResultsDialog';
 import { AddTestCasesDialog } from '@/frontend/components/common/dialogs/AddTestCasesDialog';
 import { AddTestSuitesDialog } from './subcomponents/AddTestSuitesDialog';
 import { CreateDefectDialog } from '@/frontend/components/defect/subcomponents/CreateDefectDialog';
@@ -74,6 +75,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [loadingSuites, setLoadingSuites] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  // 一括更新（ステータス変更 / コメント追記）用の選択状態とダイアログ状態
+  const [bulkSelectedTestCaseIds, setBulkSelectedTestCaseIds] = useState<string[]>([]);
+  const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+
   const [excludeTarget, setExcludeTarget] = useState<{
     testCaseId: string;
     title: string;
@@ -648,6 +654,135 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     }
   };
 
+  /**
+   * 選択中のテストケースに対してステータスやコメントを一括適用する。
+   *
+   * API（POST /api/projects/[id]/testruns/[testrunId]/results）は `status` を必須とし、
+   * 既存値を保持するオプションを持たないため、status が未指定（変更しない）の場合は
+   * 既存の status をそのまま送り直して結果レコードを upsert する。
+   *
+   * コメントは「追記モード」のみ対応。既存コメントが空でなければ改行を挟んで末尾に
+   * 連結する。空欄なら既存コメントを変更しない（既存値を再送する）。
+   */
+  const handleBulkUpdate = async ({
+    status,
+    appendComment,
+  }: {
+    status?: string;
+    appendComment: string;
+  }) => {
+    if (!testRun) return;
+    if (bulkSelectedTestCaseIds.length === 0) return;
+
+    let projectId = testRun.project?.id;
+    if (!projectId && typeof window !== 'undefined') {
+      const pathSegments = window.location.pathname.split('/');
+      const projectIndex = pathSegments.indexOf('projects');
+      if (projectIndex !== -1 && projectIndex + 1 < pathSegments.length) {
+        projectId = pathSegments[projectIndex + 1];
+      }
+    }
+    if (!projectId) {
+      setFloatingAlert({
+        type: 'error',
+        title: '一括更新に失敗しました',
+        message: 'プロジェクト情報を取得できませんでした',
+      });
+      return;
+    }
+
+    setBulkUpdating(true);
+    let successCount = 0;
+    const failures: Array<{ testCaseId: string; message: string }> = [];
+
+    try {
+      // 並列実行で per-test-case の POST を発行する。
+      // 一部失敗しても他は継続するため Promise.allSettled を使う。
+      const results = await Promise.allSettled(
+        bulkSelectedTestCaseIds.map(async (testCaseId) => {
+          const existing = testRun.results.find((r) => r.testCaseId === testCaseId);
+          // 既存ステータスは API enum に含まれる値のみ送る（型上は常に該当するが保険）。
+          const nextStatus = status ?? existing?.status ?? 'NOT_STARTED';
+
+          const existingComment = existing?.comment ?? '';
+          const nextComment =
+            appendComment.length > 0
+              ? existingComment.length > 0
+                ? `${existingComment}\n${appendComment}`
+                : appendComment
+              : existingComment;
+
+          const payload: Record<string, unknown> = {
+            testCaseId,
+            status: nextStatus,
+            comment: nextComment,
+          };
+          if (typeof existing?.duration === 'number') {
+            payload.duration = existing.duration;
+          }
+
+          const response = await fetch(
+            `/api/projects/${projectId}/testruns/${testRunId}/results`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            }
+          );
+          if (!response.ok) {
+            let message = `HTTP ${response.status}`;
+            try {
+              const data = await response.json();
+              message = data.error || data.message || message;
+            } catch {
+              /* noop */
+            }
+            throw new Error(message);
+          }
+          return testCaseId;
+        })
+      );
+
+      results.forEach((r, idx) => {
+        if (r.status === 'fulfilled') {
+          successCount++;
+        } else {
+          failures.push({
+            testCaseId: bulkSelectedTestCaseIds[idx],
+            message: r.reason instanceof Error ? r.reason.message : '不明なエラー',
+          });
+        }
+      });
+
+      await fetchTestRun();
+
+      if (failures.length === 0) {
+        setBulkUpdateDialogOpen(false);
+        setBulkSelectedTestCaseIds([]);
+        setFloatingAlert({
+          type: 'success',
+          title: '一括更新しました',
+          message: `${successCount} 件のテストケースを更新しました`,
+        });
+      } else {
+        setFloatingAlert({
+          type: 'error',
+          title: `${failures.length} 件の更新に失敗しました`,
+          message: `${successCount} 件は成功しました。詳細はコンソールを確認してください。`,
+        });
+        console.error('Bulk update partial failure:', failures);
+      }
+    } catch (error) {
+      setFloatingAlert({
+        type: 'error',
+        title: '一括更新に失敗しました',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      });
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
   const fetchAvailableTestSuites = async () => {
     if (!testRun || !testRun.project?.id) return;
 
@@ -1061,6 +1196,10 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           onViewResult={handleViewResult}
           forceShowDefectActions={showAutomationDefectActions}
           getResultIcon={getResultIcon}
+          enableBulkActions={canUpdateTestRun}
+          selectedTestCaseIds={bulkSelectedTestCaseIds}
+          onSelectedTestCaseIdsChange={setBulkSelectedTestCaseIds}
+          onBulkUpdateRequest={() => setBulkUpdateDialogOpen(true)}
         />
 
         <ViewResultDialog
@@ -1070,6 +1209,16 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             if (!open) setViewingResult(null);
           }}
           result={viewingResult}
+        />
+
+        <BulkUpdateResultsDialog
+          open={bulkUpdateDialogOpen}
+          onOpenChange={setBulkUpdateDialogOpen}
+          selectedResults={testRun.results.filter((r) =>
+            bulkSelectedTestCaseIds.includes(r.testCaseId)
+          )}
+          loading={bulkUpdating}
+          onSubmit={handleBulkUpdate}
         />
 
         <RecordResultDialog

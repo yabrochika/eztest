@@ -1,8 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import { TestSuiteService } from '@/backend/services/testsuite/services';
 import { TestSuiteMessages } from '@/backend/constants/static_messages';
 
+const prisma = new PrismaClient();
 const testSuiteService = new TestSuiteService();
+
+/**
+ * フォーム由来の parentId 値を、DB へ渡せる形（既存スイートIDの string、または null）に正規化する。
+ *
+ * - undefined / null はそのまま null（親なし）
+ * - 文字列の場合、trim 後に空文字 / 'none' / 'null' は null として扱う
+ *   （UI のフォームは select の「親なし」値として 'none' を送るが、
+ *    sessionStorage 永続化や非ログインタブの初期化で '' が紛れ込むケースがあり、
+ *    そのまま prisma に渡すと外部キー違反（P2003）で 500 になる）
+ */
+function normalizeParentId(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (trimmed === '' || trimmed === 'none' || trimmed === 'null') return null;
+  return trimmed;
+}
+
+/**
+ * Prisma の既知エラー（P2002: ユニーク違反、P2003: 外部キー違反 など）を識別する。
+ */
+function isPrismaErrorWithCode(error: unknown, code: string): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: string }).code === code
+  );
+}
 
 export class TestSuiteController {
   /**
@@ -67,7 +98,7 @@ export class TestSuiteController {
   async createTestSuite(request: NextRequest, projectId: string) {
     try {
       const body = await request.json();
-      const { name, description, parentId, order } = body;
+      const { name, description, order } = body;
 
       if (!name || !name.trim()) {
         return NextResponse.json(
@@ -76,11 +107,29 @@ export class TestSuiteController {
         );
       }
 
+      // parentId は空文字 / 'none' / 余分な空白などが UI から来ることがあるため正規化する。
+      // 不正値がそのまま Prisma に渡ると外部キー違反で 500 になるため、明示的に検証する。
+      const normalizedParentId = normalizeParentId(body.parentId);
+      if (normalizedParentId) {
+        const parent = await prisma.testSuite.findFirst({
+          where: { id: normalizedParentId, projectId },
+          select: { id: true },
+        });
+        if (!parent) {
+          // フロントの localStorage / sessionStorage に削除済みスイートの ID が残っている、
+          // または別プロジェクトのスイート ID が混入したケースなどでここに到達する。
+          return NextResponse.json(
+            { error: TestSuiteMessages.InvalidSuiteParent },
+            { status: 400 }
+          );
+        }
+      }
+
       const suite = await testSuiteService.createTestSuite({
         projectId,
         name: name.trim(),
         description: description?.trim(),
-        parentId,
+        parentId: normalizedParentId ?? undefined,
         order,
       });
 
@@ -89,6 +138,14 @@ export class TestSuiteController {
         message: TestSuiteMessages.TestSuiteCreatedSuccessfully,
       });
     } catch (error) {
+      // Prisma の外部キー違反 / ユニーク違反は 400 で詳細メッセージを返す。
+      if (isPrismaErrorWithCode(error, 'P2003')) {
+        console.warn('Foreign key violation while creating test suite:', error);
+        return NextResponse.json(
+          { error: TestSuiteMessages.InvalidSuiteParent },
+          { status: 400 }
+        );
+      }
       console.error('Error creating test suite:', error);
       return NextResponse.json(
         { error: TestSuiteMessages.FailedToCreateTestSuite },
@@ -112,7 +169,7 @@ export class TestSuiteController {
       }
 
       const body = await request.json();
-      const { name, description, parentId, order } = body;
+      const { name, description, order } = body;
       const updateData: {
         name?: string;
         description?: string | null;
@@ -127,7 +184,37 @@ export class TestSuiteController {
         updateData.description = typeof description === 'string' ? description.trim() : null;
       }
       if (Object.prototype.hasOwnProperty.call(body, 'parentId')) {
-        updateData.parentId = parentId ?? null;
+        const normalizedParentId = normalizeParentId(body.parentId);
+        if (normalizedParentId) {
+          // 親を同一プロジェクト内に絞って検証する（自己参照は許可しないため除外）。
+          const targetSuite = await prisma.testSuite.findUnique({
+            where: { id: suiteId },
+            select: { projectId: true },
+          });
+          if (!targetSuite) {
+            return NextResponse.json(
+              { error: TestSuiteMessages.TestSuiteNotFound },
+              { status: 404 }
+            );
+          }
+          if (normalizedParentId === suiteId) {
+            return NextResponse.json(
+              { error: TestSuiteMessages.InvalidSuiteParent },
+              { status: 400 }
+            );
+          }
+          const parent = await prisma.testSuite.findFirst({
+            where: { id: normalizedParentId, projectId: targetSuite.projectId },
+            select: { id: true },
+          });
+          if (!parent) {
+            return NextResponse.json(
+              { error: TestSuiteMessages.InvalidSuiteParent },
+              { status: 400 }
+            );
+          }
+        }
+        updateData.parentId = normalizedParentId;
       }
       if (Object.prototype.hasOwnProperty.call(body, 'order')) {
         updateData.order = order;
@@ -140,6 +227,13 @@ export class TestSuiteController {
         message: TestSuiteMessages.TestSuiteUpdatedSuccessfully,
       });
     } catch (error) {
+      if (isPrismaErrorWithCode(error, 'P2003')) {
+        console.warn('Foreign key violation while updating test suite:', error);
+        return NextResponse.json(
+          { error: TestSuiteMessages.InvalidSuiteParent },
+          { status: 400 }
+        );
+      }
       console.error('Error updating test suite:', error);
       return NextResponse.json(
         { error: TestSuiteMessages.FailedToUpdateTestSuite },

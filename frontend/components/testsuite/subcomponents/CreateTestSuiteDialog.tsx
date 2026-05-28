@@ -58,6 +58,14 @@ export function CreateTestSuiteDialog({
   ];
 
   const handleSubmit = async (formData: Record<string, string>) => {
+    // 親スイートID は select の「親なし」値（'none'）／未入力（''）／削除済みID の混入を
+    // 防ぐため、現在表示中の根スイート一覧に含まれている時のみ送信する。
+    const parentIdRaw = (formData.parentId ?? '').trim();
+    const validParentId =
+      parentIdRaw && parentIdRaw !== 'none' && parentOptions.some((o) => o.value === parentIdRaw)
+        ? parentIdRaw
+        : undefined;
+
     const response = await fetch(`/api/projects/${projectId}/testsuites`, {
       method: 'POST',
       headers: {
@@ -66,7 +74,7 @@ export function CreateTestSuiteDialog({
       body: JSON.stringify({
         name: formData.name,
         description: formData.description || undefined,
-        parentId: formData.parentId !== 'none' ? formData.parentId : undefined,
+        parentId: validParentId,
       }),
     });
 

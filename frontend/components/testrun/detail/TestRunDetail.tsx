@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { Navbar } from '@/frontend/reusable-components/layout/Navbar';
 import { Breadcrumbs } from '@/frontend/reusable-components/layout/Breadcrumbs';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
@@ -41,6 +42,8 @@ interface TestRunDetailProps {
 
 export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const { hasPermission: hasPermissionCheck, isLoading: permissionsLoading } = usePermissions();
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id || '';
 
   const [testRun, setTestRun] = useState<TestRun | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,6 +95,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     {
       status: 'NOT_STARTED',
       comment: '',
+      executedById: '',
     },
     {
       expiryMs: 30 * 60 * 1000, // 30 minutes
@@ -393,9 +397,10 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setResultForm({
       status: resolvedStatus,
       comment: existingResult?.comment || '',
+      executedById: existingResult?.executedBy?.id || existingResult?.executedById || currentUserId,
     });
     setResultCommentAttachments(mapResultAttachments(existingResult));
-  }, [selectedTestCase, sortedTestCases, testRun?.results, setResultForm, mapResultAttachments]);
+  }, [selectedTestCase, sortedTestCases, testRun?.results, setResultForm, mapResultAttachments, currentUserId]);
 
   // 次のテストケースに遷移するヘルパー（保存後・欠陥作成後に使用）
   const navigateToNextTestCase = useCallback((freshRun?: TestRun | null) => {
@@ -422,6 +427,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       setResultForm({
         status: resolvedStatus,
         comment: nextResult?.comment || '',
+        executedById: nextResult?.executedBy?.id || nextResult?.executedById || currentUserId,
       });
       setResultCommentAttachments(mapResultAttachments(nextResult));
       setResultDialogOpen(true);
@@ -430,7 +436,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       setSelectedTestCase(null);
       setResultCommentAttachments([]);
     }
-  }, [selectedTestCase, sortedTestCases, testRun, setResultForm, mapResultAttachments]);
+  }, [selectedTestCase, sortedTestCases, testRun, setResultForm, mapResultAttachments, currentUserId]);
 
   const handleOpenResultDialog = (testCase: TestCase) => {
     const existingResult = testRun?.results.find(
@@ -452,6 +458,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setResultForm({
       status: resolvedStatus,
       comment: existingResult?.comment || '',
+      executedById: existingResult?.executedBy?.id || existingResult?.executedById || currentUserId,
     });
 
     setResultCommentAttachments(mapResultAttachments(existingResult));
@@ -503,6 +510,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           status: resultForm.status,
           comment: resultForm.comment,
           duration: durationSeconds,
+          executedById: resultForm.executedById || undefined,
         }),
       });
 

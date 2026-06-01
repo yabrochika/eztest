@@ -5,10 +5,11 @@ import { getAvatarColorClass } from '@/lib/avatar-color-utils';
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
+import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import { formatDateTime } from '@/lib/date-utils';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { GroupedDataTable, type ColumnDef, type GroupConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
-import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2 } from 'lucide-react';
+import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2, ListTodo } from 'lucide-react';
 import { TestResult, TestCase } from '../types';
 import {
   getLayerSortKey,
@@ -42,6 +43,18 @@ interface TestCasesListCardProps {
   onViewResult?: (result: TestResult) => void;
   forceShowDefectActions?: boolean;
   getResultIcon: (status?: string) => React.JSX.Element;
+  /**
+   * 一括操作（ステータス変更 / コメント追記）を有効にするかどうか。
+   * true の時、行頭にチェックボックス列を出し、選択中件数に応じて
+   * ヘッダ右側に「一括ステータス・コメント」ボタンを表示する。
+   */
+  enableBulkActions?: boolean;
+  /** 現在選択中のテストケースID 配列 */
+  selectedTestCaseIds?: string[];
+  /** 選択 ID 配列の変更通知 */
+  onSelectedTestCaseIdsChange?: (ids: string[]) => void;
+  /** 「一括ステータス・コメント」ボタン押下時のハンドラ */
+  onBulkUpdateRequest?: () => void;
 }
 
 interface ResultRow {
@@ -72,6 +85,10 @@ export function TestCasesListCard({
   onViewResult,
   forceShowDefectActions = false,
   getResultIcon,
+  enableBulkActions = false,
+  selectedTestCaseIds = [],
+  onSelectedTestCaseIdsChange,
+  onBulkUpdateRequest,
 }: TestCasesListCardProps) {
   const router = useRouter();
   const { options: priorityOptions, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
@@ -137,7 +154,74 @@ export function TestCasesListCard({
     }
   };
 
-  const columns: ColumnDef<ResultRow>[] = [
+  // 一括選択用の補助関数・集計値（テーブルデータより上で評価しないため、ここでは ID 集合のみ作る）
+  const selectedIdSet = new Set(selectedTestCaseIds);
+  const allVisibleIds = (results || [])
+    .filter((r) => r.testCase)
+    .map((r) => r.testCase.id);
+  const visibleSelectedCount = allVisibleIds.filter((id) => selectedIdSet.has(id)).length;
+  const isAllSelected =
+    allVisibleIds.length > 0 && visibleSelectedCount === allVisibleIds.length;
+  const isPartiallySelected = visibleSelectedCount > 0 && !isAllSelected;
+
+  const toggleRowSelection = (testCaseId: string, checked: boolean) => {
+    if (!onSelectedTestCaseIdsChange) return;
+    if (checked) {
+      if (selectedIdSet.has(testCaseId)) return;
+      onSelectedTestCaseIdsChange([...selectedTestCaseIds, testCaseId]);
+    } else {
+      onSelectedTestCaseIdsChange(selectedTestCaseIds.filter((id) => id !== testCaseId));
+    }
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    if (!onSelectedTestCaseIdsChange) return;
+    if (checked) {
+      // 既選択を維持しつつ、現在表示中の全 ID を選択状態にする
+      const next = new Set(selectedTestCaseIds);
+      allVisibleIds.forEach((id) => next.add(id));
+      onSelectedTestCaseIdsChange(Array.from(next));
+    } else {
+      // 表示中の ID だけ選択解除する（他ビューで選択した分は維持）
+      const visibleSet = new Set(allVisibleIds);
+      onSelectedTestCaseIdsChange(selectedTestCaseIds.filter((id) => !visibleSet.has(id)));
+    }
+  };
+
+  const selectionColumn: ColumnDef<ResultRow> = {
+    key: 'select',
+    label: '',
+    width: '40px',
+    renderHeader: () => (
+      <div
+        className="flex items-center justify-center"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        title={isAllSelected ? '全選択を解除' : '全選択'}
+      >
+        <Checkbox
+          checked={isAllSelected ? true : isPartiallySelected ? 'indeterminate' : false}
+          onCheckedChange={(checked) => toggleSelectAll(Boolean(checked))}
+          aria-label="表示中のテストケースを全て選択"
+        />
+      </div>
+    ),
+    render: (row: ResultRow) => (
+      <div
+        className="flex items-center justify-center"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <Checkbox
+          checked={selectedIdSet.has(row.testCase.id)}
+          onCheckedChange={(checked) => toggleRowSelection(row.testCase.id, Boolean(checked))}
+          aria-label={`「${row.testCase.title || row.testCase.tcId || row.testCase.id}」を選択`}
+        />
+      </div>
+    ),
+  };
+
+  const dataColumns: ColumnDef<ResultRow>[] = [
     {
       key: 'flowId',
       label: 'Flow-ID',
@@ -493,31 +577,70 @@ export function TestCasesListCard({
     });
   }
 
+  // 一括操作の有効化条件: 親から要求 + 1件以上の表示 + 編集権限
+  const bulkActionsActive = enableBulkActions && allVisibleIds.length > 0 && canUpdate;
+  const columns: ColumnDef<ResultRow>[] = bulkActionsActive
+    ? [selectionColumn, ...dataColumns]
+    : dataColumns;
+  const gridTemplateColumns = bulkActionsActive
+    ? '40px 90px 1fr 100px 90px 120px 70px 140px 175px'
+    : '90px 1fr 100px 90px 120px 70px 140px 175px';
+
+  const hasHeaderAction = (results && results.length > 0 && canCreate) || bulkActionsActive;
+
   return (
     <DetailCard
       title={`テストケース (${results?.length || 0})`}
       contentClassName=""
       headerAction={
-        results && results.length > 0 && canCreate ? (
-          <div className="flex gap-2 flex-wrap justify-end">
-            <Button
-              variant="glass"
-              size="sm"
-              onClick={onAddTestSuites}
-              disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              テストスイートを追加
-            </Button>
-            <Button
-              variant="glass"
-              size="sm"
-              onClick={onAddTestCases}
-              disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              テストケースを追加
-            </Button>
+        hasHeaderAction ? (
+          <div className="flex gap-2 flex-wrap justify-end items-center">
+            {bulkActionsActive && visibleSelectedCount > 0 && (
+              <>
+                <span className="text-xs text-white/70 mr-1">
+                  選択中: {visibleSelectedCount} 件
+                </span>
+                <Button
+                  variant="glass"
+                  size="sm"
+                  onClick={() => onSelectedTestCaseIdsChange?.([])}
+                  buttonName="Test Cases List Card - Clear Selection"
+                >
+                  選択解除
+                </Button>
+                <ButtonPrimary
+                  size="sm"
+                  onClick={() => onBulkUpdateRequest?.()}
+                  disabled={!onBulkUpdateRequest}
+                  buttonName="Test Cases List Card - Bulk Update"
+                >
+                  <ListTodo className="w-4 h-4 mr-2" />
+                  一括ステータス・コメント
+                </ButtonPrimary>
+              </>
+            )}
+            {results && results.length > 0 && canCreate && (
+              <>
+                <Button
+                  variant="glass"
+                  size="sm"
+                  onClick={onAddTestSuites}
+                  disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  テストスイートを追加
+                </Button>
+                <Button
+                  variant="glass"
+                  size="sm"
+                  onClick={onAddTestCases}
+                  disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  テストケースを追加
+                </Button>
+              </>
+            )}
           </div>
         ) : undefined
       }
@@ -565,7 +688,7 @@ export function TestCasesListCard({
             // （その行をクリックすればさらに ViewResultDialog で詳細表示）。
             router.push(`/projects/${projectId}/testcases/${row.testCase.id}`);
           }}
-          gridTemplateColumns="90px 1fr 100px 90px 120px 70px 140px 175px"
+          gridTemplateColumns={gridTemplateColumns}
           emptyMessage="テストケースはありません"
         />
       )}

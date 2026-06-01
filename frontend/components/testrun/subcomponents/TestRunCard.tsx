@@ -4,7 +4,7 @@ import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
 import { ProgressBarWithLabel } from '@/frontend/reusable-components/data/ProgressBarWithLabel';
 import { CompactStatsGrid } from '@/frontend/reusable-components/data/CompactStatsGrid';
 import { CardFooter } from '@/frontend/reusable-components/layout/CardFooter';
-import { Calendar, Play, Trash2, User, Pencil } from 'lucide-react';
+import { Calendar, Play, Trash2, User, Pencil, Copy } from 'lucide-react';
 import { TestRun } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
@@ -14,20 +14,24 @@ interface TestRunCardProps {
   testRun: TestRun;
   canUpdate?: boolean;
   canDelete?: boolean;
+  canDuplicate?: boolean;
   onCardClick: () => void;
   onViewDetails: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onDuplicate?: () => void;
 }
 
 export function TestRunCard({
   testRun,
   canUpdate = true,
   canDelete = true,
+  canDuplicate = false,
   onCardClick,
   onViewDetails,
   onEdit,
   onDelete,
+  onDuplicate,
 }: TestRunCardProps) {
   const { options: statusOptions } = useDropdownOptions('TestRun', 'status');
   const { options: environmentOptions } = useDropdownOptions('TestRun', 'environment');
@@ -195,6 +199,13 @@ export function TestRunCard({
           onClick: onEdit,
           show: canUpdate,
           buttonName: `Test Run Card - Edit (${testRun.name})`,
+        },
+        {
+          label: '複製',
+          icon: Copy,
+          onClick: () => onDuplicate?.(),
+          show: canDuplicate && !!onDuplicate,
+          buttonName: `Test Run Card - Duplicate (${testRun.name})`,
         },
         {
           label: '削除',

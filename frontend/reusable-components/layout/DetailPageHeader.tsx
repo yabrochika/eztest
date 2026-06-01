@@ -24,6 +24,8 @@ export interface ActionButton {
   show?: boolean;
   /** Button name for analytics tracking (defaults to label if not provided) */
   buttonName?: string;
+  /** アイコンに追加で適用する Tailwind クラス（色やサイズ調整用） */
+  iconClassName?: string;
 }
 
 export interface DetailPageHeaderProps {
@@ -173,12 +175,12 @@ export function DetailPageHeader({
                     className="cursor-pointer"
                     buttonName={action.buttonName || action.label}
                   >
-                    <Icon className="w-4 h-4 mr-2" />
+                    <Icon className={cn('w-4 h-4 mr-2', action.iconClassName)} />
                     {action.label}
                   </ButtonDestructive>
                 );
               }
-              
+
               return (
                 <Button
                   key={index}
@@ -187,7 +189,7 @@ export function DetailPageHeader({
                   className="cursor-pointer"
                   data-analytics-button={action.buttonName || action.label}
                 >
-                  <Icon className="w-4 h-4 mr-2" />
+                  <Icon className={cn('w-4 h-4 mr-2', action.iconClassName)} />
                   {action.label}
                 </Button>
               );

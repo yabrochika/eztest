@@ -1,7 +1,7 @@
 'use client';
 
 import { DetailPageHeader } from '@/frontend/reusable-components/layout/DetailPageHeader';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, PlayCircle, Trash2 } from 'lucide-react';
 import { TestCase, TestCaseFormData } from '../types';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
@@ -15,8 +15,11 @@ interface TestCaseHeaderProps {
   onSave: () => void;
   onDelete: () => void;
   onFormChange: (data: TestCaseFormData) => void;
+  /** 「テスト実行」ボタンの押下ハンドラ。未指定の場合はボタンを表示しない。 */
+  onExecuteTest?: () => void;
   canUpdate?: boolean;
   canDelete?: boolean;
+  canExecute?: boolean;
   saving?: boolean;
 }
 
@@ -29,8 +32,10 @@ export function TestCaseHeader({
   onSave,
   onDelete,
   onFormChange,
+  onExecuteTest,
   canUpdate = true,
   canDelete = true,
+  canExecute = true,
   saving = false,
 }: TestCaseHeaderProps) {
   const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
@@ -96,18 +101,26 @@ export function TestCaseHeader({
         },
       ]}
       actions={[
-        { 
-          label: 'Edit', 
-          icon: Edit, 
-          onClick: onEdit, 
+        {
+          label: 'テスト実行',
+          icon: PlayCircle,
+          onClick: () => onExecuteTest?.(),
+          show: !!onExecuteTest && canExecute,
+          buttonName: 'TestCase Detail - Execute Test',
+          iconClassName: 'text-blue-400 size-5',
+        },
+        {
+          label: 'Edit',
+          icon: Edit,
+          onClick: onEdit,
           show: canUpdate,
           buttonName: 'TestCase Detail - Edit',
         },
-        { 
-          label: 'Delete', 
-          icon: Trash2, 
-          onClick: onDelete, 
-          variant: 'destructive', 
+        {
+          label: 'Delete',
+          icon: Trash2,
+          onClick: onDelete,
+          variant: 'destructive',
           show: canDelete,
           buttonName: 'TestCase Detail - Delete',
         },

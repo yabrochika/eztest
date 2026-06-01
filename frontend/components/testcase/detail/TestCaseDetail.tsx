@@ -18,9 +18,17 @@ import { TestCaseHistoryCard } from './subcomponents/TestCaseHistoryCard';
 import { TestCaseCommentsCard } from './subcomponents/TestCaseCommentsCard';
 import { LinkedDefectsCard } from './subcomponents/LinkedDefectsCard';
 import { DeleteTestCaseDialog } from './subcomponents/DeleteTestCaseDialog';
+import {
+  SelectTestRunDialog,
+  type SelectableTestRun,
+  type SelectableTestRunResult,
+} from './subcomponents/SelectTestRunDialog';
+import { RecordResultDialog } from '@/frontend/components/testrun/detail/subcomponents/RecordResultDialog';
+import type { ResultFormData } from '@/frontend/components/testrun/detail/types';
 import { attachmentStorage } from '@/lib/attachment-storage';
 import type { Attachment } from '@/lib/s3';
-import { uploadFileToS3 } from '@/lib/s3';
+import { uploadFileToS3, linkAttachments } from '@/lib/s3';
+import type { Attachment as CommentAttachment } from '@/frontend/reusable-elements/textareas/TextareaWithAttachments';
 
 interface TestCaseDetailProps {
   testCaseId: string;
@@ -115,6 +123,122 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
   // Check permissions
   const canUpdateTestCase = hasPermissionCheck('testcases:update');
   const canDeleteTestCase = hasPermissionCheck('testcases:delete');
+  const canExecuteTest = hasPermissionCheck('testruns:update');
+
+  // ── テスト実行フロー ──
+  // 1) テストラン選択ダイアログ → 2) 結果記録ダイアログ
+  const [selectTestRunOpen, setSelectTestRunOpen] = useState(false);
+  const [recordResultOpen, setRecordResultOpen] = useState(false);
+  const [activeTestRun, setActiveTestRun] = useState<SelectableTestRun | null>(null);
+  const [activeResult, setActiveResult] = useState<SelectableTestRunResult | null>(null);
+  const [resultForm, setResultForm] = useState<ResultFormData>({ status: '', comment: '' });
+  const [resultCommentAttachments, setResultCommentAttachments] = useState<CommentAttachment[]>([]);
+
+  const handleOpenExecuteFlow = () => {
+    setSelectTestRunOpen(true);
+  };
+
+  const handleSelectTestRun = (
+    testRun: SelectableTestRun,
+    currentResult: SelectableTestRunResult
+  ) => {
+    setActiveTestRun(testRun);
+    setActiveResult(currentResult);
+    setSelectTestRunOpen(false);
+    // 既存の結果があれば初期値として読み込む（未実行なら空欄）
+    setResultForm({
+      status: currentResult.status && currentResult.status !== 'NOT_STARTED' ? currentResult.status : '',
+      comment: '',
+    });
+    setResultCommentAttachments([]);
+    setRecordResultOpen(true);
+  };
+
+  const handleSubmitResult = async (durationSeconds?: number) => {
+    if (!activeTestRun || !testCase) return;
+    if (!resultForm.status) {
+      setAlert({
+        type: 'error',
+        title: '入力エラー',
+        message: '結果ステータスを選択してください',
+      });
+      return;
+    }
+
+    try {
+      const projectId = activeTestRun.projectId;
+
+      // 添付ファイルがあれば事前にアップロードして TestResult に紐付ける
+      const uploadedToLink: CommentAttachment[] = [];
+      for (const att of resultCommentAttachments) {
+        if (!att.id.startsWith('pending-')) continue;
+        const file = (att as CommentAttachment & { _pendingFile?: File })._pendingFile;
+        if (!file) continue;
+        const up = await uploadFileToS3({
+          file,
+          fieldName: att.fieldName || 'comment',
+          entityType: 'testresult',
+          projectId,
+          onProgress: () => {},
+        });
+        if (up.success && up.attachment) {
+          uploadedToLink.push({ ...up.attachment, entityType: 'testresult' } as CommentAttachment);
+        }
+      }
+
+      const response = await fetch(
+        `/api/projects/${projectId}/testruns/${activeTestRun.id}/results`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            testCaseId: testCase.id,
+            status: resultForm.status,
+            comment: resultForm.comment,
+            duration: durationSeconds,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.data) {
+        const testResultId = data.data.id as string;
+        if (uploadedToLink.length > 0) {
+          await linkAttachments(uploadedToLink, 'testResultId', testResultId);
+        }
+
+        setRecordResultOpen(false);
+        setActiveTestRun(null);
+        setActiveResult(null);
+        setResultForm({ status: '', comment: '' });
+        setResultCommentAttachments([]);
+
+        setAlert({
+          type: 'success',
+          title: 'テスト結果を記録しました',
+          message: `テストラン「${activeTestRun.name}」に結果を保存しました。`,
+        });
+        setTimeout(() => setAlert(null), 5000);
+
+        // 履歴を反映するため再フェッチ
+        fetchTestCase();
+      } else {
+        setAlert({
+          type: 'error',
+          title: '保存に失敗しました',
+          message: data.error || '結果の保存に失敗しました',
+        });
+      }
+    } catch (error) {
+      console.error('Error saving result:', error);
+      setAlert({
+        type: 'error',
+        title: '保存に失敗しました',
+        message: error instanceof Error ? error.message : '結果の保存に失敗しました',
+      });
+    }
+  };
 
   const fetchTestCase = async () => {
     try {
@@ -809,10 +933,12 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
           }}
           onSave={handleSave}
           onDelete={() => setDeleteDialogOpen(true)}
+          onExecuteTest={handleOpenExecuteFlow}
           saving={saving}
           onFormChange={setFormData}
           canUpdate={canUpdateTestCase}
           canDelete={canDeleteTestCase}
+          canExecute={canExecuteTest}
         />
 
         {/* Quick Actions Buttons */}
@@ -920,6 +1046,38 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleDeleteTestCase}
         />
+
+        <SelectTestRunDialog
+          open={selectTestRunOpen}
+          testCaseId={testCaseId}
+          onOpenChange={setSelectTestRunOpen}
+          onSelect={handleSelectTestRun}
+        />
+
+        {activeTestRun ? (
+          <RecordResultDialog
+            open={recordResultOpen}
+            testCaseName={testCase.title}
+            testCaseId={testCase.id}
+            projectId={activeTestRun.projectId}
+            testRunEnvironment={activeTestRun.environment || undefined}
+            testRunPlatform={activeTestRun.platform || undefined}
+            testRunDevice={activeTestRun.device || undefined}
+            formData={resultForm}
+            commentAttachments={resultCommentAttachments}
+            onCommentAttachmentsChange={setResultCommentAttachments}
+            onOpenChange={(open) => {
+              setRecordResultOpen(open);
+              if (!open) {
+                setActiveTestRun(null);
+                setActiveResult(null);
+              }
+            }}
+            onFormChange={(data) => setResultForm((prev) => ({ ...prev, ...data }))}
+            onSubmit={handleSubmitResult}
+            initialDurationSeconds={activeResult?.duration ?? undefined}
+          />
+        ) : null}
       </div>
     </div>
   );

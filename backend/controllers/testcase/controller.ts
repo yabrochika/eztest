@@ -422,6 +422,29 @@ evidence: validatedData.evidence,
   }
 
   /**
+   * Get test runs that include this test case (with current result per run)
+   * Permission already checked by route wrapper
+   */
+  async getTestRunsForTestCase(
+    request: CustomRequest,
+    testCaseId: string
+  ) {
+    try {
+      const data = await testCaseService.getTestRunsForTestCase(
+        testCaseId,
+        request.userInfo.id,
+        request.scopeInfo.scope_name
+      );
+      return { data };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('not found')) {
+        throw new NotFoundException(TestCaseMessages.TestCaseNotFound);
+      }
+      throw new InternalServerException(TestCaseMessages.FailedToFetchTestCase);
+    }
+  }
+
+  /**
    * Get test case statistics for a project
    */
   async getProjectTestCaseStats(projectId: string) {

@@ -1275,6 +1275,97 @@ export class TestCaseService {
   }
 
   /**
+   * Get test runs that include this test case (active runs first).
+   * 各テストランごとの、このテストケースに対する現在の結果も含める。
+   */
+  async getTestRunsForTestCase(testCaseId: string, userId: string, scope: string) {
+    let whereClause: Record<string, unknown> = { id: testCaseId };
+
+    if (scope === 'project') {
+      whereClause = {
+        ...whereClause,
+        project: {
+          members: {
+            some: {
+              userId: userId,
+            },
+          },
+        },
+      };
+    }
+
+    const testCase = await prisma.testCase.findFirst({
+      where: whereClause,
+    });
+
+    if (!testCase) {
+      throw new Error('Test case not found');
+    }
+
+    const results = await prisma.testResult.findMany({
+      where: {
+        testCaseId: testCaseId,
+      },
+      select: {
+        id: true,
+        status: true,
+        duration: true,
+        comment: true,
+        executedAt: true,
+        executedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        testRun: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            environment: true,
+            verificationEnvironment: true,
+            platform: true,
+            device: true,
+            projectId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+    });
+
+    // 並び順: 未完了のテストランを優先（NOT_STARTED → IN_PROGRESS → その他 → COMPLETED/CANCELLED）
+    const statusPriority: Record<string, number> = {
+      IN_PROGRESS: 0,
+      NOT_STARTED: 1,
+      PLANNED: 2,
+      COMPLETED: 3,
+      CANCELLED: 4,
+    };
+
+    return results
+      .map((r) => ({
+        testRun: r.testRun,
+        result: {
+          id: r.id,
+          status: r.status,
+          duration: r.duration,
+          comment: r.comment,
+          executedAt: r.executedAt,
+          executedBy: r.executedBy,
+        },
+      }))
+      .sort((a, b) => {
+        const ap = statusPriority[a.testRun.status] ?? 99;
+        const bp = statusPriority[b.testRun.status] ?? 99;
+        if (ap !== bp) return ap - bp;
+        return new Date(b.testRun.updatedAt).getTime() - new Date(a.testRun.updatedAt).getTime();
+      });
+  }
+
+  /**
    * Get test case statistics for a project
    */
   async getProjectTestCaseStats(projectId: string) {

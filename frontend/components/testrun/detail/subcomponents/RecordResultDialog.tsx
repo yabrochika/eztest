@@ -121,11 +121,13 @@ export function RecordResultDialog({
 
   // 実行者の選択肢（プロジェクトメンバー）
   const [executorOptions, setExecutorOptions] = useState<ExecutorOption[]>([]);
+  const [loadingExecutors, setLoadingExecutors] = useState(false);
 
   useEffect(() => {
     if (!projectId) return;
     let cancelled = false;
     const fetchMembers = async () => {
+      setLoadingExecutors(true);
       try {
         const response = await fetch(`/api/projects/${projectId}/members`);
         if (!response.ok) return;
@@ -142,6 +144,8 @@ export function RecordResultDialog({
         );
       } catch {
         // メンバー取得に失敗してもダイアログ自体は使えるようにフォールバック
+      } finally {
+        if (!cancelled) setLoadingExecutors(false);
       }
     };
     fetchMembers();
@@ -655,7 +659,12 @@ export function RecordResultDialog({
                 <SelectValue placeholder="実行者を選択" />
               </SelectTrigger>
               <SelectContent>
-                {executorOptions.length === 0 ? (
+                {loadingExecutors ? (
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm text-white/50">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    メンバーを読み込み中...
+                  </div>
+                ) : executorOptions.length === 0 ? (
                   <div className="px-3 py-2 text-sm text-white/50">
                     プロジェクトメンバーが見つかりません
                   </div>

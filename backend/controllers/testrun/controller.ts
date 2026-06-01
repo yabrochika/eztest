@@ -241,12 +241,28 @@ export class TestRunController {
 
     const validatedData = validationResult.data;
 
+    // 実行者は既定で認証ユーザー。明示指定された場合は、対象テストランの
+    // プロジェクトに所属するメンバーであることを検証し、任意ユーザーへの
+    // なりすまし帰属を防ぐ。
+    const executedById = validatedData.executedById ?? userId;
+    if (executedById !== userId) {
+      const isProjectMember = await testRunService.hasAccessToTestRun(
+        testRunId,
+        executedById
+      );
+      if (!isProjectMember) {
+        throw new ValidationException(
+          '指定された実行者はこのテストランのプロジェクトメンバーではありません'
+        );
+      }
+    }
+
     const result = await testRunService.addTestResult(
       testRunId,
       validatedData.testCaseId,
       {
         status: validatedData.status,
-        executedById: validatedData.executedById ?? userId,
+        executedById,
         duration: validatedData.duration,
         comment: validatedData.comment,
         errorMessage: validatedData.errorMessage,

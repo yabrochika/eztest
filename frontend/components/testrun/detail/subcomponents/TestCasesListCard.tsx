@@ -82,7 +82,7 @@ export function TestCasesListCard({
   const canCreateDefect = hasPermissionCheck('defects:create');
 
   // 並び替え対象の列キーと方向（null: デフォルト順）
-  type SortKey = 'tcId' | 'testCase' | 'estimatedTime' | 'priority' | 'status' | 'executedBy' | 'executedAt';
+  type SortKey = 'flowId' | 'testCase' | 'estimatedTime' | 'priority' | 'status' | 'executedBy' | 'executedAt';
   const [sortState, setSortState] = useState<{ key: SortKey; direction: 'asc' | 'desc' } | null>(null);
 
   const toggleSort = (key: SortKey) => {
@@ -139,12 +139,12 @@ export function TestCasesListCard({
 
   const columns: ColumnDef<ResultRow>[] = [
     {
-      key: 'tcId',
-      label: 'ID',
+      key: 'flowId',
+      label: 'Flow-ID',
       width: '90px',
-      renderHeader: () => renderSortableHeader('tcId', 'ID'),
+      renderHeader: () => renderSortableHeader('flowId', 'Flow-ID'),
       render: (row: ResultRow) => (
-        <p className="text-xs font-mono text-white/70 truncate">{row.testCase.tcId || '-'}</p>
+        <p className="text-xs font-mono text-white/70 truncate">{row.testCase.flowId || '-'}</p>
       ),
     },
     {
@@ -421,8 +421,8 @@ export function TestCasesListCard({
   /** 列キー毎の比較値を取得する。数値なら number、文字列なら string を返す。 */
   const getSortValue = (row: ResultRow, key: SortKey): number | string => {
     switch (key) {
-      case 'tcId':
-        return row.testCase.tcId || '';
+      case 'flowId':
+        return row.testCase.flowId || '';
       case 'testCase':
         return row.testCase.title || '';
       case 'estimatedTime':

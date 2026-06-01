@@ -62,10 +62,14 @@ export function TestRunCard({
     const total = testRun._count.results;
     if (total === 0) return 0;
 
-    // Progress = tests that have been executed (passed, failed, blocked)
-    // Skipped / NOT_STARTED tests are NOT considered executed
+    // Progress = tests that have been executed (passed, failed, blocked, skipped)
+    // Skipped tests are considered executed (intentionally not run)
     const executed = testRun.results.filter(
-      (r) => r.status === 'PASSED' || r.status === 'FAILED' || r.status === 'BLOCKED'
+      (r) =>
+        r.status === 'PASSED' ||
+        r.status === 'FAILED' ||
+        r.status === 'BLOCKED' ||
+        r.status === 'SKIPPED'
     ).length;
     return Math.round((executed / total) * 100);
   };

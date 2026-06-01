@@ -246,7 +246,7 @@ export class TestRunController {
       validatedData.testCaseId,
       {
         status: validatedData.status,
-        executedById: userId,
+        executedById: validatedData.executedById ?? userId,
         duration: validatedData.duration,
         comment: validatedData.comment,
         errorMessage: validatedData.errorMessage,

@@ -16,7 +16,9 @@ export interface TestResult {
   comment?: string;
   duration?: number;
   executedAt?: string;
+  executedById?: string;
   executedBy?: {
+    id?: string;
     name: string;
     email: string;
     avatar?: string | null;
@@ -94,6 +96,7 @@ export interface TestRun {
 export interface ResultFormData extends Record<string, string> {
   status: string;
   comment: string;
+  executedById: string;
 }
 
 export interface TestSuite {

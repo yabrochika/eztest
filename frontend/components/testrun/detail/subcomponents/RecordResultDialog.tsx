@@ -59,6 +59,12 @@ interface Defect {
   severity: string;
 }
 
+interface ExecutorOption {
+  id: string;
+  name: string;
+  email: string;
+}
+
 interface RecordResultDialogProps {
   open: boolean;
   testCaseName: string;
@@ -112,6 +118,37 @@ export function RecordResultDialog({
   const [testCaseDetail, setTestCaseDetail] = useState<TestCaseDetail | null>(null);
   const [loadingTestCase, setLoadingTestCase] = useState(false);
   const [testCaseExpanded, setTestCaseExpanded] = useState(true);
+
+  // 実行者の選択肢（プロジェクトメンバー）
+  const [executorOptions, setExecutorOptions] = useState<ExecutorOption[]>([]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    let cancelled = false;
+    const fetchMembers = async () => {
+      try {
+        const response = await fetch(`/api/projects/${projectId}/members`);
+        if (!response.ok) return;
+        const data = await response.json();
+        const members: Array<{ user: { id: string; name?: string | null; email: string } }> =
+          data.data || [];
+        if (cancelled) return;
+        setExecutorOptions(
+          members.map((m) => ({
+            id: m.user.id,
+            name: m.user.name || m.user.email,
+            email: m.user.email,
+          }))
+        );
+      } catch {
+        // メンバー取得に失敗してもダイアログ自体は使えるようにフォールバック
+      }
+    };
+    fetchMembers();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   // 経過時間タイマー（テストケース読み込み完了後に開始）
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -604,6 +641,31 @@ export function RecordResultDialog({
                     </div>
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="executor">実行者 *</Label>
+            <Select
+              value={formData.executedById || ''}
+              onValueChange={(value: string) => onFormChange({ executedById: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="実行者を選択" />
+              </SelectTrigger>
+              <SelectContent>
+                {executorOptions.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-white/50">
+                    プロジェクトメンバーが見つかりません
+                  </div>
+                ) : (
+                  executorOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      <span>{option.name}</span>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>

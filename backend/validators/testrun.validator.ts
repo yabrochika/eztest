@@ -65,6 +65,8 @@ export const addTestResultSchema = z.object({
   comment: z.string().optional(),
   errorMessage: z.string().optional(),
   stackTrace: z.string().optional(),
+  // Override the executor (defaults to the authenticated user when omitted).
+  executedById: z.string().min(1).optional(),
 });
 
 /**

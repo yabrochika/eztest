@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/frontend/reusable-elements/avatars/Avatar';
+import { getAvatarColorClass } from '@/lib/avatar-color-utils';
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
@@ -241,13 +242,14 @@ export function TestCasesListCard({
           .join('')
           .slice(0, 2)
           .toUpperCase();
+        const colorClass = getAvatarColorClass(user.email || user.name);
         return (
           <div className="flex items-center justify-center" title={user.name}>
-            <Avatar className="size-7">
+            <Avatar className={`size-7 ${colorClass}`}>
               {user.avatar ? (
                 <AvatarImage src={user.avatar} alt={user.name} />
               ) : null}
-              <AvatarFallback className="text-[10px]">
+              <AvatarFallback className={`text-sm font-extrabold tracking-tight ${colorClass}`}>
                 {initials || '?'}
               </AvatarFallback>
             </Avatar>

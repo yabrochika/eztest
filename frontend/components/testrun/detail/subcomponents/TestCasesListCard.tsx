@@ -9,6 +9,11 @@ import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { GroupedDataTable, type ColumnDef, type GroupConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
 import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2 } from 'lucide-react';
 import { TestResult, TestCase } from '../types';
+import {
+  getLayerSortKey,
+  getTitleNumberSortKey,
+  getModuleSortKey as getModuleSortKeyFromTestCase,
+} from '../lib/testCaseDisplayOrder';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -49,56 +54,6 @@ interface ResultRow {
   /** 元の TestResult（ビュー表示用）。コメントや添付を参照する。 */
   result: TestResult;
 }
-
-/**
- * Layer (SMOKE / CORE / EXTENDED) の並び順を表す優先度マップ。
- * デフォルト並び順で使用（列ヘッダ駆動の sortState とは独立）。
- */
-const LAYER_SORT_ORDER: Record<string, number> = {
-  SMOKE: 0,
-  CORE: 1,
-  EXTENDED: 2,
-  UNKNOWN: 3,
-};
-
-/** タイトル先頭の [SM-001] / [CR-007] / [EX-012] 等のプレフィックスから Layer 略号と番号を抽出 */
-const TITLE_PREFIX_REGEX = /^\s*\[?\s*(SM|CR|EX)\s*-\s*(\d+)\s*\]?/i;
-
-const TITLE_PREFIX_TO_LAYER: Record<string, string> = {
-  SM: 'SMOKE',
-  CR: 'CORE',
-  EX: 'EXTENDED',
-};
-
-const parseTitlePrefix = (title?: string): { layer?: string; num?: number } => {
-  if (!title) return {};
-  const m = title.match(TITLE_PREFIX_REGEX);
-  if (!m) return {};
-  const prefix = m[1].toUpperCase();
-  const num = parseInt(m[2], 10);
-  return {
-    layer: TITLE_PREFIX_TO_LAYER[prefix],
-    num: Number.isNaN(num) ? undefined : num,
-  };
-};
-
-/**
- * Layer ソートキー。
- * タイトル先頭の [SM-/CR-/EX-] プレフィックスを最優先する
- * （DB の layer フィールドが UNKNOWN のままインポートされたケースでも正しく分類するため）。
- */
-const getLayerSortKey = (layer?: string | null, title?: string): number => {
-  const titleLayer = parseTitlePrefix(title).layer;
-  const resolved = titleLayer || (layer && layer !== 'UNKNOWN' ? layer : undefined);
-  if (!resolved) return 99;
-  return LAYER_SORT_ORDER[resolved] ?? 98;
-};
-
-/** タイトル先頭プレフィックスの番号（昇順用）。なければ末尾扱い。 */
-const getTitleNumberSortKey = (title?: string): number => {
-  const num = parseTitlePrefix(title).num;
-  return num ?? Number.POSITIVE_INFINITY;
-};
 
 export function TestCasesListCard({
   results,
@@ -444,17 +399,8 @@ export function TestCasesListCard({
   };
 
   /** モジュール名の末尾の数字を取得（並び替え用）。なければ no-module は末尾にするため Infinity、数字なしは 0 */
-  const getModuleSortKey = (row: ResultRow): number => {
-    const name = row.testCase.module?.name;
-    if (!name || !row.testCase.module?.id) return Number.POSITIVE_INFINITY; // モジュールなしは最後
-    const matches = name.match(/\d+/g);
-    if (!matches || matches.length === 0) return 0;
-    const lastNum = parseInt(matches[matches.length - 1], 10);
-    return Number.isNaN(lastNum) ? 0 : lastNum;
-  };
-
-  // IN_PROGRESS時はTC-ID昇順のフラットリスト、それ以外はモジュールグループ表示
-  const isInProgress = testRunStatus === 'IN_PROGRESS';
+  const getModuleSortKey = (row: ResultRow): number =>
+    getModuleSortKeyFromTestCase(row.testCase);
 
   /** 列キー毎の比較値を取得する。数値なら number、文字列なら string を返す。 */
   const getSortValue = (row: ResultRow, key: SortKey): number | string => {
@@ -519,11 +465,10 @@ export function TestCasesListCard({
   if (sortState) {
     // 並び替え指定時はグループ/Layer順を上書きしてフラットに並び替え
     tableDataSorted = [...tableData].sort(compareBySortState);
-  } else if (isInProgress) {
-    // デフォルトは Layer (Smoke → Core → Extended) → タイトル番号 → tcId
-    tableDataSorted = [...tableData].sort(compareByLayerDefault);
   } else {
-    // モジュールグループ表示時は、モジュール順を最優先しつつグループ内は Layer 順
+    // 規定の表示順: モジュール順 → Layer (Smoke → Core → Extended) → タイトル番号 → tcId。
+    // テストランのステータス（PLANNED / IN_PROGRESS / COMPLETED 等）によらず
+    // 常に同じ並び順を担保することで、実行中に一覧の順番が変わらないようにする。
     tableDataSorted = [...tableData].sort((a, b) => {
       const keyA = getModuleSortKey(a);
       const keyB = getModuleSortKey(b);
@@ -591,7 +536,7 @@ export function TestCasesListCard({
         <GroupedDataTable
           data={tableDataSorted}
           columns={columns}
-          grouped={!isInProgress && !sortState}
+          grouped={!sortState}
           groupConfig={groupConfig}
           defaultExpanded={true}
           onRowClick={(row) => {

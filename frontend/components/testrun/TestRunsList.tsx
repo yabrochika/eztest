@@ -6,13 +6,14 @@ import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimar
 import { ButtonSecondary } from '@/frontend/reusable-elements/buttons/ButtonSecondary';
 import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
 import { Loader } from '@/frontend/reusable-elements/loaders/Loader';
-import { Plus, Upload, FileCode, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Upload, FileCode, ArrowUp, ArrowDown, LayoutGrid, Columns3 } from 'lucide-react';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { PageHeaderWithBadge } from '@/frontend/reusable-components/layout/PageHeaderWithBadge';
 import { HeaderWithFilters } from '@/frontend/reusable-components/layout/HeaderWithFilters';
 import { ResponsiveGrid } from '@/frontend/reusable-components/layout/ResponsiveGrid';
 import { TestRunsFilterCard } from './subcomponents/TestRunsFilterCard';
 import { TestRunCard } from './subcomponents/TestRunCard';
+import { TestRunsKanbanView } from './subcomponents/TestRunsKanbanView';
 import { TestRunsEmptyState } from './subcomponents/TestRunsEmptyState';
 import { CreateTestRunDialog } from './subcomponents/CreateTestRunDialog';
 import { EditTestRunDialog } from './subcomponents/EditTestRunDialog';
@@ -44,6 +45,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
   const [selectedTestRun, setSelectedTestRun] = useState<TestRun | null>(null);
 
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
   const [filters, setFilters] = useState<TestRunFilters>({
     searchQuery: '',
@@ -316,29 +318,70 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
               title="テストラン"
               description="テスト実行の進捗を管理・追跡します"
               titleSuffix={
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-                  }
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-white/15 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 transition-colors text-xs cursor-pointer"
-                  title={
-                    sortDirection === 'asc'
-                      ? '昇順（SM → CR → EZ → EX）クリックで降順に切替'
-                      : '降順 クリックで昇順に切替'
-                  }
-                  aria-label={
-                    sortDirection === 'asc' ? '昇順 / クリックで降順' : '降順 / クリックで昇順'
-                  }
-                  data-button-name="Test Runs List - Toggle Sort Direction"
-                >
-                  {sortDirection === 'asc' ? (
-                    <ArrowUp className="w-3.5 h-3.5" />
-                  ) : (
-                    <ArrowDown className="w-3.5 h-3.5" />
-                  )}
-                  <span>{sortDirection === 'asc' ? '昇順' : '降順'}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="inline-flex items-center rounded-md border border-white/15 bg-white/5 p-0.5 text-xs"
+                    role="group"
+                    aria-label="表示モード切替"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('list')}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded transition-colors cursor-pointer ${
+                        viewMode === 'list'
+                          ? 'bg-white/15 text-white'
+                          : 'text-white/60 hover:text-white hover:bg-white/10'
+                      }`}
+                      title="一覧表示"
+                      aria-label="一覧表示"
+                      aria-pressed={viewMode === 'list'}
+                      data-button-name="Test Runs List - View Mode List"
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" />
+                      <span>List</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('kanban')}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded transition-colors cursor-pointer ${
+                        viewMode === 'kanban'
+                          ? 'bg-white/15 text-white'
+                          : 'text-white/60 hover:text-white hover:bg-white/10'
+                      }`}
+                      title="カンバン表示"
+                      aria-label="カンバン表示"
+                      aria-pressed={viewMode === 'kanban'}
+                      data-button-name="Test Runs List - View Mode Kanban"
+                    >
+                      <Columns3 className="w-3.5 h-3.5" />
+                      <span>Kanban</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                    }
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-white/15 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 transition-colors text-xs cursor-pointer"
+                    title={
+                      sortDirection === 'asc'
+                        ? '昇順（SM → CR → EZ → EX）クリックで降順に切替'
+                        : '降順 クリックで昇順に切替'
+                    }
+                    aria-label={
+                      sortDirection === 'asc' ? '昇順 / クリックで降順' : '降順 / クリックで昇順'
+                    }
+                    data-button-name="Test Runs List - Toggle Sort Direction"
+                  >
+                    {sortDirection === 'asc' ? (
+                      <ArrowUp className="w-3.5 h-3.5" />
+                    ) : (
+                      <ArrowDown className="w-3.5 h-3.5" />
+                    )}
+                    <span>{sortDirection === 'asc' ? '昇順' : '降順'}</span>
+                  </button>
+                </div>
               }
             />
           }
@@ -377,6 +420,28 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
             hasTestRuns={testRuns.length > 0}
             onCreateClick={() => setCreateDialogOpen(true)}
             canCreate={canCreateTestRun}
+          />
+        ) : viewMode === 'kanban' ? (
+          <TestRunsKanbanView
+            testRuns={filteredTestRuns}
+            canUpdate={canUpdateTestRun}
+            canDelete={canDeleteTestRun}
+            canCreate={canCreateTestRun}
+            onCardClick={(testRun) =>
+              router.push(`/projects/${projectId}/testruns/${testRun.id}`)
+            }
+            onViewDetails={(testRun) =>
+              router.push(`/projects/${projectId}/testruns/${testRun.id}`)
+            }
+            onEdit={(testRun) => {
+              setSelectedTestRun(testRun);
+              setEditDialogOpen(true);
+            }}
+            onDelete={(testRun) => {
+              setSelectedTestRun(testRun);
+              setDeleteDialogOpen(true);
+            }}
+            onCreate={() => setCreateDialogOpen(true)}
           />
         ) : (
           <ResponsiveGrid

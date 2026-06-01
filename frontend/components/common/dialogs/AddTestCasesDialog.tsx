@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
+import { Search, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +14,7 @@ import { Button } from '@/frontend/reusable-elements/buttons/Button';
 import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 import { CheckboxListItem } from '@/frontend/reusable-elements/checkboxes/CheckboxListItem';
 import { PriorityBadge } from '@/frontend/reusable-components/badges/PriorityBadge';
+import { Input } from '@/frontend/reusable-elements/inputs/Input';
 
 interface TestCase {
   id: string;
@@ -59,6 +62,23 @@ export function AddTestCasesDialog({
   const contextLabel = context === 'suite' ? 'このテストスイート' : 'このテストラン';
   const title = context === 'suite' ? 'テストスイートにテストケースを追加' : 'テストランにテストケースを追加';
 
+  // テストケース名（タイトル）による部分一致検索
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // ダイアログを閉じたら検索キーワードをリセット
+  useEffect(() => {
+    if (!open) setSearchQuery('');
+  }, [open]);
+
+  const filteredTestCases = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return testCases;
+    return testCases.filter((tc) => {
+      const name = (tc.title || tc.name || '').toLowerCase();
+      return name.includes(q);
+    });
+  }, [testCases, searchQuery]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={context === 'run' ? 'max-w-3xl' : 'max-w-lg'}>
@@ -69,14 +89,43 @@ export function AddTestCasesDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {testCases.length > 0 && (
+          <div className="relative mb-3">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+            <Input
+              variant="glass"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="テストケース名で検索（部分一致）"
+              className="pl-10 pr-10"
+              aria-label="テストケース名で検索"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 cursor-pointer"
+                aria-label="検索をクリア"
+                title="検索をクリア"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        )}
+
         <div className={context === 'run' ? 'max-h-[400px] overflow-y-auto custom-scrollbar' : 'max-h-[80vh] overflow-y-auto custom-scrollbar pr-4'}>
           {testCases.length === 0 ? (
             <p className={context === 'run' ? 'text-white/60 text-center py-8' : 'text-gray-400 text-center py-8'}>
               追加できるテストケースがありません
             </p>
+          ) : filteredTestCases.length === 0 ? (
+            <p className={context === 'run' ? 'text-white/60 text-center py-8' : 'text-gray-400 text-center py-8'}>
+              「{searchQuery}」に一致するテストケースはありません
+            </p>
           ) : (
             <div className={context === 'run' ? 'space-y-2' : 'space-y-3'}>
-              {testCases.map((testCase) => (
+              {filteredTestCases.map((testCase) => (
                 <div
                   key={testCase.id}
                   className={`rounded transition-colors ${

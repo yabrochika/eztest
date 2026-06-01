@@ -568,7 +568,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       const data = await response.json();
 
       if (data.data) {
-        const existingIds = new Set(currentTestRun.results.map((r: { testCaseId: string }) => r.testCaseId));
+        const existingIds = new Set(
+          currentTestRun.results
+            .map((r: { testCaseId: string | null }) => r.testCaseId)
+            .filter((id: string | null): id is string => id != null)
+        );
         const available = data.data.filter(
           (tc: TestCase) => !existingIds.has(tc.id)
         );
@@ -672,7 +676,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       const testCasesData = await testCasesResponse.json();
 
       if (suitesData.data) {
-        const existingTestCaseIds = new Set(currentTestRun.results.map((r: { testCaseId: string }) => r.testCaseId));
+        const existingTestCaseIds = new Set(
+          currentTestRun.results
+            .map((r: { testCaseId: string | null }) => r.testCaseId)
+            .filter((id: string | null): id is string => id != null)
+        );
         
         // Collect all test case IDs that belong to any suite
         const testCaseIdsInSuites = new Set<string>();
@@ -1067,6 +1075,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           testRunEnvironment={testRun.environment}
           testRunPlatform={testRun.platform}
           testRunDevice={testRun.device}
+          testCaseSnapshot={
+            selectedTestCase
+              ? testRun.results.find((r) => r.testCaseId === selectedTestCase.testCaseId)?.testCaseSnapshot
+              : undefined
+          }
           formData={resultForm}
           commentAttachments={resultCommentAttachments}
           onCommentAttachmentsChange={setResultCommentAttachments}

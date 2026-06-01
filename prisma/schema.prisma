@@ -370,7 +370,9 @@ model TestRunSuite {
 model TestResult {
   id          String   @id @default(cuid())
   testRunId   String
-  testCaseId  String
+  // マスターのテストケースが削除されても testresult は残し、スナップショットを
+  // 「過去のエビデンス」として参照できるようにするため nullable + SetNull にする。
+  testCaseId  String?
   status      String   // Dynamic dropdown value: PASSED, FAILED, BLOCKED, SKIPPED, RETEST
   executedById String
   duration    Int?     // in seconds
@@ -378,9 +380,13 @@ model TestResult {
   errorMessage String?
   stackTrace  String?
   executedAt  DateTime @default(now())
+  // テストランへ追加した時点のテストケース内容のスナップショット。
+  // マスターのテストケース更新／削除の影響を受けない「過去のエビデンス」として保持する。
+  // 形状: { title, description, expectedResult, preconditions, postconditions, priority, estimatedTime, tcId, rtcId, steps: [...] }
+  testCaseSnapshot Json?
 
   testRun     TestRun  @relation(fields: [testRunId], references: [id], onDelete: Cascade)
-  testCase    TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  testCase    TestCase? @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
   executedBy  User     @relation(fields: [executedById], references: [id])
   attachments Attachment[]
 

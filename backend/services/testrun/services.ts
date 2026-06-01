@@ -2,6 +2,11 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { XMLParser } from 'fast-xml-parser';
 import dropdownOptionService from '@/backend/services/dropdown-option/dropdown-option.service';
+import {
+  buildTestCaseSnapshot,
+  buildTestCaseSnapshots,
+  overlaySnapshotOnTestCase,
+} from './snapshot';
 
 /**
  * Normalize test case identifier by converting underscores to hyphens
@@ -598,8 +603,15 @@ export class TestRunService {
         })
       : testRun.assignedTo ? [testRun.assignedTo] : [];
 
+    // 各結果行に testCaseSnapshot がある場合、testCase 表示用フィールドを
+    // スナップショットで上書きする（マスター変更の影響を受けないようにするため）。
+    // snapshot は別フィールドとしてもクライアントへ返却し、ダイアログ等で
+    // steps を読み出せるようにする。
+    const resultsWithSnapshot = testRun.results.map((r) => overlaySnapshotOnTestCase(r));
+
     return {
       ...testRun,
+      results: resultsWithSnapshot,
       executionType: executionType || 'MANUAL',
       version: version || undefined,
       assignedToIds: assignedToIds.length > 0 ? assignedToIds : (testRun.assignedToId ? [testRun.assignedToId] : []),
@@ -702,12 +714,15 @@ export class TestRunService {
       // executedById は NOT NULL で User への外部キー。
       // テスター未割り当て時は作成者 ID をフォールバックに使う（実際の実行時に上書きされる）。
       const placeholderExecutorId = data.assignedToId || data.createdById;
+      // テストケースのスナップショットを作成（テストランへの追加時点で固定）
+      const snapshots = await buildTestCaseSnapshots(testCaseIds);
       await prisma.testResult.createMany({
         data: testCaseIds.map((testCaseId) => ({
           testRunId: testRun.id,
           testCaseId,
           status: 'NOT_STARTED',
           executedById: placeholderExecutorId,
+          testCaseSnapshot: (snapshots.get(testCaseId) ?? null) as Prisma.InputJsonValue | null,
         })),
         skipDuplicates: true,
       });
@@ -955,6 +970,9 @@ export class TestRunService {
       stackTrace?: string;
     }
   ) {
+    // 新規作成時のみテストケースのスナップショットを取得する。
+    // 既存 TestResult の更新（実行結果の記録など）では snapshot は変更しない。
+    const snapshotForCreate = await buildTestCaseSnapshot(testCaseId);
     const result = await prisma.testResult.upsert({
       where: {
         testRunId_testCaseId: {
@@ -980,6 +998,7 @@ export class TestRunService {
         comment: data.comment,
         errorMessage: data.errorMessage,
         stackTrace: data.stackTrace,
+        testCaseSnapshot: (snapshotForCreate ?? undefined) as Prisma.InputJsonValue | undefined,
       },
       include: {
         testCase: {
@@ -1382,7 +1401,8 @@ export class TestRunService {
           executedAt = new Date();
         }
 
-        // Create or update test result
+        // 新規作成時のみテストケースのスナップショットを取得（既存行の更新では維持）
+        const snapshotForImport = await buildTestCaseSnapshot(testCase.id);
         await prisma.testResult.upsert({
           where: {
             testRunId_testCaseId: {
@@ -1403,6 +1423,7 @@ export class TestRunService {
             executedById,
             duration,
             executedAt,
+            testCaseSnapshot: (snapshotForImport ?? undefined) as Prisma.InputJsonValue | undefined,
           },
         });
 

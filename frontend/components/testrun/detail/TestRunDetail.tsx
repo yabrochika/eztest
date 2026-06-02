@@ -1210,7 +1210,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           open={bulkUpdateDialogOpen}
           onOpenChange={setBulkUpdateDialogOpen}
           selectedResults={testRun.results.filter((r) =>
-            bulkSelectedTestCaseIds.includes(r.testCaseId)
+            r.testCaseId != null && bulkSelectedTestCaseIds.includes(r.testCaseId)
           )}
           loading={bulkUpdating}
           onSubmit={handleBulkUpdate}

@@ -723,7 +723,7 @@ export class TestRunService {
           testCaseId,
           status: 'NOT_STARTED',
           executedById: placeholderExecutorId,
-          testCaseSnapshot: (snapshots.get(testCaseId) ?? null) as Prisma.InputJsonValue | null,
+          testCaseSnapshot: (snapshots.get(testCaseId) as Prisma.InputJsonValue | undefined) ?? Prisma.JsonNull,
         })),
         skipDuplicates: true,
       });

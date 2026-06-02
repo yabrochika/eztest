@@ -1,0 +1,31 @@
+---
+description: このリポジトリで PR を作成する際の向き先（base）を upstream に固定する
+alwaysApply: true
+---
+
+# PR の向き先（恒久ルール）
+
+このリポジトリは fork 構成のため、PR は **必ず upstream の `japantradingcardcenter/eztest` をベース** に作成すること。フォーク (`yabrochika/eztest`) を base にしてはならない。
+
+## remote 構成
+
+- `origin`   = `https://github.com/yabrochika/eztest.git`（push 先のフォーク）
+- `upstream` = `https://github.com/japantradingcardcenter/eztest.git`（PR の base）
+
+## gh コマンド
+
+`gh repo set-default japantradingcardcenter/eztest` 済み。`gh pr create` は何も指定しなければ upstream に向くが、明示的に書く場合は以下を使う:
+
+```bash
+gh pr create \
+  --repo japantradingcardcenter/eztest \
+  --base main \
+  --head yabrochika:<branch-name> \
+  --title "<title>" \
+  --body-file <body.md>
+```
+
+## 注意
+
+- 誤って `yabrochika/eztest` に PR を作ってしまった場合は、`gh pr close <number> --repo yabrochika/eztest` でクローズし、上記コマンドで作り直す。
+- base リポジトリ自体は `gh pr edit` では変更できないため、必ず作り直しが必要。

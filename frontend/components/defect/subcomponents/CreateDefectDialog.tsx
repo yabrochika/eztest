@@ -403,7 +403,21 @@ export function CreateDefectDialog({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create defect');
+        // The API (backend/utils/baseInterceptor.ts) returns errors as
+        // `{ message, data }`, where `data` holds Zod validation issues on 422.
+        // Surface the real reason instead of a generic fallback so the user
+        // can see what actually went wrong.
+        const validationDetail = Array.isArray(data?.data)
+          ? data.data
+              .map((issue: { path?: Array<string | number>; message?: string }) => {
+                const field = issue?.path?.join('.');
+                return field ? `${field}: ${issue?.message}` : issue?.message;
+              })
+              .filter(Boolean)
+              .join(', ')
+          : '';
+
+        throw new Error(validationDetail || data?.message || data?.error || 'Failed to create defect');
       }
 
       const createdDefect = data.data;

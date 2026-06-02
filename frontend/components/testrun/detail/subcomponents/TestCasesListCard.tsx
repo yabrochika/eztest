@@ -281,6 +281,10 @@ export function TestCasesListCard({
       width: '90px',
       renderHeader: () => renderSortableHeader('priority', '優先度'),
       render: (row: ResultRow) => {
+        // 削除済みテストケースのプレースホルダーでは priority が欠落することがある。
+        if (!row.testCase.priority) {
+          return <span className="text-white/50 text-sm">-</span>;
+        }
         const badgeProps = getDynamicBadgeProps(row.testCase.priority, priorityOptions);
         const priorityLabel = !loadingPriority && priorityOptions.length > 0
           ? priorityOptions.find(opt => opt.value === row.testCase.priority)?.label || row.testCase.priority

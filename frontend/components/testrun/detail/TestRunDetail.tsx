@@ -533,15 +533,9 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
 
         const latestRun = await fetchTestRun();
 
-        if (resultForm.status === 'FAILED' && selectedTestCase) {
-          // FAILED → 結果記録を閉じて新規欠陥作成ダイアログを開く
-          setResultDialogOpen(false);
-          setSelectedTestCaseForDefect(selectedTestCase.testCaseId);
-          setCreateDefectDialogOpen(true);
-        } else {
-          // FAILED以外 → 次のテストケースへ遷移
-          navigateToNextTestCase(latestRun);
-        }
+        // Defect作成はFAILED選択時に即座に開く方式へ変更したため、
+        // 保存後は結果ステータスに関わらず次のテストケースへ遷移する。
+        navigateToNextTestCase(latestRun);
       } else {
         alert(data.error || '結果の保存に失敗しました');
       }
@@ -1038,13 +1032,12 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   };
 
   const handleDefectCreated = async () => {
+    // Defect作成モーダルのみ閉じ、結果記録モーダルは開いたまま維持する。
+    // ユーザーは作成したDefect（テストケースに自動リンク済み）を確認しつつ、
+    // 続けて結果を保存できる。次のテストケースへの遷移は結果保存時に行う。
     setCreateDefectDialogOpen(false);
-    setSelectedTestCaseForDefect(null);
     setDefectRefreshTrigger(prev => prev + 1);
-    const latest = await fetchTestRun();
-
-    // 欠陥作成後、次のテストケースの結果記録ダイアログを開く
-    navigateToNextTestCase(latest);
+    await fetchTestRun();
   };
 
   const getResultIcon = (status?: string) => {
@@ -1240,6 +1233,13 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             setResultForm({ ...resultForm, ...filteredData } as ResultFormData);
           }}
           onSubmit={handleSubmitResult}
+          onFailedSelected={() => {
+            // FAILED 選択時、結果記録モーダルは開いたまま新規Defect作成モーダルを前面に開く
+            if (selectedTestCase) {
+              setSelectedTestCaseForDefect(selectedTestCase.testCaseId);
+              setCreateDefectDialogOpen(true);
+            }
+          }}
           initialDurationSeconds={
             selectedTestCase
               ? testRun.results.find((r) => r.testCaseId === selectedTestCase.testCaseId)?.duration

@@ -86,6 +86,11 @@ interface RecordResultDialogProps {
   onOpenChange: (open: boolean) => void;
   onFormChange: (data: Partial<ResultFormData>) => void;
   onSubmit: (durationSeconds?: number) => void;
+  /**
+   * ユーザーが結果ステータスとして FAILED を選択した瞬間に呼ばれる。
+   * 親側で即座に新規Defect作成モーダルを開くために使用する。
+   */
+  onFailedSelected?: () => void;
   initialDurationSeconds?: number;
   refreshTrigger?: number; // Trigger to refresh defects after creation
   onNavigate?: (direction: 'prev' | 'next') => void;
@@ -108,6 +113,7 @@ export function RecordResultDialog({
   onOpenChange,
   onFormChange,
   onSubmit,
+  onFailedSelected,
   initialDurationSeconds,
   refreshTrigger,
   onNavigate,
@@ -659,7 +665,13 @@ export function RecordResultDialog({
             <Label htmlFor="status">結果ステータス *</Label>
             <Select
               value={formData.status}
-              onValueChange={(value: string) => onFormChange({ status: value })}
+              onValueChange={(value: string) => {
+                onFormChange({ status: value });
+                // FAILED を選んだら即座に新規Defect作成モーダルへ切り替える
+                if (value === 'FAILED') {
+                  onFailedSelected?.();
+                }
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="結果ステータスを選択" />

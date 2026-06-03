@@ -534,40 +534,14 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           await linkAttachments(uploadedToLink, 'testResultId', testResultId);
         }
 
-        // FAILED の場合は、フォームをクリアする前にコメント・添付を退避して
-        // Defect 作成ダイアログへ引き継ぐ。添付はアップロード済み（非 pending）の
-        // ものに加え、今回アップロードしたものを ID で重複排除して収集する。
-        const isFailed = resultForm.status === 'FAILED' && !!selectedTestCase;
-        const carriedComment = isFailed ? resultForm.comment || '' : '';
-        // Defect 説明欄は fieldName === 'description'（または空）の添付のみ表示するため、
-        // 引き継ぐ添付の fieldName を 'description' に正規化する。
-        const carriedAttachments: Attachment[] = isFailed
-          ? [
-              ...resultCommentAttachments.filter((a) => !a.id.startsWith('pending-')),
-              ...uploadedToLink,
-            ]
-              .filter((att, index, arr) => arr.findIndex((x) => x.id === att.id) === index)
-              .map((att) => ({ ...att, fieldName: 'description' }))
-          : [];
-
         clearResultForm();
         setResultCommentAttachments([]);
 
         const latestRun = await fetchTestRun();
 
-        if (isFailed && selectedTestCase) {
-          // FAILED → 結果記録を閉じて新規欠陥作成ダイアログを開く。
-          // テスト結果のコメント・添付を引き継ぐため、永続化された
-          // Defect フォームをクリアしてから seed を設定する。
-          setResultDialogOpen(false);
-          clearPersistedForm(`create-defect-${projectId}`);
-          setDefectSeed({ comment: carriedComment, attachments: carriedAttachments });
-          setSelectedTestCaseForDefect(selectedTestCase.testCaseId);
-          setCreateDefectDialogOpen(true);
-        } else {
-          // FAILED以外 → 次のテストケースへ遷移
-          navigateToNextTestCase(latestRun);
-        }
+        // Defect作成はFAILED選択時に即座に開く方式のため、
+        // 保存後は結果ステータスに関わらず次のテストケースへ遷移する。
+        navigateToNextTestCase(latestRun);
       } else {
         alert(data.error || '結果の保存に失敗しました');
       }
@@ -1066,14 +1040,12 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   };
 
   const handleDefectCreated = async () => {
+    // Defect作成モーダルのみ閉じ、結果記録モーダルは開いたまま維持する。
+    // ユーザーは作成したDefect（テストケースに自動リンク済み）を確認しつつ、
+    // 続けて結果を保存できる。次のテストケースへの遷移は結果保存時に行う。
     setCreateDefectDialogOpen(false);
-    setSelectedTestCaseForDefect(null);
-    setDefectSeed({ comment: '', attachments: [] });
     setDefectRefreshTrigger(prev => prev + 1);
-    const latest = await fetchTestRun();
-
-    // 欠陥作成後、次のテストケースの結果記録ダイアログを開く
-    navigateToNextTestCase(latest);
+    await fetchTestRun();
   };
 
   const getResultIcon = (status?: string) => {
@@ -1239,7 +1211,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           open={bulkUpdateDialogOpen}
           onOpenChange={setBulkUpdateDialogOpen}
           selectedResults={testRun.results.filter((r) =>
-            bulkSelectedTestCaseIds.includes(r.testCaseId)
+            r.testCaseId != null && bulkSelectedTestCaseIds.includes(r.testCaseId)
           )}
           loading={bulkUpdating}
           onSubmit={handleBulkUpdate}
@@ -1269,6 +1241,21 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             setResultForm({ ...resultForm, ...filteredData } as ResultFormData);
           }}
           onSubmit={handleSubmitResult}
+          onFailedSelected={() => {
+            // FAILED 選択時、結果記録モーダルは開いたまま新規Defect作成モーダルを前面に開く。
+            // この時点で入力済みのコメント・添付をDefectの説明欄へ引き継ぐ。
+            // Defect説明欄は fieldName === 'description'（または空）の添付のみ表示するため、
+            // 引き継ぐ添付の fieldName を 'description' に正規化する。
+            if (selectedTestCase) {
+              clearPersistedForm(`create-defect-${testRun.project?.id}`);
+              setDefectSeed({
+                comment: resultForm.comment || '',
+                attachments: resultCommentAttachments.map((att) => ({ ...att, fieldName: 'description' })),
+              });
+              setSelectedTestCaseForDefect(selectedTestCase.testCaseId);
+              setCreateDefectDialogOpen(true);
+            }
+          }}
           initialDurationSeconds={
             selectedTestCase
               ? testRun.results.find((r) => r.testCaseId === selectedTestCase.testCaseId)?.duration

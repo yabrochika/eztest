@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { Calendar, User, Plus, Pencil, Trash2, Play } from 'lucide-react';
 import { TestRun } from '../types';
 import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
@@ -79,12 +78,11 @@ export function TestRunsKanbanView({
   canDelete,
   canCreate = false,
   onCardClick,
+  onViewDetails,
   onEdit,
   onDelete,
   onCreate,
 }: TestRunsKanbanViewProps) {
-  const router = useRouter();
-
   const grouped = useMemo(() => {
     const map = new Map<string, TestRun[]>();
     for (const col of KANBAN_COLUMNS) {
@@ -146,11 +144,7 @@ export function TestRunsKanbanView({
                       canUpdate={canUpdate}
                       canDelete={canDelete}
                       onCardClick={onCardClick}
-                      onViewDetails={(tr) =>
-                        router.push(
-                          `/projects/${tr.project?.id || ''}/testruns/${tr.id}`
-                        )
-                      }
+                      onViewDetails={onViewDetails}
                       onEdit={onEdit}
                       onDelete={onDelete}
                     />

@@ -32,7 +32,7 @@ import { compareTestCasesByDisplayOrder } from './lib/testCaseDisplayOrder';
 import type { Attachment } from '@/lib/s3';
 import { uploadFileToS3, linkAttachments } from '@/lib/s3';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useFormPersistence, clearPersistedForm } from '@/hooks/useFormPersistence';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
 import { EditTestRunDialog } from '@/frontend/components/testrun/subcomponents/EditTestRunDialog';
 import { ConfirmDeleteDialog } from '@/frontend/reusable-components/dialogs/ConfirmDeleteDialog';
@@ -53,6 +53,12 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [addSuitesDialogOpen, setAddSuitesDialogOpen] = useState(false);
   const [createDefectDialogOpen, setCreateDefectDialogOpen] = useState(false);
   const [selectedTestCaseForDefect, setSelectedTestCaseForDefect] = useState<string | null>(null);
+  // FAILED のテスト結果から Defect を作成する際、テスト結果のコメント・添付を
+  // Defect 作成ダイアログ（説明欄・添付）へ引き継ぐための退避領域。
+  const [defectSeed, setDefectSeed] = useState<{ comment: string; attachments: Attachment[] }>({
+    comment: '',
+    attachments: [],
+  });
   // Shortcut Sub-task follow-up flow launched by "ストーリーを作成" in CreateDefectDialog.
   // The pickers are kept here (not inside CreateDefectDialog) so they stay
   // mounted after CreateDefectDialog closes/unmounts on successful submit.
@@ -528,14 +534,34 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           await linkAttachments(uploadedToLink, 'testResultId', testResultId);
         }
 
+        // FAILED の場合は、フォームをクリアする前にコメント・添付を退避して
+        // Defect 作成ダイアログへ引き継ぐ。添付はアップロード済み（非 pending）の
+        // ものに加え、今回アップロードしたものを ID で重複排除して収集する。
+        const isFailed = resultForm.status === 'FAILED' && !!selectedTestCase;
+        const carriedComment = isFailed ? resultForm.comment || '' : '';
+        // Defect 説明欄は fieldName === 'description'（または空）の添付のみ表示するため、
+        // 引き継ぐ添付の fieldName を 'description' に正規化する。
+        const carriedAttachments: Attachment[] = isFailed
+          ? [
+              ...resultCommentAttachments.filter((a) => !a.id.startsWith('pending-')),
+              ...uploadedToLink,
+            ]
+              .filter((att, index, arr) => arr.findIndex((x) => x.id === att.id) === index)
+              .map((att) => ({ ...att, fieldName: 'description' }))
+          : [];
+
         clearResultForm();
         setResultCommentAttachments([]);
 
         const latestRun = await fetchTestRun();
 
-        if (resultForm.status === 'FAILED' && selectedTestCase) {
-          // FAILED → 結果記録を閉じて新規欠陥作成ダイアログを開く
+        if (isFailed && selectedTestCase) {
+          // FAILED → 結果記録を閉じて新規欠陥作成ダイアログを開く。
+          // テスト結果のコメント・添付を引き継ぐため、永続化された
+          // Defect フォームをクリアしてから seed を設定する。
           setResultDialogOpen(false);
+          clearPersistedForm(`create-defect-${projectId}`);
+          setDefectSeed({ comment: carriedComment, attachments: carriedAttachments });
           setSelectedTestCaseForDefect(selectedTestCase.testCaseId);
           setCreateDefectDialogOpen(true);
         } else {
@@ -950,6 +976,8 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   };
 
   const handleCreateDefect = (testCaseId: string) => {
+    // テーブルからの作成はテスト結果を経由しないため、引き継ぎ内容をクリアする。
+    setDefectSeed({ comment: '', attachments: [] });
     setSelectedTestCaseForDefect(testCaseId);
     setCreateDefectDialogOpen(true);
   };
@@ -1040,6 +1068,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const handleDefectCreated = async () => {
     setCreateDefectDialogOpen(false);
     setSelectedTestCaseForDefect(null);
+    setDefectSeed({ comment: '', attachments: [] });
     setDefectRefreshTrigger(prev => prev + 1);
     const latest = await fetchTestRun();
 
@@ -1306,13 +1335,23 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           <CreateDefectDialog
             projectId={testRun.project.id}
             triggerOpen={createDefectDialogOpen}
-            onOpenChange={setCreateDefectDialogOpen}
+            onOpenChange={(open) => {
+              setCreateDefectDialogOpen(open);
+              // キャンセル（作成せずに閉じる）時はダイアログをアンマウントして
+              // 次回オープン時に引き継ぎ内容が再シードされるようにする。
+              if (!open) {
+                setSelectedTestCaseForDefect(null);
+                setDefectSeed({ comment: '', attachments: [] });
+              }
+            }}
             onDefectCreated={handleDefectCreated}
             testCaseId={selectedTestCaseForDefect}
             testRunEnvironment={testRun.environment}
             testRunPlatform={testRun.platform}
             testRunDevice={testRun.device}
             onCreateStoryAfterDefect={handleCreateStoryForDefect}
+            initialDescription={defectSeed.comment}
+            initialAttachments={defectSeed.attachments}
           />
         )}
 

@@ -235,7 +235,7 @@ export function TestCasesListCard({
     {
       key: 'testCase',
       label: 'テストケース',
-      width: '1440px',
+      width: '870px',
       className: 'min-w-0',
       renderHeader: () => renderSortableHeader('testCase', 'テストケース'),
       render: (row: ResultRow) => (
@@ -262,7 +262,7 @@ export function TestCasesListCard({
     {
       key: 'estimatedTime',
       label: '実行時間',
-      width: '100px',
+      width: '120px',
       align: 'center',
       renderHeader: () => renderSortableHeader('estimatedTime', '実行時間', 'center'),
       render: (row: ResultRow) => {
@@ -361,7 +361,7 @@ export function TestCasesListCard({
     {
       key: 'executedAt',
       label: '日時',
-      width: '140px',
+      width: '200px',
       align: 'center',
       renderHeader: () => renderSortableHeader('executedAt', '日時', 'center'),
       render: (row: ResultRow) => (
@@ -590,8 +590,8 @@ export function TestCasesListCard({
     ? [selectionColumn, ...dataColumns]
     : dataColumns;
   const gridTemplateColumns = bulkActionsActive
-    ? '40px 120px 1440px 100px 110px 140px 70px 140px 175px'
-    : '120px 1440px 100px 110px 140px 70px 140px 175px';
+    ? '40px 120px 870px 120px 110px 140px 70px 200px 175px'
+    : '120px 870px 120px 110px 140px 70px 200px 175px';
 
   const hasHeaderAction = (results && results.length > 0 && canCreate) || bulkActionsActive;
 
@@ -696,6 +696,7 @@ export function TestCasesListCard({
             router.push(`/projects/${projectId}/testcases/${row.testCase.id}`);
           }}
           gridTemplateColumns={gridTemplateColumns}
+          gapClassName="gap-[24px]"
           emptyMessage="テストケースはありません"
         />
       )}

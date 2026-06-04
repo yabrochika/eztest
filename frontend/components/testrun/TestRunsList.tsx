@@ -45,7 +45,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
   const [selectedTestRun, setSelectedTestRun] = useState<TestRun | null>(null);
 
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
 
   const [filters, setFilters] = useState<TestRunFilters>({
     searchQuery: '',

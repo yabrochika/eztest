@@ -10,6 +10,7 @@ import { TestCasesListCard } from './subcomponents/TestCasesListCard';
 import { RecordResultDialog } from './subcomponents/RecordResultDialog';
 import { ViewResultDialog } from './subcomponents/ViewResultDialog';
 import { BulkUpdateResultsDialog } from './subcomponents/BulkUpdateResultsDialog';
+import { BulkAssignExecutorDialog } from './subcomponents/BulkAssignExecutorDialog';
 import { AddTestCasesDialog } from '@/frontend/components/common/dialogs/AddTestCasesDialog';
 import { AddTestSuitesDialog } from './subcomponents/AddTestSuitesDialog';
 import { CreateDefectDialog } from '@/frontend/components/defect/subcomponents/CreateDefectDialog';
@@ -83,6 +84,9 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [bulkSelectedTestCaseIds, setBulkSelectedTestCaseIds] = useState<string[]>([]);
   const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  // 一括実行者登録用のダイアログ状態
+  const [bulkAssignExecutorDialogOpen, setBulkAssignExecutorDialogOpen] = useState(false);
+  const [bulkAssigningExecutor, setBulkAssigningExecutor] = useState(false);
 
   const [excludeTarget, setExcludeTarget] = useState<{
     testCaseId: string;
@@ -774,6 +778,113 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     }
   };
 
+  /**
+   * 選択中のテストケースに対して実行者を一括登録する。
+   *
+   * 結果API（POST /api/projects/[id]/testruns/[testrunId]/results）は `status` を必須とし、
+   * 実行者だけを更新する専用エンドポイントが無いため、既存の status / comment / duration を
+   * そのまま再送しつつ executedById のみ差し替えて結果レコードを upsert する。
+   */
+  const handleBulkAssignExecutor = async ({ executedById }: { executedById: string }) => {
+    if (!testRun) return;
+    if (bulkSelectedTestCaseIds.length === 0) return;
+
+    let projectId = testRun.project?.id;
+    if (!projectId && typeof window !== 'undefined') {
+      const pathSegments = window.location.pathname.split('/');
+      const projectIndex = pathSegments.indexOf('projects');
+      if (projectIndex !== -1 && projectIndex + 1 < pathSegments.length) {
+        projectId = pathSegments[projectIndex + 1];
+      }
+    }
+    if (!projectId) {
+      setFloatingAlert({
+        type: 'error',
+        title: '実行者の一括登録に失敗しました',
+        message: 'プロジェクト情報を取得できませんでした',
+      });
+      return;
+    }
+
+    setBulkAssigningExecutor(true);
+    let successCount = 0;
+    const failures: Array<{ testCaseId: string; message: string }> = [];
+
+    try {
+      const results = await Promise.allSettled(
+        bulkSelectedTestCaseIds.map(async (testCaseId) => {
+          const existing = testRun.results.find((r) => r.testCaseId === testCaseId);
+          // executorOnly=true により、サーバー側では実行者のみ差し替え、
+          // 既存のステータス・コメント・実行時間・実行日時はそのまま維持される。
+          const payload: Record<string, unknown> = {
+            testCaseId,
+            status: existing?.status ?? 'NOT_STARTED',
+            executedById,
+            executorOnly: true,
+          };
+
+          const response = await fetch(
+            `/api/projects/${projectId}/testruns/${testRunId}/results`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            }
+          );
+          if (!response.ok) {
+            let message = `HTTP ${response.status}`;
+            try {
+              const data = await response.json();
+              message = data.error || data.message || message;
+            } catch {
+              /* noop */
+            }
+            throw new Error(message);
+          }
+          return testCaseId;
+        })
+      );
+
+      results.forEach((r, idx) => {
+        if (r.status === 'fulfilled') {
+          successCount++;
+        } else {
+          failures.push({
+            testCaseId: bulkSelectedTestCaseIds[idx],
+            message: r.reason instanceof Error ? r.reason.message : '不明なエラー',
+          });
+        }
+      });
+
+      await fetchTestRun();
+
+      if (failures.length === 0) {
+        setBulkAssignExecutorDialogOpen(false);
+        setBulkSelectedTestCaseIds([]);
+        setFloatingAlert({
+          type: 'success',
+          title: '実行者を一括登録しました',
+          message: `${successCount} 件のテストケースに実行者を登録しました`,
+        });
+      } else {
+        setFloatingAlert({
+          type: 'error',
+          title: `${failures.length} 件の登録に失敗しました`,
+          message: `${successCount} 件は成功しました。詳細はコンソールを確認してください。`,
+        });
+        console.error('Bulk assign executor partial failure:', failures);
+      }
+    } catch (error) {
+      setFloatingAlert({
+        type: 'error',
+        title: '実行者の一括登録に失敗しました',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      });
+    } finally {
+      setBulkAssigningExecutor(false);
+    }
+  };
+
   const fetchAvailableTestSuites = async () => {
     if (!testRun || !testRun.project?.id) return;
 
@@ -1188,6 +1299,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           selectedTestCaseIds={bulkSelectedTestCaseIds}
           onSelectedTestCaseIdsChange={setBulkSelectedTestCaseIds}
           onBulkUpdateRequest={() => setBulkUpdateDialogOpen(true)}
+          onBulkAssignExecutorRequest={() => setBulkAssignExecutorDialogOpen(true)}
         />
 
         <ViewResultDialog
@@ -1207,6 +1319,19 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           )}
           loading={bulkUpdating}
           onSubmit={handleBulkUpdate}
+        />
+
+        <BulkAssignExecutorDialog
+          open={bulkAssignExecutorDialogOpen}
+          onOpenChange={setBulkAssignExecutorDialogOpen}
+          selectedCount={
+            testRun.results.filter(
+              (r) => r.testCaseId != null && bulkSelectedTestCaseIds.includes(r.testCaseId)
+            ).length
+          }
+          projectId={testRun.project?.id || ''}
+          loading={bulkAssigningExecutor}
+          onSubmit={handleBulkAssignExecutor}
         />
 
         <RecordResultDialog

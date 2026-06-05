@@ -67,6 +67,9 @@ export const addTestResultSchema = z.object({
   stackTrace: z.string().optional(),
   // Override the executor (defaults to the authenticated user when omitted).
   executedById: z.string().min(1).optional(),
+  // 実行者のみを更新する（既存のステータス・コメント・実行日時等は変更しない）。
+  // 一括実行者登録などで、未実行のテストケースの実行日時を進めたくない場合に使う。
+  executorOnly: z.boolean().optional(),
 });
 
 /**

@@ -970,11 +970,29 @@ export class TestRunService {
       comment?: string;
       errorMessage?: string;
       stackTrace?: string;
+      /**
+       * true の場合、既存 TestResult については実行者（executedById）だけを更新し、
+       * ステータス・コメント・実行時間・実行日時（executedAt）は変更しない。
+       * 一括実行者登録で、未実行テストケースの実行日時を進めたくないケースで使う。
+       */
+      executorOnly?: boolean;
     }
   ) {
     // 新規作成時のみテストケースのスナップショットを取得する。
     // 既存 TestResult の更新（実行結果の記録など）では snapshot は変更しない。
     const snapshotForCreate = await buildTestCaseSnapshot(testCaseId);
+    // executorOnly のときは実行者のみ差し替え、それ以外のフィールド（特に executedAt）は維持する。
+    const updateData = data.executorOnly
+      ? { executedById: data.executedById }
+      : {
+          status: data.status,
+          executedById: data.executedById,
+          duration: data.duration,
+          comment: data.comment,
+          errorMessage: data.errorMessage,
+          stackTrace: data.stackTrace,
+          executedAt: new Date(),
+        };
     const result = await prisma.testResult.upsert({
       where: {
         testRunId_testCaseId: {
@@ -982,15 +1000,7 @@ export class TestRunService {
           testCaseId,
         },
       },
-      update: {
-        status: data.status,
-        executedById: data.executedById,
-        duration: data.duration,
-        comment: data.comment,
-        errorMessage: data.errorMessage,
-        stackTrace: data.stackTrace,
-        executedAt: new Date(),
-      },
+      update: updateData,
       create: {
         testRunId,
         testCaseId,

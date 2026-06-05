@@ -126,9 +126,9 @@ export function CreateTestCaseDialog({
     },
     {
       name: 'flowId',
-      label: 'Flow-ID',
+      label: 'TC-ID',
       type: 'text',
-      placeholder: 'Enter flow ID',
+      placeholder: 'Enter TC ID',
       cols: 1,
     },
     {

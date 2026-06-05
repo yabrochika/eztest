@@ -224,9 +224,9 @@ export function TestCasesListCard({
   const dataColumns: ColumnDef<ResultRow>[] = [
     {
       key: 'flowId',
-      label: 'Flow-ID',
+      label: 'TC-ID',
       width: '90px',
-      renderHeader: () => renderSortableHeader('flowId', 'Flow-ID'),
+      renderHeader: () => renderSortableHeader('flowId', 'TC-ID'),
       render: (row: ResultRow) => (
         <p className="text-xs font-mono text-white/70 truncate">{row.testCase.flowId || '-'}</p>
       ),

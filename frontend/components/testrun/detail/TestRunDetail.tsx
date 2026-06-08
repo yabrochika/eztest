@@ -32,7 +32,7 @@ import { compareTestCasesByDisplayOrder } from './lib/testCaseDisplayOrder';
 import type { Attachment } from '@/lib/s3';
 import { uploadFileToS3, linkAttachments } from '@/lib/s3';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useFormPersistence, clearPersistedForm } from '@/hooks/useFormPersistence';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
 import { EditTestRunDialog } from '@/frontend/components/testrun/subcomponents/EditTestRunDialog';
 import { ConfirmDeleteDialog } from '@/frontend/reusable-components/dialogs/ConfirmDeleteDialog';
@@ -53,6 +53,12 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [addSuitesDialogOpen, setAddSuitesDialogOpen] = useState(false);
   const [createDefectDialogOpen, setCreateDefectDialogOpen] = useState(false);
   const [selectedTestCaseForDefect, setSelectedTestCaseForDefect] = useState<string | null>(null);
+  // FAILED のテスト結果から Defect を作成する際、テスト結果のコメント・添付を
+  // Defect 作成ダイアログ（説明欄・添付）へ引き継ぐための退避領域。
+  const [defectSeed, setDefectSeed] = useState<{ comment: string; attachments: Attachment[] }>({
+    comment: '',
+    attachments: [],
+  });
   // Shortcut Sub-task follow-up flow launched by "ストーリーを作成" in CreateDefectDialog.
   // The pickers are kept here (not inside CreateDefectDialog) so they stay
   // mounted after CreateDefectDialog closes/unmounts on successful submit.
@@ -533,7 +539,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
 
         const latestRun = await fetchTestRun();
 
-        // Defect作成はFAILED選択時に即座に開く方式へ変更したため、
+        // Defect作成はFAILED選択時に即座に開く方式のため、
         // 保存後は結果ステータスに関わらず次のテストケースへ遷移する。
         navigateToNextTestCase(latestRun);
       } else {
@@ -944,6 +950,8 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   };
 
   const handleCreateDefect = (testCaseId: string) => {
+    // テーブルからの作成はテスト結果を経由しないため、引き継ぎ内容をクリアする。
+    setDefectSeed({ comment: '', attachments: [] });
     setSelectedTestCaseForDefect(testCaseId);
     setCreateDefectDialogOpen(true);
   };
@@ -1234,8 +1242,16 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           }}
           onSubmit={handleSubmitResult}
           onFailedSelected={() => {
-            // FAILED 選択時、結果記録モーダルは開いたまま新規Defect作成モーダルを前面に開く
+            // FAILED 選択時、結果記録モーダルは開いたまま新規Defect作成モーダルを前面に開く。
+            // この時点で入力済みのコメント・添付をDefectの説明欄へ引き継ぐ。
+            // Defect説明欄は fieldName === 'description'（または空）の添付のみ表示するため、
+            // 引き継ぐ添付の fieldName を 'description' に正規化する。
             if (selectedTestCase) {
+              clearPersistedForm(`create-defect-${testRun.project?.id}`);
+              setDefectSeed({
+                comment: resultForm.comment || '',
+                attachments: resultCommentAttachments.map((att) => ({ ...att, fieldName: 'description' })),
+              });
               setSelectedTestCaseForDefect(selectedTestCase.testCaseId);
               setCreateDefectDialogOpen(true);
             }
@@ -1306,13 +1322,23 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           <CreateDefectDialog
             projectId={testRun.project.id}
             triggerOpen={createDefectDialogOpen}
-            onOpenChange={setCreateDefectDialogOpen}
+            onOpenChange={(open) => {
+              setCreateDefectDialogOpen(open);
+              // キャンセル（作成せずに閉じる）時はダイアログをアンマウントして
+              // 次回オープン時に引き継ぎ内容が再シードされるようにする。
+              if (!open) {
+                setSelectedTestCaseForDefect(null);
+                setDefectSeed({ comment: '', attachments: [] });
+              }
+            }}
             onDefectCreated={handleDefectCreated}
             testCaseId={selectedTestCaseForDefect}
             testRunEnvironment={testRun.environment}
             testRunPlatform={testRun.platform}
             testRunDevice={testRun.device}
             onCreateStoryAfterDefect={handleCreateStoryForDefect}
+            initialDescription={defectSeed.comment}
+            initialAttachments={defectSeed.attachments}
           />
         )}
 

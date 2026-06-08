@@ -9,7 +9,7 @@ import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import { formatDateTime } from '@/lib/date-utils';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { GroupedDataTable, type ColumnDef, type GroupConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
-import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2, ListTodo } from 'lucide-react';
+import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2, ListTodo, UserCog } from 'lucide-react';
 import { TestResult, TestCase } from '../types';
 import {
   getLayerSortKey,
@@ -55,6 +55,8 @@ interface TestCasesListCardProps {
   onSelectedTestCaseIdsChange?: (ids: string[]) => void;
   /** 「一括ステータス・コメント」ボタン押下時のハンドラ */
   onBulkUpdateRequest?: () => void;
+  /** 「一括実行者登録」ボタン押下時のハンドラ */
+  onBulkAssignExecutorRequest?: () => void;
 }
 
 interface ResultRow {
@@ -89,6 +91,7 @@ export function TestCasesListCard({
   selectedTestCaseIds = [],
   onSelectedTestCaseIdsChange,
   onBulkUpdateRequest,
+  onBulkAssignExecutorRequest,
 }: TestCasesListCardProps) {
   const router = useRouter();
   const { options: priorityOptions, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
@@ -611,6 +614,16 @@ export function TestCasesListCard({
                   buttonName="Test Cases List Card - Clear Selection"
                 >
                   選択解除
+                </Button>
+                <Button
+                  variant="glass"
+                  size="sm"
+                  onClick={() => onBulkAssignExecutorRequest?.()}
+                  disabled={!onBulkAssignExecutorRequest}
+                  buttonName="Test Cases List Card - Bulk Assign Executor"
+                >
+                  <UserCog className="w-4 h-4 mr-2" />
+                  一括実行者登録
                 </Button>
                 <ButtonPrimary
                   size="sm"

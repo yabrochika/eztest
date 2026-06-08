@@ -267,6 +267,7 @@ export class TestRunController {
         comment: validatedData.comment,
         errorMessage: validatedData.errorMessage,
         stackTrace: validatedData.stackTrace,
+        executorOnly: validatedData.executorOnly,
       }
     );
 

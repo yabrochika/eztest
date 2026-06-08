@@ -93,6 +93,9 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   // 一括実行者登録用のダイアログ状態
   const [bulkAssignExecutorDialogOpen, setBulkAssignExecutorDialogOpen] = useState(false);
   const [bulkAssigningExecutor, setBulkAssigningExecutor] = useState(false);
+  // 一括除外用のダイアログ状態
+  const [bulkExcludeDialogOpen, setBulkExcludeDialogOpen] = useState(false);
+  const [bulkExcluding, setBulkExcluding] = useState(false);
 
   const [excludeTarget, setExcludeTarget] = useState<{
     testCaseId: string;
@@ -1150,6 +1153,84 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     }
   };
 
+  /**
+   * 選択中のテストケースをテストランから一括除外する。
+   *
+   * 一括除外専用エンドポイントは無いため、単体除外と同じ
+   * DELETE /api/projects/[id]/testruns/[testrunId]/testcases/[testCaseId]
+   * を選択件数分だけ並列に発行する（一部失敗しても他は継続する）。
+   */
+  const handleConfirmBulkExclude = async () => {
+    if (!testRun?.project?.id) return;
+    if (bulkSelectedTestCaseIds.length === 0) return;
+
+    const projectId = testRun.project.id;
+    setBulkExcluding(true);
+    let successCount = 0;
+    const failures: Array<{ testCaseId: string; message: string }> = [];
+
+    try {
+      const results = await Promise.allSettled(
+        bulkSelectedTestCaseIds.map(async (testCaseId) => {
+          const response = await fetch(
+            `/api/projects/${projectId}/testruns/${testRunId}/testcases/${testCaseId}`,
+            { method: 'DELETE' }
+          );
+          if (!response.ok) {
+            let message = `HTTP ${response.status}`;
+            try {
+              const data = await response.json();
+              message = data.error || data.message || message;
+            } catch {
+              /* noop */
+            }
+            throw new Error(message);
+          }
+          return testCaseId;
+        })
+      );
+
+      results.forEach((r, idx) => {
+        if (r.status === 'fulfilled') {
+          successCount++;
+        } else {
+          failures.push({
+            testCaseId: bulkSelectedTestCaseIds[idx],
+            message: r.reason instanceof Error ? r.reason.message : '不明なエラー',
+          });
+        }
+      });
+
+      await fetchTestRun();
+
+      if (failures.length === 0) {
+        setBulkExcludeDialogOpen(false);
+        setBulkSelectedTestCaseIds([]);
+        setFloatingAlert({
+          type: 'success',
+          title: '一括除外しました',
+          message: `${successCount} 件のテストケースをテストランから除外しました`,
+        });
+      } else {
+        setBulkSelectedTestCaseIds([]);
+        setFloatingAlert({
+          type: 'error',
+          title: `${failures.length} 件の除外に失敗しました`,
+          message: `${successCount} 件は成功しました。詳細はコンソールを確認してください。`,
+        });
+        console.error('Bulk exclude partial failure:', failures);
+      }
+    } catch (error) {
+      setFloatingAlert({
+        type: 'error',
+        title: '一括除外に失敗しました',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      });
+    } finally {
+      setBulkExcluding(false);
+    }
+  };
+
   const handleDefectCreated = async () => {
     // Defect作成モーダルのみ閉じ、結果記録モーダルは開いたまま維持する。
     // ユーザーは作成したDefect（テストケースに自動リンク済み）を確認しつつ、
@@ -1308,6 +1389,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           onSelectedTestCaseIdsChange={setBulkSelectedTestCaseIds}
           onBulkUpdateRequest={() => setBulkUpdateDialogOpen(true)}
           onBulkAssignExecutorRequest={() => setBulkAssignExecutorDialogOpen(true)}
+          onBulkExcludeRequest={() => setBulkExcludeDialogOpen(true)}
         />
 
         <ViewResultDialog
@@ -1554,6 +1636,34 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           }}
           onConfirm={handleConfirmExclude}
           dialogName="Test Run Detail - Exclude Test Case"
+        />
+
+        <ConfirmDeleteDialog
+          open={bulkExcludeDialogOpen}
+          title="テストケースを一括除外"
+          description={(() => {
+            const selectedResults = testRun.results.filter(
+              (r) => r.testCaseId != null && bulkSelectedTestCaseIds.includes(r.testCaseId)
+            );
+            const count = selectedResults.length;
+            const executedCount = selectedResults.filter(
+              (r) => r.status && r.status !== 'NOT_STARTED' && r.status !== 'SKIPPED'
+            ).length;
+            const base = `選択中の ${count} 件のテストケースを、このテストランから除外します。`;
+            const warn =
+              executedCount > 0
+                ? `\nうち ${executedCount} 件は実行済みです。実行結果・コメント・添付ファイルも併せて削除されます。`
+                : '';
+            return `${base}${warn}\nこの操作は取り消せません。`;
+          })()}
+          confirmLabel="一括除外する"
+          cancelLabel="キャンセル"
+          isLoading={bulkExcluding}
+          onOpenChange={(open) => {
+            if (!open) setBulkExcludeDialogOpen(false);
+          }}
+          onConfirm={handleConfirmBulkExclude}
+          dialogName="Test Run Detail - Bulk Exclude Test Cases"
         />
       </div>
 

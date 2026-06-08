@@ -57,6 +57,8 @@ interface TestCasesListCardProps {
   onBulkUpdateRequest?: () => void;
   /** 「一括実行者登録」ボタン押下時のハンドラ */
   onBulkAssignExecutorRequest?: () => void;
+  /** 「一括除外」ボタン押下時のハンドラ */
+  onBulkExcludeRequest?: () => void;
 }
 
 interface ResultRow {
@@ -92,6 +94,7 @@ export function TestCasesListCard({
   onSelectedTestCaseIdsChange,
   onBulkUpdateRequest,
   onBulkAssignExecutorRequest,
+  onBulkExcludeRequest,
 }: TestCasesListCardProps) {
   const router = useRouter();
   const { options: priorityOptions, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
@@ -632,6 +635,20 @@ export function TestCasesListCard({
                   <UserCog className="w-4 h-4 mr-2" />
                   一括実行者登録
                 </Button>
+                {onBulkExcludeRequest &&
+                  testRunStatus !== 'COMPLETED' &&
+                  testRunStatus !== 'CANCELLED' && (
+                    <Button
+                      variant="glass"
+                      size="sm"
+                      onClick={() => onBulkExcludeRequest()}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      buttonName="Test Cases List Card - Bulk Exclude"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      一括除外
+                    </Button>
+                  )}
                 <ButtonPrimary
                   size="sm"
                   onClick={() => onBulkUpdateRequest?.()}

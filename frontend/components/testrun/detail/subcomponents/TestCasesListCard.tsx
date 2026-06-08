@@ -228,15 +228,17 @@ export function TestCasesListCard({
     {
       key: 'tcId',
       label: 'TC-ID',
-      width: '90px',
-      renderHeader: () => renderSortableHeader('tcId', 'TC-ID'),
+      width: '120px',
+      align: 'center',
+      renderHeader: () => renderSortableHeader('tcId', 'TC-ID', 'center'),
       render: (row: ResultRow) => (
-        <p className="text-xs font-mono text-white/70 truncate">{row.testCase.tcId || '-'}</p>
+        <p className="text-xs font-mono text-white/70 whitespace-nowrap">{row.testCase.tcId || '-'}</p>
       ),
     },
     {
       key: 'testCase',
       label: 'テストケース',
+      width: '870px',
       className: 'min-w-0',
       renderHeader: () => renderSortableHeader('testCase', 'テストケース'),
       render: (row: ResultRow) => (
@@ -263,8 +265,9 @@ export function TestCasesListCard({
     {
       key: 'estimatedTime',
       label: '実行時間',
-      width: '100px',
-      renderHeader: () => renderSortableHeader('estimatedTime', '実行時間'),
+      width: '120px',
+      align: 'center',
+      renderHeader: () => renderSortableHeader('estimatedTime', '実行時間', 'center'),
       render: (row: ResultRow) => {
         const t = row.duration;
         if (t == null || !Number.isFinite(t)) return <span className="text-white/70 text-sm">-</span>;
@@ -281,8 +284,9 @@ export function TestCasesListCard({
     {
       key: 'priority',
       label: '優先度',
-      width: '90px',
-      renderHeader: () => renderSortableHeader('priority', '優先度'),
+      width: '110px',
+      align: 'center',
+      renderHeader: () => renderSortableHeader('priority', '優先度', 'center'),
       render: (row: ResultRow) => {
         // 削除済みテストケースのプレースホルダーでは priority が欠落することがある。
         if (!row.testCase.priority) {
@@ -306,15 +310,16 @@ export function TestCasesListCard({
     {
       key: 'status',
       label: 'ステータス',
-      width: '120px',
-      renderHeader: () => renderSortableHeader('status', 'ステータス'),
+      width: '140px',
+      align: 'center',
+      renderHeader: () => renderSortableHeader('status', 'ステータス', 'center'),
       render: (row: ResultRow) => {
         const badgeProps = getDynamicBadgeProps(row.status, statusOptions);
         const label = !loadingStatus && statusOptions.length > 0
           ? statusOptions.find(opt => opt.value === row.status)?.label || row.status
           : row.status;
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2">
             {row.status !== 'FAILED' && getResultIcon(row.status)}
             <Badge
               variant="outline"
@@ -363,8 +368,9 @@ export function TestCasesListCard({
     {
       key: 'executedAt',
       label: '日時',
-      width: '140px',
-      renderHeader: () => renderSortableHeader('executedAt', '日時'),
+      width: '200px',
+      align: 'center',
+      renderHeader: () => renderSortableHeader('executedAt', '日時', 'center'),
       render: (row: ResultRow) => (
         <span className="text-white/70 text-sm">
           {row.executedAt
@@ -377,8 +383,9 @@ export function TestCasesListCard({
       key: 'actions',
       label: 'アクション',
       width: '175px',
+      align: 'center',
       render: (row: ResultRow) => (
-        <div className="flex items-center gap-1 justify-end">
+        <div className="flex items-center gap-1 justify-center">
           {(testRunStatus === 'IN_PROGRESS' || forceShowDefectActions) && (
             <>
               {testRunStatus === 'IN_PROGRESS' && canUpdate && (
@@ -590,8 +597,8 @@ export function TestCasesListCard({
     ? [selectionColumn, ...dataColumns]
     : dataColumns;
   const gridTemplateColumns = bulkActionsActive
-    ? '40px 90px 1fr 100px 90px 120px 70px 140px 175px'
-    : '90px 1fr 100px 90px 120px 70px 140px 175px';
+    ? '40px 120px 870px 120px 110px 140px 70px 200px 175px'
+    : '120px 870px 120px 110px 140px 70px 200px 175px';
 
   const hasHeaderAction = (results && results.length > 0 && canCreate) || bulkActionsActive;
 
@@ -706,6 +713,7 @@ export function TestCasesListCard({
             router.push(`/projects/${projectId}/testcases/${row.testCase.id}`);
           }}
           gridTemplateColumns={gridTemplateColumns}
+          gapClassName="gap-[24px]"
           emptyMessage="テストケースはありません"
         />
       )}

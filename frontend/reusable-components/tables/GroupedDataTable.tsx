@@ -50,6 +50,8 @@ export interface GroupedDataTableProps<T> {
   emptyMessage?: string;
   gridTemplateColumns?: string;
   defaultExpanded?: boolean;
+  /** 列間の余白を制御する Tailwind クラス（既定は gap-3 = 12px） */
+  gapClassName?: string;
 }
 
 /**
@@ -92,6 +94,7 @@ export function GroupedDataTable<T = Record<string, unknown>>({
   emptyMessage = 'No data available',
   gridTemplateColumns,
   defaultExpanded = false,
+  gapClassName = 'gap-3',
 }: GroupedDataTableProps<T>) {
   // デフォルト展開時は全グループIDを初期値にする
   const allGroupIds = useMemo(() => {
@@ -176,7 +179,7 @@ export function GroupedDataTable<T = Record<string, unknown>>({
   // Render header row
   const renderHeader = () => (
     <div
-      className={`grid gap-3 px-3 py-1.5 text-xs font-semibold text-white/60 border-b border-white/10 ${headerClassName}`}
+      className={`grid ${gapClassName} px-3 py-1.5 text-xs font-semibold text-white/60 border-b border-white/10 ${headerClassName}`}
       style={{ gridTemplateColumns: getGridColumns() }}
     >
       {columns.map((col) => (
@@ -202,7 +205,7 @@ export function GroupedDataTable<T = Record<string, unknown>>({
     return (
       <div
         key={index}
-        className={`grid gap-3 px-3 py-1.5 cursor-pointer transition-colors items-center text-sm rounded-sm hover:bg-accent/20 ${
+        className={`grid ${gapClassName} px-3 py-1.5 cursor-pointer transition-colors items-center text-sm rounded-sm hover:bg-accent/20 ${
           index % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.04] border-b border-white/10'
         } ${rowClassName}`}
         style={{ gridTemplateColumns: getGridColumns() }}

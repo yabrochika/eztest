@@ -410,10 +410,12 @@ export class TestRunService {
         },
         _count: {
           select: {
-            results: true,
+            // 削除済みテストケース（testCaseId が null）の結果は集計から除外する
+            results: { where: { testCaseId: { not: null } } },
           },
         },
         results: {
+          where: { testCaseId: { not: null } },
           select: {
             status: true,
             testCase: {
@@ -509,6 +511,9 @@ export class TestRunService {
           },
         },
         results: {
+          // マスターのテストケースが削除された結果（testCaseId が SET NULL で
+          // null になったもの）はテストランから即座に除外する。
+          where: { testCaseId: { not: null } },
           include: {
             testCase: {
               select: {
@@ -565,7 +570,8 @@ export class TestRunService {
         },
         _count: {
           select: {
-            results: true,
+            // 削除済みテストケースの結果を合計件数からも除外する
+            results: { where: { testCaseId: { not: null } } },
           },
         },
       },
@@ -1064,6 +1070,8 @@ export class TestRunService {
       by: ['status'],
       where: {
         testRunId,
+        // 削除済みテストケースの結果は統計に含めない
+        testCaseId: { not: null },
       },
       _count: {
         status: true,

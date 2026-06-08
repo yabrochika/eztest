@@ -90,6 +90,16 @@ const COLOR_PALETTES = [
 ];
 
 /**
+ * Neutral fallback used when a badge value is missing (null/undefined/empty).
+ * 削除済みテストケースのプレースホルダー等で値が欠落しても安全に描画できるようにする。
+ */
+const NEUTRAL_BADGE_COLOR = {
+  bg: 'bg-gray-500/10',
+  text: 'text-gray-400',
+  border: 'border-gray-500/20',
+};
+
+/**
  * Generate a hash from a string
  */
 function hashString(str: string): number {
@@ -153,9 +163,15 @@ function hexToTailwindClasses(hexColor: string): { bg: string; text: string; bor
  * @returns Object with bg, text, and border Tailwind classes
  */
 export function getBadgeColorClasses(
-  value: string,
+  value: string | null | undefined,
   options: DropdownOption[]
 ): { bg: string; text: string; border: string } {
+  // 値が欠落している場合（削除済みテストケースのプレースホルダー等）は
+  // ハッシュ計算で落ちないよう中立色で安全に描画する。
+  if (!value) {
+    return NEUTRAL_BADGE_COLOR;
+  }
+
   // First, check if this is an existing badge with static color
   const staticColor = STATIC_BADGE_COLORS[value];
   if (staticColor) {
@@ -209,12 +225,20 @@ export function getBadgeInlineStyles(hexColor: string): {
  * @returns Object with className string and optional style object
  */
 export function getDynamicBadgeProps(
-  value: string,
+  value: string | null | undefined,
   options: DropdownOption[]
 ): {
   className: string;
   style?: React.CSSProperties;
 } {
+  // 値が欠落している場合（削除済みテストケースのプレースホルダー等）は
+  // ハッシュ計算で落ちないよう中立色で安全に描画する。
+  if (!value) {
+    return {
+      className: `${NEUTRAL_BADGE_COLOR.bg} ${NEUTRAL_BADGE_COLOR.text} ${NEUTRAL_BADGE_COLOR.border}`,
+    };
+  }
+
   // First, check if this is an existing badge with static color
   const staticColor = STATIC_BADGE_COLORS[value];
   if (staticColor) {

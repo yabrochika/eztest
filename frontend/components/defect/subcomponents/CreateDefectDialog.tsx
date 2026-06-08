@@ -37,6 +37,16 @@ interface CreateDefectDialogProps {
    * even after this dialog closes / unmounts.
    */
   onCreateStoryAfterDefect?: (defect: Defect) => void;
+  /**
+   * Pre-fills the description field. Used when creating a Defect from a failed
+   * test result so the test result comment is carried over to the Defect.
+   */
+  initialDescription?: string;
+  /**
+   * Pre-loads already-uploaded attachments (e.g. images from the test result
+   * comment) so they are carried over and saved with the new Defect.
+   */
+  initialAttachments?: Attachment[];
 }
 
 export function CreateDefectDialog({
@@ -49,12 +59,14 @@ export function CreateDefectDialog({
   testRunPlatform,
   testRunDevice,
   onCreateStoryAfterDefect,
+  initialDescription,
+  initialAttachments,
 }: CreateDefectDialogProps) {
   const { data: session } = useSession();
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
   const [assignees, setAssignees] = useState<Array<{ id: string; name: string }>>([]);
   const [testCases, setTestCases] = useState<Array<{ id: string; testCaseId: string; title: string }>>([]);
-  const [descriptionAttachments, setDescriptionAttachments] = useState<Attachment[]>([]);
+  const [descriptionAttachments, setDescriptionAttachments] = useState<Attachment[]>(initialAttachments ?? []);
 
   // Fetch dynamic dropdown options
   const { options: severityOptions } = useDropdownOptions('Defect', 'severity');
@@ -243,6 +255,7 @@ export function CreateDefectDialog({
       name: 'description',
       label: '説明（画像・動画を添付可能）',
       type: 'custom',
+      defaultValue: initialDescription || '',
       rows: 3,
       cols: 2,
       maxLength: 2000,
@@ -403,7 +416,21 @@ export function CreateDefectDialog({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create defect');
+        // The API (backend/utils/baseInterceptor.ts) returns errors as
+        // `{ message, data }`, where `data` holds Zod validation issues on 422.
+        // Surface the real reason instead of a generic fallback so the user
+        // can see what actually went wrong.
+        const validationDetail = Array.isArray(data?.data)
+          ? data.data
+              .map((issue: { path?: Array<string | number>; message?: string }) => {
+                const field = issue?.path?.join('.');
+                return field ? `${field}: ${issue?.message}` : issue?.message;
+              })
+              .filter(Boolean)
+              .join(', ')
+          : '';
+
+        throw new Error(validationDetail || data?.message || data?.error || 'Failed to create defect');
       }
 
       const createdDefect = data.data;

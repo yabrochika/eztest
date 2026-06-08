@@ -131,7 +131,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
   const [recordResultOpen, setRecordResultOpen] = useState(false);
   const [activeTestRun, setActiveTestRun] = useState<SelectableTestRun | null>(null);
   const [activeResult, setActiveResult] = useState<SelectableTestRunResult | null>(null);
-  const [resultForm, setResultForm] = useState<ResultFormData>({ status: '', comment: '' });
+  const [resultForm, setResultForm] = useState<ResultFormData>({ status: '', comment: '', executedById: '' });
   const [resultCommentAttachments, setResultCommentAttachments] = useState<CommentAttachment[]>([]);
 
   const handleOpenExecuteFlow = () => {
@@ -149,6 +149,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
     setResultForm({
       status: currentResult.status && currentResult.status !== 'NOT_STARTED' ? currentResult.status : '',
       comment: '',
+      executedById: '',
     });
     setResultCommentAttachments([]);
     setRecordResultOpen(true);
@@ -211,7 +212,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
         setRecordResultOpen(false);
         setActiveTestRun(null);
         setActiveResult(null);
-        setResultForm({ status: '', comment: '' });
+        setResultForm({ status: '', comment: '', executedById: '' });
         setResultCommentAttachments([]);
 
         setAlert({
@@ -1073,7 +1074,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
                 setActiveResult(null);
               }
             }}
-            onFormChange={(data) => setResultForm((prev) => ({ ...prev, ...data }))}
+            onFormChange={(data) => setResultForm((prev) => ({ ...prev, ...data }) as ResultFormData)}
             onSubmit={handleSubmitResult}
             initialDurationSeconds={activeResult?.duration ?? undefined}
           />

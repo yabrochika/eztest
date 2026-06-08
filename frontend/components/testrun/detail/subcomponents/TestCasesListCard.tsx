@@ -9,7 +9,7 @@ import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import { formatDateTime } from '@/lib/date-utils';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { GroupedDataTable, type ColumnDef, type GroupConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
-import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2, ListTodo } from 'lucide-react';
+import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2, ListTodo, UserCog } from 'lucide-react';
 import { TestResult, TestCase } from '../types';
 import {
   getLayerSortKey,
@@ -55,6 +55,8 @@ interface TestCasesListCardProps {
   onSelectedTestCaseIdsChange?: (ids: string[]) => void;
   /** 「一括ステータス・コメント」ボタン押下時のハンドラ */
   onBulkUpdateRequest?: () => void;
+  /** 「一括実行者登録」ボタン押下時のハンドラ */
+  onBulkAssignExecutorRequest?: () => void;
 }
 
 interface ResultRow {
@@ -89,6 +91,7 @@ export function TestCasesListCard({
   selectedTestCaseIds = [],
   onSelectedTestCaseIdsChange,
   onBulkUpdateRequest,
+  onBulkAssignExecutorRequest,
 }: TestCasesListCardProps) {
   const router = useRouter();
   const { options: priorityOptions, loading: loadingPriority } = useDropdownOptions('TestCase', 'priority');
@@ -99,7 +102,7 @@ export function TestCasesListCard({
   const canCreateDefect = hasPermissionCheck('defects:create');
 
   // 並び替え対象の列キーと方向（null: デフォルト順）
-  type SortKey = 'flowId' | 'testCase' | 'estimatedTime' | 'priority' | 'status' | 'executedBy' | 'executedAt';
+  type SortKey = 'tcId' | 'testCase' | 'estimatedTime' | 'priority' | 'status' | 'executedBy' | 'executedAt';
   const [sortState, setSortState] = useState<{ key: SortKey; direction: 'asc' | 'desc' } | null>(null);
 
   const toggleSort = (key: SortKey) => {
@@ -223,13 +226,13 @@ export function TestCasesListCard({
 
   const dataColumns: ColumnDef<ResultRow>[] = [
     {
-      key: 'flowId',
-      label: 'Flow-ID',
+      key: 'tcId',
+      label: 'ID',
       width: '120px',
       align: 'center',
-      renderHeader: () => renderSortableHeader('flowId', 'Flow-ID', 'center'),
+      renderHeader: () => renderSortableHeader('tcId', 'ID', 'center'),
       render: (row: ResultRow) => (
-        <p className="text-xs font-mono text-white/70 whitespace-nowrap">{row.testCase.flowId || '-'}</p>
+        <p className="text-xs font-mono text-white/70 whitespace-nowrap">{row.testCase.tcId || '-'}</p>
       ),
     },
     {
@@ -285,6 +288,10 @@ export function TestCasesListCard({
       align: 'center',
       renderHeader: () => renderSortableHeader('priority', '優先度', 'center'),
       render: (row: ResultRow) => {
+        // 削除済みテストケースのプレースホルダーでは priority が欠落することがある。
+        if (!row.testCase.priority) {
+          return <span className="text-white/50 text-sm">-</span>;
+        }
         const badgeProps = getDynamicBadgeProps(row.testCase.priority, priorityOptions);
         const priorityLabel = !loadingPriority && priorityOptions.length > 0
           ? priorityOptions.find(opt => opt.value === row.testCase.priority)?.label || row.testCase.priority
@@ -512,8 +519,8 @@ export function TestCasesListCard({
   /** 列キー毎の比較値を取得する。数値なら number、文字列なら string を返す。 */
   const getSortValue = (row: ResultRow, key: SortKey): number | string => {
     switch (key) {
-      case 'flowId':
-        return row.testCase.flowId || '';
+      case 'tcId':
+        return row.testCase.tcId || '';
       case 'testCase':
         return row.testCase.title || '';
       case 'estimatedTime':
@@ -614,6 +621,16 @@ export function TestCasesListCard({
                   buttonName="Test Cases List Card - Clear Selection"
                 >
                   選択解除
+                </Button>
+                <Button
+                  variant="glass"
+                  size="sm"
+                  onClick={() => onBulkAssignExecutorRequest?.()}
+                  disabled={!onBulkAssignExecutorRequest}
+                  buttonName="Test Cases List Card - Bulk Assign Executor"
+                >
+                  <UserCog className="w-4 h-4 mr-2" />
+                  一括実行者登録
                 </Button>
                 <ButtonPrimary
                   size="sm"

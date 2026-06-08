@@ -10,6 +10,7 @@ import { TestCasesListCard } from './subcomponents/TestCasesListCard';
 import { RecordResultDialog } from './subcomponents/RecordResultDialog';
 import { ViewResultDialog } from './subcomponents/ViewResultDialog';
 import { BulkUpdateResultsDialog } from './subcomponents/BulkUpdateResultsDialog';
+import { BulkAssignExecutorDialog } from './subcomponents/BulkAssignExecutorDialog';
 import { AddTestCasesDialog } from '@/frontend/components/common/dialogs/AddTestCasesDialog';
 import { AddTestSuitesDialog } from './subcomponents/AddTestSuitesDialog';
 import { CreateDefectDialog } from '@/frontend/components/defect/subcomponents/CreateDefectDialog';
@@ -32,7 +33,7 @@ import { compareTestCasesByDisplayOrder } from './lib/testCaseDisplayOrder';
 import type { Attachment } from '@/lib/s3';
 import { uploadFileToS3, linkAttachments } from '@/lib/s3';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useFormPersistence, clearPersistedForm } from '@/hooks/useFormPersistence';
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
 import { EditTestRunDialog } from '@/frontend/components/testrun/subcomponents/EditTestRunDialog';
 import { ConfirmDeleteDialog } from '@/frontend/reusable-components/dialogs/ConfirmDeleteDialog';
@@ -53,6 +54,12 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [addSuitesDialogOpen, setAddSuitesDialogOpen] = useState(false);
   const [createDefectDialogOpen, setCreateDefectDialogOpen] = useState(false);
   const [selectedTestCaseForDefect, setSelectedTestCaseForDefect] = useState<string | null>(null);
+  // FAILED のテスト結果から Defect を作成する際、テスト結果のコメント・添付を
+  // Defect 作成ダイアログ（説明欄・添付）へ引き継ぐための退避領域。
+  const [defectSeed, setDefectSeed] = useState<{ comment: string; attachments: Attachment[] }>({
+    comment: '',
+    attachments: [],
+  });
   // Shortcut Sub-task follow-up flow launched by "ストーリーを作成" in CreateDefectDialog.
   // The pickers are kept here (not inside CreateDefectDialog) so they stay
   // mounted after CreateDefectDialog closes/unmounts on successful submit.
@@ -83,6 +90,9 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   const [bulkSelectedTestCaseIds, setBulkSelectedTestCaseIds] = useState<string[]>([]);
   const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  // 一括実行者登録用のダイアログ状態
+  const [bulkAssignExecutorDialogOpen, setBulkAssignExecutorDialogOpen] = useState(false);
+  const [bulkAssigningExecutor, setBulkAssigningExecutor] = useState(false);
 
   const [excludeTarget, setExcludeTarget] = useState<{
     testCaseId: string;
@@ -533,15 +543,9 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
 
         const latestRun = await fetchTestRun();
 
-        if (resultForm.status === 'FAILED' && selectedTestCase) {
-          // FAILED → 結果記録を閉じて新規欠陥作成ダイアログを開く
-          setResultDialogOpen(false);
-          setSelectedTestCaseForDefect(selectedTestCase.testCaseId);
-          setCreateDefectDialogOpen(true);
-        } else {
-          // FAILED以外 → 次のテストケースへ遷移
-          navigateToNextTestCase(latestRun);
-        }
+        // Defect作成はFAILED選択時に即座に開く方式のため、
+        // 保存後は結果ステータスに関わらず次のテストケースへ遷移する。
+        navigateToNextTestCase(latestRun);
       } else {
         alert(data.error || '結果の保存に失敗しました');
       }
@@ -780,6 +784,113 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     }
   };
 
+  /**
+   * 選択中のテストケースに対して実行者を一括登録する。
+   *
+   * 結果API（POST /api/projects/[id]/testruns/[testrunId]/results）は `status` を必須とし、
+   * 実行者だけを更新する専用エンドポイントが無いため、既存の status / comment / duration を
+   * そのまま再送しつつ executedById のみ差し替えて結果レコードを upsert する。
+   */
+  const handleBulkAssignExecutor = async ({ executedById }: { executedById: string }) => {
+    if (!testRun) return;
+    if (bulkSelectedTestCaseIds.length === 0) return;
+
+    let projectId = testRun.project?.id;
+    if (!projectId && typeof window !== 'undefined') {
+      const pathSegments = window.location.pathname.split('/');
+      const projectIndex = pathSegments.indexOf('projects');
+      if (projectIndex !== -1 && projectIndex + 1 < pathSegments.length) {
+        projectId = pathSegments[projectIndex + 1];
+      }
+    }
+    if (!projectId) {
+      setFloatingAlert({
+        type: 'error',
+        title: '実行者の一括登録に失敗しました',
+        message: 'プロジェクト情報を取得できませんでした',
+      });
+      return;
+    }
+
+    setBulkAssigningExecutor(true);
+    let successCount = 0;
+    const failures: Array<{ testCaseId: string; message: string }> = [];
+
+    try {
+      const results = await Promise.allSettled(
+        bulkSelectedTestCaseIds.map(async (testCaseId) => {
+          const existing = testRun.results.find((r) => r.testCaseId === testCaseId);
+          // executorOnly=true により、サーバー側では実行者のみ差し替え、
+          // 既存のステータス・コメント・実行時間・実行日時はそのまま維持される。
+          const payload: Record<string, unknown> = {
+            testCaseId,
+            status: existing?.status ?? 'NOT_STARTED',
+            executedById,
+            executorOnly: true,
+          };
+
+          const response = await fetch(
+            `/api/projects/${projectId}/testruns/${testRunId}/results`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            }
+          );
+          if (!response.ok) {
+            let message = `HTTP ${response.status}`;
+            try {
+              const data = await response.json();
+              message = data.error || data.message || message;
+            } catch {
+              /* noop */
+            }
+            throw new Error(message);
+          }
+          return testCaseId;
+        })
+      );
+
+      results.forEach((r, idx) => {
+        if (r.status === 'fulfilled') {
+          successCount++;
+        } else {
+          failures.push({
+            testCaseId: bulkSelectedTestCaseIds[idx],
+            message: r.reason instanceof Error ? r.reason.message : '不明なエラー',
+          });
+        }
+      });
+
+      await fetchTestRun();
+
+      if (failures.length === 0) {
+        setBulkAssignExecutorDialogOpen(false);
+        setBulkSelectedTestCaseIds([]);
+        setFloatingAlert({
+          type: 'success',
+          title: '実行者を一括登録しました',
+          message: `${successCount} 件のテストケースに実行者を登録しました`,
+        });
+      } else {
+        setFloatingAlert({
+          type: 'error',
+          title: `${failures.length} 件の登録に失敗しました`,
+          message: `${successCount} 件は成功しました。詳細はコンソールを確認してください。`,
+        });
+        console.error('Bulk assign executor partial failure:', failures);
+      }
+    } catch (error) {
+      setFloatingAlert({
+        type: 'error',
+        title: '実行者の一括登録に失敗しました',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      });
+    } finally {
+      setBulkAssigningExecutor(false);
+    }
+  };
+
   const fetchAvailableTestSuites = async () => {
     if (!testRun || !testRun.project?.id) return;
 
@@ -950,6 +1061,8 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   };
 
   const handleCreateDefect = (testCaseId: string) => {
+    // テーブルからの作成はテスト結果を経由しないため、引き継ぎ内容をクリアする。
+    setDefectSeed({ comment: '', attachments: [] });
     setSelectedTestCaseForDefect(testCaseId);
     setCreateDefectDialogOpen(true);
   };
@@ -1038,13 +1151,12 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   };
 
   const handleDefectCreated = async () => {
+    // Defect作成モーダルのみ閉じ、結果記録モーダルは開いたまま維持する。
+    // ユーザーは作成したDefect（テストケースに自動リンク済み）を確認しつつ、
+    // 続けて結果を保存できる。次のテストケースへの遷移は結果保存時に行う。
     setCreateDefectDialogOpen(false);
-    setSelectedTestCaseForDefect(null);
     setDefectRefreshTrigger(prev => prev + 1);
-    const latest = await fetchTestRun();
-
-    // 欠陥作成後、次のテストケースの結果記録ダイアログを開く
-    navigateToNextTestCase(latest);
+    await fetchTestRun();
   };
 
   const getResultIcon = (status?: string) => {
@@ -1195,6 +1307,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           selectedTestCaseIds={bulkSelectedTestCaseIds}
           onSelectedTestCaseIdsChange={setBulkSelectedTestCaseIds}
           onBulkUpdateRequest={() => setBulkUpdateDialogOpen(true)}
+          onBulkAssignExecutorRequest={() => setBulkAssignExecutorDialogOpen(true)}
         />
 
         <ViewResultDialog
@@ -1210,10 +1323,23 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           open={bulkUpdateDialogOpen}
           onOpenChange={setBulkUpdateDialogOpen}
           selectedResults={testRun.results.filter((r) =>
-            bulkSelectedTestCaseIds.includes(r.testCaseId)
+            r.testCaseId != null && bulkSelectedTestCaseIds.includes(r.testCaseId)
           )}
           loading={bulkUpdating}
           onSubmit={handleBulkUpdate}
+        />
+
+        <BulkAssignExecutorDialog
+          open={bulkAssignExecutorDialogOpen}
+          onOpenChange={setBulkAssignExecutorDialogOpen}
+          selectedCount={
+            testRun.results.filter(
+              (r) => r.testCaseId != null && bulkSelectedTestCaseIds.includes(r.testCaseId)
+            ).length
+          }
+          projectId={testRun.project?.id || ''}
+          loading={bulkAssigningExecutor}
+          onSubmit={handleBulkAssignExecutor}
         />
 
         <RecordResultDialog
@@ -1240,6 +1366,21 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             setResultForm({ ...resultForm, ...filteredData } as ResultFormData);
           }}
           onSubmit={handleSubmitResult}
+          onFailedSelected={() => {
+            // FAILED 選択時、結果記録モーダルは開いたまま新規Defect作成モーダルを前面に開く。
+            // この時点で入力済みのコメント・添付をDefectの説明欄へ引き継ぐ。
+            // Defect説明欄は fieldName === 'description'（または空）の添付のみ表示するため、
+            // 引き継ぐ添付の fieldName を 'description' に正規化する。
+            if (selectedTestCase) {
+              clearPersistedForm(`create-defect-${testRun.project?.id}`);
+              setDefectSeed({
+                comment: resultForm.comment || '',
+                attachments: resultCommentAttachments.map((att) => ({ ...att, fieldName: 'description' })),
+              });
+              setSelectedTestCaseForDefect(selectedTestCase.testCaseId);
+              setCreateDefectDialogOpen(true);
+            }
+          }}
           initialDurationSeconds={
             selectedTestCase
               ? testRun.results.find((r) => r.testCaseId === selectedTestCase.testCaseId)?.duration
@@ -1306,13 +1447,23 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           <CreateDefectDialog
             projectId={testRun.project.id}
             triggerOpen={createDefectDialogOpen}
-            onOpenChange={setCreateDefectDialogOpen}
+            onOpenChange={(open) => {
+              setCreateDefectDialogOpen(open);
+              // キャンセル（作成せずに閉じる）時はダイアログをアンマウントして
+              // 次回オープン時に引き継ぎ内容が再シードされるようにする。
+              if (!open) {
+                setSelectedTestCaseForDefect(null);
+                setDefectSeed({ comment: '', attachments: [] });
+              }
+            }}
             onDefectCreated={handleDefectCreated}
             testCaseId={selectedTestCaseForDefect}
             testRunEnvironment={testRun.environment}
             testRunPlatform={testRun.platform}
             testRunDevice={testRun.device}
             onCreateStoryAfterDefect={handleCreateStoryForDefect}
+            initialDescription={defectSeed.comment}
+            initialAttachments={defectSeed.attachments}
           />
         )}
 

@@ -227,10 +227,10 @@ export function TestCasesListCard({
   const dataColumns: ColumnDef<ResultRow>[] = [
     {
       key: 'tcId',
-      label: 'ID',
+      label: 'TC-ID',
       width: '120px',
       align: 'center',
-      renderHeader: () => renderSortableHeader('tcId', 'ID', 'center'),
+      renderHeader: () => renderSortableHeader('tcId', 'TC-ID', 'center'),
       render: (row: ResultRow) => (
         <p className="text-xs font-mono text-white/70 whitespace-nowrap">{row.testCase.tcId || '-'}</p>
       ),

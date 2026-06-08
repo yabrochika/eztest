@@ -186,13 +186,13 @@ export function TestCaseDetailsCard({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="flowId">Flow-ID</Label>
+                <Label htmlFor="flowId">TC-ID</Label>
                 <Input
                   id="flowId"
                   variant="glass"
                   value={formData.flowId || ''}
                   onChange={(e) => handleFieldChange('flowId', e.target.value)}
-                  placeholder="Flow-ID を入力"
+                  placeholder="TC-ID を入力"
                 />
               </div>
             </div>
@@ -469,7 +469,7 @@ export function TestCaseDetailsCard({
                 )}
                 {testCase.flowId && (
                   <div>
-                    <span className="text-xs text-white/50">Flow-ID</span>
+                    <span className="text-xs text-white/50">TC-ID</span>
                     <p className="text-sm text-white/90">{testCase.flowId}</p>
                   </div>
                 )}

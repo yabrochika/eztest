@@ -35,6 +35,15 @@ export function normalizeText(value: string): string {
 }
 
 /**
+ * TC 番号（例: "TC-42"）の区切り文字ゆらぎを吸収するため、
+ * 空白・ハイフン・アンダースコア・ドット・スラッシュを取り除く。
+ * これにより "TC-42" / "TC42" / "tc_42" などを同一視できる。
+ */
+function collapseSeparators(value: string): string {
+  return value.replace(/[\s\-_./#]+/g, '');
+}
+
+/**
  * オブジェクトに含まれる文字列・数値・真偽値の葉ノードを再帰的に集めて
  * 1 つの検索用テキストに連結する。
  */
@@ -114,9 +123,17 @@ export function fuzzySubstringDistance(text: string, pattern: string): number {
 function tokenMatches(
   token: string,
   haystack: string,
+  collapsedHaystack: string,
   fuzzyTarget: string
 ): boolean {
   if (haystack.includes(token)) return true;
+
+  // TC 番号など区切り文字ゆらぎを無視した一致（"TC42" → "TC-42" 等）
+  const collapsedToken = collapseSeparators(token);
+  if (collapsedToken && collapsedHaystack.includes(collapsedToken)) {
+    return true;
+  }
+
   if (!fuzzyTarget) return false;
   return fuzzySubstringDistance(fuzzyTarget, token) <= maxErrorsFor(token.length);
 }
@@ -145,10 +162,13 @@ export function testCaseMatchesQuery(
   if (!normalizedQuery) return true;
 
   const haystack = normalizeText(collectSearchableText(testCase));
+  const collapsedHaystack = collapseSeparators(haystack);
   const fuzzyTarget = options.fuzzyTarget
     ? normalizeText(options.fuzzyTarget)
     : '';
 
   const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
-  return tokens.every((token) => tokenMatches(token, haystack, fuzzyTarget));
+  return tokens.every((token) =>
+    tokenMatches(token, haystack, collapsedHaystack, fuzzyTarget)
+  );
 }

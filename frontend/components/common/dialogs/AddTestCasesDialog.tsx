@@ -19,6 +19,7 @@ import { testCaseMatchesQuery } from '@/lib/testcase-search';
 
 interface TestCase {
   id: string;
+  tcId?: string;
   title?: string;
   name?: string;
   description?: string;
@@ -96,7 +97,7 @@ export function AddTestCasesDialog({
               variant="glass"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="テストケースを検索（全項目・タイトルは曖昧一致）"
+              placeholder="テストケースを検索（TC番号・全項目・タイトルは曖昧一致）"
               className="pl-10 pr-10"
               aria-label="テストケースを検索"
             />
@@ -138,7 +139,7 @@ export function AddTestCasesDialog({
                     id={testCase.id}
                     checked={selectedIds.includes(testCase.id)}
                     onCheckedChange={() => handleToggle(testCase.id)}
-                    label={testCase.title || testCase.name || '（タイトルなし）'}
+                    label={`${testCase.tcId ? `[${testCase.tcId}] ` : ''}${testCase.title || testCase.name || '（タイトルなし）'}`}
                     description={testCase.description}
                     rightContent={
                       showPriority && testCase.priority ? (

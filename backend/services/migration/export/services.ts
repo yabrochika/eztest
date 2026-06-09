@@ -505,6 +505,8 @@ export class ExportService {
           },
         },
         results: {
+          // 削除済みテストケース（testCaseId が null）の結果はエクスポートから除外する
+          where: { testCaseId: { not: null } },
           include: {
             testCase: {
               select: {

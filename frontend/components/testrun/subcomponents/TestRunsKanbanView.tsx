@@ -23,6 +23,7 @@ interface TestRunsKanbanViewProps {
  * - NOT_STARTED, PLANNED → Not Started
  * - IN_PROGRESS         → In Progress
  * - PAUSED              → Paused
+ * - Regression test updated → Regression test updated
  * - COMPLETED, CANCELLED → Done
  */
 interface KanbanColumnDef {
@@ -63,6 +64,14 @@ const KANBAN_COLUMNS: KanbanColumnDef[] = [
     cardBorderClassName: 'border-amber-500/30',
   },
   {
+    key: 'regression_test_updated',
+    title: 'Regression test updated',
+    statuses: ['Regression test updated'],
+    titleClassName: 'text-violet-300',
+    cardClassName: 'bg-violet-500/10 hover:bg-violet-500/15',
+    cardBorderClassName: 'border-violet-500/30',
+  },
+  {
     key: 'done',
     title: 'Done',
     statuses: ['COMPLETED', 'CANCELLED'],
@@ -99,7 +108,7 @@ export function TestRunsKanbanView({
 
   return (
     <div className="overflow-x-auto -mx-2 px-2">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-w-[640px] lg:min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 min-w-[800px] lg:min-w-0">
         {KANBAN_COLUMNS.map((col) => {
           const items = grouped.get(col.key) ?? [];
           return (

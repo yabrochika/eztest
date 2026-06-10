@@ -8,6 +8,9 @@ import {
   Trash2,
 } from 'lucide-react';
 import { TestSuite } from '../types';
+import { Badge } from '@/frontend/reusable-elements/badges/Badge';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
+import { STATUS_OPTIONS } from '../constants/testSuiteFormConfig';
 
 interface TestSuiteCardProps {
   suite: TestSuite;
@@ -38,6 +41,11 @@ export function TestSuiteCard({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const hasChildren = suite.children && suite.children.length > 0;
   const childrenCount = suite.children?.length || 0;
+
+  const statusBadgeProps = getDynamicBadgeProps(suite.status, []);
+  const statusLabel =
+    STATUS_OPTIONS.find((opt) => opt.value === suite.status)?.label ||
+    suite.status?.replace(/_/g, ' ');
 
   // Card design matching the image
   return (
@@ -80,6 +88,19 @@ export function TestSuiteCard({
         <h3 className="text-white group-hover:text-primary font-semibold text-base mb-2 truncate transition-colors">
           {suite.name}
         </h3>
+
+        {/* Status */}
+        {suite.status && statusLabel && (
+          <div className="mb-2">
+            <Badge
+              variant="outline"
+              className={statusBadgeProps.className}
+              style={statusBadgeProps.style}
+            >
+              {statusLabel}
+            </Badge>
+          </div>
+        )}
 
         {/* Description */}
         <p className="text-white/50 text-sm mb-6 line-clamp-2">

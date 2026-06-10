@@ -13,6 +13,7 @@ export const STATUS_OPTIONS = [
   { label: '実行中', value: 'IN_PROGRESS' },
   { label: '完了', value: 'COMPLETED' },
   { label: 'キャンセル', value: 'CANCELLED' },
+  { label: 'Regression test updated', value: 'Regression test updated' },
 ];
 
 /**

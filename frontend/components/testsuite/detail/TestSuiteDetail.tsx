@@ -46,6 +46,7 @@ export default function TestSuiteDetail({ suiteId }: TestSuiteDetailProps) {
   const [formData, setFormData] = useState<TestSuiteFormData>({
     name: '',
     description: '',
+    status: 'NOT_STARTED',
   });
 
   const navbarActions = useMemo(() => {
@@ -108,6 +109,7 @@ export default function TestSuiteDetail({ suiteId }: TestSuiteDetailProps) {
           setFormData({
             name: data.data.name,
             description: data.data.description || '',
+            status: data.data.status || 'NOT_STARTED',
           });
         }
       }
@@ -167,6 +169,7 @@ export default function TestSuiteDetail({ suiteId }: TestSuiteDetailProps) {
       setFormData({
         name: testSuite.name,
         description: testSuite.description || '',
+        status: testSuite.status || 'NOT_STARTED',
       });
     }
   };
@@ -551,6 +554,7 @@ export default function TestSuiteDetail({ suiteId }: TestSuiteDetailProps) {
 
           <div className="space-y-6">
             <TestSuiteInfoCard
+              status={testSuite.status}
               parent={testSuite.parent}
               testCasesCount={testSuite._count.testCases}
               childrenCount={testSuite._count.children}

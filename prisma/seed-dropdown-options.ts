@@ -29,6 +29,16 @@ export async function seedDropdownOptions() {
     { entity: 'TestRun', field: 'status', value: 'PAUSED', label: 'PAUSED', order: 4 },
     { entity: 'TestRun', field: 'status', value: 'COMPLETED', label: 'DONE', order: 5 },
     { entity: 'TestRun', field: 'status', value: 'CANCELLED', label: 'CANCELLED', order: 6 },
+    { entity: 'TestRun', field: 'status', value: 'Regression test updated', label: 'Regression test updated', order: 7 },
+
+    // TestSuiteStatus options (used in TestSuite)
+    { entity: 'TestSuite', field: 'status', value: 'NOT_STARTED', label: 'NOT STARTED', order: 1 },
+    { entity: 'TestSuite', field: 'status', value: 'PLANNED', label: 'PLANNED', order: 2 },
+    { entity: 'TestSuite', field: 'status', value: 'IN_PROGRESS', label: 'IN PROGRESS', order: 3 },
+    { entity: 'TestSuite', field: 'status', value: 'PAUSED', label: 'PAUSED', order: 4 },
+    { entity: 'TestSuite', field: 'status', value: 'COMPLETED', label: 'DONE', order: 5 },
+    { entity: 'TestSuite', field: 'status', value: 'CANCELLED', label: 'CANCELLED', order: 6 },
+    { entity: 'TestSuite', field: 'status', value: 'Regression test updated', label: 'Regression test updated', order: 7 },
 
     // TestResultStatus options (used in TestResult)
     { entity: 'TestResult', field: 'status', value: 'NOT_STARTED', label: 'NOT STARTED', order: 1 },

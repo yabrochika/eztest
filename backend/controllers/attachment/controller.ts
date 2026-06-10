@@ -51,6 +51,8 @@ export class AttachmentController {
       }
       if (error instanceof Error) {
         console.error('Upload initialization error:', error.message);
+        // 失敗の切り分けを容易にするため、想定外エラーでも要因を含めて返す
+        throw new InternalServerException(`Failed to initialize upload: ${error.message}`);
       }
       throw new InternalServerException('Failed to initialize upload');
     }

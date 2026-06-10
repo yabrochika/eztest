@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authenticateRequest } from '@/lib/auth/apiKeyAuth';
 import { UploadPartCommand } from '@aws-sdk/client-s3';
 import { s3Client, getS3Bucket } from '@/lib/s3-client';
 
@@ -34,8 +33,8 @@ import { s3Client, getS3Bucket } from '@/lib/s3-client';
  */
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = await authenticateRequest(request);
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

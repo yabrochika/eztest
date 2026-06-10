@@ -49,8 +49,16 @@ export class AttachmentController {
       if (error instanceof Error && error.message.includes('not supported')) {
         throw new BadRequestException(error.message);
       }
+      // クライアント入力起因のエラーは 400 として、原因が分かるメッセージで返す（#5）。
+      if (error instanceof Error && error.message.includes('Invalid file name')) {
+        throw new BadRequestException(
+          'Invalid file name: "fileName" must be a non-empty string'
+        );
+      }
       if (error instanceof Error) {
         console.error('Upload initialization error:', error.message);
+        // 失敗の切り分けを容易にするため、想定外エラーでも要因を含めて返す（#5）。
+        throw new InternalServerException(`Failed to initialize upload: ${error.message}`);
       }
       throw new InternalServerException('Failed to initialize upload');
     }
@@ -92,6 +100,15 @@ export class AttachmentController {
       }
       if (error instanceof Error && error.message.includes('not allowed')) {
         throw new BadRequestException(error.message);
+      }
+      // 必須パラメータ不足はクライアント起因のため 400 で原因を返す（#5）。
+      if (error instanceof Error && error.message.includes('Missing required')) {
+        throw new BadRequestException(error.message);
+      }
+      if (error instanceof Error) {
+        console.error('Upload completion error:', error.message);
+        // 失敗の切り分けを容易にするため、想定外エラーでも要因を含めて返す（#5）。
+        throw new InternalServerException(`Failed to complete upload: ${error.message}`);
       }
       throw new InternalServerException('Failed to complete upload');
     }

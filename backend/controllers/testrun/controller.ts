@@ -1,11 +1,12 @@
-import { testRunService } from '@/backend/services/testrun/services';
+import { testRunService, TestCaseDeletedError } from '@/backend/services/testrun/services';
 import { emailService } from '@/backend/services/email/services';
 import { 
   createTestRunSchema, 
   updateTestRunSchema, 
-  addTestResultSchema 
+  addTestResultSchema,
+  patchTestResultSchema
 } from '@/backend/validators/testrun.validator';
-import { ValidationException } from '@/backend/utils/exceptions';
+import { NotFoundException, ValidationException } from '@/backend/utils/exceptions';
 import { TestRunMessages } from '@/backend/constants/static_messages';
 
 function normalizeMultiSelectInput(value?: string | string[]): string | undefined {
@@ -257,21 +258,87 @@ export class TestRunController {
       }
     }
 
-    const result = await testRunService.addTestResult(
+    try {
+      const result = await testRunService.addTestResult(
+        testRunId,
+        validatedData.testCaseId,
+        {
+          status: validatedData.status,
+          executedById,
+          duration: validatedData.duration,
+          comment: validatedData.comment,
+          errorMessage: validatedData.errorMessage,
+          stackTrace: validatedData.stackTrace,
+          executorOnly: validatedData.executorOnly,
+          executedAt: validatedData.executedAt,
+        }
+      );
+
+      return { data: result, statusCode: 201 };
+    } catch (error) {
+      if (error instanceof TestCaseDeletedError) {
+        throw new ValidationException(error.message);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Partially update an existing test result (PATCH)
+   *
+   * 送信されたフィールドのみ更新し、未送信フィールド（特に executedAt）は維持する。
+   * executedAt を明示指定すれば検証実施日時を正確に記録できる。
+   */
+  async updateTestResult(
+    body: unknown,
+    testRunId: string,
+    userId: string
+  ) {
+    const validationResult = patchTestResultSchema.safeParse(body);
+    if (!validationResult.success) {
+      throw new ValidationException(
+        'Validation failed',
+        validationResult.error.issues
+      );
+    }
+
+    const validatedData = validationResult.data;
+
+    // executedById を明示指定する場合は、対象テストランのプロジェクトメンバーで
+    // あることを検証し、任意ユーザーへのなりすまし帰属を防ぐ。
+    if (validatedData.executedById && validatedData.executedById !== userId) {
+      const isProjectMember = await testRunService.hasAccessToTestRun(
+        testRunId,
+        validatedData.executedById
+      );
+      if (!isProjectMember) {
+        throw new ValidationException(
+          '指定された実行者はこのテストランのプロジェクトメンバーではありません'
+        );
+      }
+    }
+
+    const result = await testRunService.updateTestResultPartial(
       testRunId,
       validatedData.testCaseId,
       {
         status: validatedData.status,
-        executedById,
+        executedById: validatedData.executedById,
         duration: validatedData.duration,
         comment: validatedData.comment,
         errorMessage: validatedData.errorMessage,
         stackTrace: validatedData.stackTrace,
-        executorOnly: validatedData.executorOnly,
+        executedAt: validatedData.executedAt,
       }
     );
 
-    return { data: result, statusCode: 201 };
+    if (!result) {
+      throw new NotFoundException(
+        `testCaseId "${validatedData.testCaseId}" の結果はこのテストランに存在しません。先に POST で結果を作成してください。`
+      );
+    }
+
+    return { data: result };
   }
 
   /**

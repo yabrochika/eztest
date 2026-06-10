@@ -1,6 +1,6 @@
 import { attachmentController } from '@/backend/controllers/attachment/controller';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authenticateRequest } from '@/lib/auth/apiKeyAuth';
+import type { NextRequest } from 'next/server';
 
 /**
  * POST /api/attachments/upload
@@ -8,11 +8,14 @@ import { authOptions } from '@/lib/auth';
  * Purpose: Start S3 multipart upload process and provide presigned URLs for chunk uploads
  * Request body: fileName, fileSize, fileType, fieldName, entityType, entityId
  * Returns: uploadId, s3Key, presignedUrls array for browser-based chunk uploads
+ *
+ * 認証: セッション(Cookie) または APIキー(Authorization: Bearer <key>)。
+ * 結果記録(POST results)と同一のAPIキーで「記録→添付」を一気通貫で自動化できるようにする。
  */
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = await authenticateRequest(request as unknown as NextRequest);
+    if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

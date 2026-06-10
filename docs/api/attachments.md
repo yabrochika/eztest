@@ -4,10 +4,35 @@ API endpoints for file attachment management with S3 support.
 
 ## Overview
 
-EzTest supports file attachments for test cases, test steps, defects, and comments. Files are stored in AWS S3 (or compatible storage) with support for multipart uploads for large files.
+EzTest supports file attachments for test cases, test steps, test results (evidence), defects, and comments. Files are stored in AWS S3 (or compatible storage) with support for multipart uploads for large files.
 
 **Maximum File Size:** 500MB  
 **Supported Formats:** Images, documents, videos, archives (see configuration)
+
+---
+
+## 認証
+
+添付ファイル系の全エンドポイントは、セッション(Cookie) **または** APIキーで認証できる。
+APIキーは `Authorization` ヘッダーに **Bearer スキーム** で指定する（`X-API-Key` は不可）。
+
+```http
+Authorization: Bearer <APIキー>
+```
+
+これにより「結果記録(`POST .../results`) → エビデンス添付」を、同一のAPIキーで一気通貫に
+自動化できる（セッションCookieは不要）。本ドキュメントの例では Cookie を用いているが、
+`Authorization: Bearer <APIキー>` に置き換えても動作する。
+
+### エビデンス（テスト結果）添付のフロー
+
+1. `POST /api/attachments/upload` … `entityType: "testresult"` で初期化（この時点では `entityId` 不要）
+2. 返却された presigned URL に各パートを `PUT`
+3. `POST /api/attachments/upload/complete` … 添付レコードを作成
+4. `PATCH /api/attachments/:id` … `{ "testResultId": "<結果ID>" }` で結果に紐付け
+
+> `complete` の `parts[]` は PascalCase (`PartNumber`/`ETag`) と camelCase (`partNumber`/`etag`) の
+> どちらでも受け付ける。
 
 ---
 
@@ -61,7 +86,7 @@ Cookie: next-auth.session-token=...
 | `fileSize` | number | Yes | File size in bytes |
 | `fileType` | string | Yes | MIME type (e.g., `image/png`) |
 | `projectId` | string | Yes | Project ID |
-| `entityType` | string | Yes | `testcase`, `teststep`, `defect`, `comment` |
+| `entityType` | string | Yes | `testcase`, `teststep`, `testresult`, `defect`, `comment`, `unassigned` |
 | `entityId` | string | No | Entity ID (required for some types) |
 
 **Response (200 OK):**
@@ -275,6 +300,40 @@ Cookie: next-auth.session-token=...
 
 - `403 Forbidden` - Insufficient permissions
 - `404 Not Found` - Attachment not found
+
+---
+
+## PATCH /api/attachments/:id
+
+添付ファイルをエンティティに紐付ける（または紐付けを変更する）。
+エビデンスをテスト結果に関連付ける際に使用する。
+
+**Request:**
+```http
+PATCH /api/attachments/att_abc123
+Content-Type: application/json
+Authorization: Bearer <APIキー>
+
+{
+  "testResultId": "result_abc123"
+}
+```
+
+**Request Body:** （いずれか一つを指定）
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `testResultId` | string \| null | テスト結果ID。指定すると testCaseId/testStepId はクリアされる |
+| `testCaseId` | string \| null | テストケースID |
+| `testStepId` | string \| null | テストステップID |
+
+**Response (200 OK):**
+```json
+{
+  "message": "Attachment updated successfully",
+  "attachment": { "id": "att_abc123", "testResultId": "result_abc123" }
+}
+```
 
 ---
 

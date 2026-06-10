@@ -21,15 +21,44 @@ export const initializeUploadSchema = z.object({
 });
 
 /**
+ * Multipart の各パート。
+ * S3 SDK は PascalCase (PartNumber / ETag) を要求するが、API 利用者の利便性のため
+ * camelCase (partNumber / etag) でも受け付け、PascalCase に正規化する（#10）。
+ */
+const uploadPartSchema = z
+  .object({
+    PartNumber: z.number().int().positive().optional(),
+    ETag: z.string().min(1).optional(),
+    partNumber: z.number().int().positive().optional(),
+    etag: z.string().min(1).optional(),
+  })
+  .transform((part, ctx) => {
+    const partNumber = part.PartNumber ?? part.partNumber;
+    const etag = part.ETag ?? part.etag;
+    if (partNumber === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'PartNumber (or partNumber) is required for each part',
+      });
+      return z.NEVER;
+    }
+    if (etag === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'ETag (or etag) is required for each part',
+      });
+      return z.NEVER;
+    }
+    return { PartNumber: partNumber, ETag: etag };
+  });
+
+/**
  * Complete upload schema
  */
 export const completeUploadSchema = z.object({
   uploadId: z.string().min(1, 'Upload ID is required'),
   s3Key: z.string().min(1, 'S3 key is required'),
-  parts: z.array(z.object({
-    PartNumber: z.number().int().positive(),
-    ETag: z.string().min(1),
-  })).min(1, 'At least one part is required'),
+  parts: z.array(uploadPartSchema).min(1, 'At least one part is required'),
   fileName: z.string().min(1, 'File name is required'),
   fileSize: z.number().positive('File size must be positive'),
   fileType: z.string().min(1, 'File type is required'),

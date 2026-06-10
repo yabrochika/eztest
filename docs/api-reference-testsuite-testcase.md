@@ -1,6 +1,6 @@
 # EZTest API Reference — TestSuite & TestCase
 
-> 認証: 全エンドポイントは **セッション認証** または **APIキー認証** (`X-API-Key` ヘッダー) が必要。
+> 認証: 全エンドポイントは **セッション認証** または **APIキー認証** (`Authorization: Bearer <APIキー>` ヘッダー) が必要。
 >
 > レスポンス形式 (成功): `{ "data": {...}, "message": "..." }`
 > レスポンス形式 (エラー): `{ "error": "..." }`
@@ -1032,12 +1032,19 @@ NextAuth.js によるセッションCookieを使用。
 
 ### APIキー認証
 
+APIキーは `Authorization` ヘッダーに **Bearer スキーム**（または `ApiKey` スキーム）で指定する。
+
 ```http
-X-API-Key: your-api-key
+Authorization: Bearer your-api-key
 ```
+
+> **注意:** 旧ドキュメントには `X-API-Key` ヘッダーと記載されていたが、実装では受け付けない（401 になる）。必ず `Authorization: Bearer <APIキー>` を使用すること。
 
 APIキーはプロジェクトスコープまたは全体スコープで発行可能。
 プロジェクトスコープのAPIキーは、対象プロジェクト以外のリソースへのアクセスが制限される。
+
+添付ファイル系エンドポイント（`/api/attachments/...`）および結果記録（`POST/PATCH .../results`）も
+すべて同一のAPIキーで認証できるため、「結果記録 → エビデンス添付」を一気通貫で自動化できる。
 
 ---
 

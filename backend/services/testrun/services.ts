@@ -18,6 +18,21 @@ function normalizeTestCaseId(identifier: string): string {
   return identifier.replace(/_/g, '-');
 }
 
+/**
+ * 削除済み（または存在しない）テストケースID に対して結果を記録しようとした際に投げる。
+ * 呼び出し側（コントローラ）で 422 等の分かりやすいエラーへ変換するためのマーカー。
+ */
+export class TestCaseDeletedError extends Error {
+  testCaseId: string;
+  constructor(testCaseId: string) {
+    super(
+      `testCaseId "${testCaseId}" はこのプロジェクトに存在しません（削除済みの可能性があります）。テストランの最新の結果一覧から有効な testCaseId を取得してください。`
+    );
+    this.name = 'TestCaseDeletedError';
+    this.testCaseId = testCaseId;
+  }
+}
+
 function parseDelimitedValues(value?: string | null): string[] {
   if (!value) {
     return [];
@@ -417,11 +432,26 @@ export class TestRunService {
         results: {
           where: { testCaseId: { not: null } },
           select: {
+            id: true,
+            testCaseId: true,
             status: true,
+            executedAt: true,
             testCase: {
               select: {
                 tcId: true,
                 title: true,
+              },
+            },
+            // 添付の成否を API でも検証できるよう、結果ごとの添付メタ情報を含める（#6）。
+            attachments: {
+              select: {
+                id: true,
+                filename: true,
+                originalName: true,
+                mimeType: true,
+                size: true,
+                fieldName: true,
+                uploadedAt: true,
               },
             },
           },
@@ -962,6 +992,21 @@ export class TestRunService {
   }
 
   /**
+   * 指定された testCaseId のテストケースがマスターに存在することを確認する。
+   * 削除済み（FK 先が存在しない）場合は、FK 違反の汎用エラーではなく
+   * 原因が分かるメッセージを返すために `TestCaseDeletedError` を投げる。
+   */
+  private async assertTestCaseExists(testCaseId: string): Promise<void> {
+    const testCase = await prisma.testCase.findUnique({
+      where: { id: testCaseId },
+      select: { id: true },
+    });
+    if (!testCase) {
+      throw new TestCaseDeletedError(testCaseId);
+    }
+  }
+
+  /**
    * Add test result to test run
    */
   async addTestResult(
@@ -980,8 +1025,16 @@ export class TestRunService {
        * 一括実行者登録で、未実行テストケースの実行日時を進めたくないケースで使う。
        */
       executorOnly?: boolean;
+      /**
+       * 検証実施日時。指定時はこの値を executedAt に使う。
+       * 未指定時は新規作成では DB 既定値(now())、更新では投稿時刻(new Date())。
+       */
+      executedAt?: Date;
     }
   ) {
+    // 削除済みテストケースID への記録は FK 違反になる前に分かりやすく弾く（#9）。
+    await this.assertTestCaseExists(testCaseId);
+
     // 新規作成時のみテストケースのスナップショットを取得する。
     // 既存 TestResult の更新（実行結果の記録など）では snapshot は変更しない。
     const snapshotForCreate = await buildTestCaseSnapshot(testCaseId);
@@ -995,7 +1048,7 @@ export class TestRunService {
           comment: data.comment,
           errorMessage: data.errorMessage,
           stackTrace: data.stackTrace,
-          executedAt: new Date(),
+          executedAt: data.executedAt ?? new Date(),
         };
     const result = await prisma.testResult.upsert({
       where: {
@@ -1014,6 +1067,8 @@ export class TestRunService {
         comment: data.comment,
         errorMessage: data.errorMessage,
         stackTrace: data.stackTrace,
+        // executedAt 未指定時はスキーマの @default(now()) に委ねる。
+        ...(data.executedAt ? { executedAt: data.executedAt } : {}),
         testCaseSnapshot: (snapshotForCreate ?? undefined) as Prisma.InputJsonValue | undefined,
       },
       include: {
@@ -1031,6 +1086,17 @@ export class TestRunService {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        attachments: {
+          select: {
+            id: true,
+            filename: true,
+            originalName: true,
+            mimeType: true,
+            size: true,
+            fieldName: true,
+            uploadedAt: true,
           },
         },
       },
@@ -1058,6 +1124,94 @@ export class TestRunService {
       // Log but don't fail the main operation - platform/device reflection is a side effect
       console.warn('[TestRunService] Failed to reflect platform/device onto test case:', error instanceof Error ? error.message : error);
     }
+
+    return result;
+  }
+
+  /**
+   * 既存テスト結果の部分更新（PATCH）。
+   *
+   * 送信されたフィールドだけを更新し、未送信フィールド（特に executedAt）は維持する。
+   * 「コメントだけ直す」用途で、再投稿により executedAt が投稿時刻へ上書きされる
+   * 問題を避けるために使う。対象 TestResult が存在しない場合は null を返す。
+   */
+  async updateTestResultPartial(
+    testRunId: string,
+    testCaseId: string,
+    data: {
+      status?: string;
+      executedById?: string;
+      duration?: number;
+      comment?: string;
+      errorMessage?: string;
+      stackTrace?: string;
+      executedAt?: Date;
+    }
+  ) {
+    const existing = await prisma.testResult.findUnique({
+      where: {
+        testRunId_testCaseId: {
+          testRunId,
+          testCaseId,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      return null;
+    }
+
+    // 送信されたフィールドだけを反映する。未指定の executedAt は維持される。
+    const updateData: Prisma.TestResultUpdateInput = {};
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.duration !== undefined) updateData.duration = data.duration;
+    if (data.comment !== undefined) updateData.comment = data.comment;
+    if (data.errorMessage !== undefined) updateData.errorMessage = data.errorMessage;
+    if (data.stackTrace !== undefined) updateData.stackTrace = data.stackTrace;
+    if (data.executedAt !== undefined) updateData.executedAt = data.executedAt;
+    if (data.executedById !== undefined) {
+      updateData.executedBy = { connect: { id: data.executedById } };
+    }
+
+    const result = await prisma.testResult.update({
+      where: {
+        testRunId_testCaseId: {
+          testRunId,
+          testCaseId,
+        },
+      },
+      data: updateData,
+      include: {
+        testCase: {
+          select: {
+            id: true,
+            tcId: true,
+            rtcId: true,
+            title: true,
+            priority: true,
+          },
+        },
+        executedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        attachments: {
+          select: {
+            id: true,
+            filename: true,
+            originalName: true,
+            mimeType: true,
+            size: true,
+            fieldName: true,
+            uploadedAt: true,
+          },
+        },
+      },
+    });
 
     return result;
   }

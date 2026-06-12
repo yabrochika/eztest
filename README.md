@@ -2,86 +2,86 @@
 
 # 🧪 EZTest
 
-### Self-Hostable Test Management Platform
+### セルフホスト可能なテスト管理プラットフォーム
 
-*Powerful test management without the "SaaS Tax" — own it, don't rent it.*
+*「SaaS税」を払わないテスト管理 — レンタルではなく、自分のものに。*
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
 
-🌐 **[Live Demo](https://eztest.houseoffoss.com/)** &nbsp;•&nbsp; 👥 **[User Guide](docs/USER_GUIDE.md)** &nbsp;•&nbsp; 📚 **[Documentation](./docs/README.md)** &nbsp;•&nbsp; 🗺️ **[Roadmap](./ROADMAP.md)**
+🌐 **[ライブデモ](https://eztest.houseoffoss.com/)** &nbsp;•&nbsp; 👥 **[ユーザーガイド](docs/USER_GUIDE.md)** &nbsp;•&nbsp; 📚 **[ドキュメント](./docs/README.md)** &nbsp;•&nbsp; 🗺️ **[ロードマップ](./ROADMAP.md)**
 
 </div>
 
 ---
 
-## 📑 Table of Contents
+## 📑 目次
 
-- [✨ Overview](#-overview)
-- [🛡️ Philosophy](#️-philosophy-breaking-the-saas-tax)
-- [📸 Screenshots](#-screenshots)
-- [🎯 Feature Status](#-feature-status)
-- [⚠️ Security Notice](#️-security-notice)
-- [🚀 Quick Start](#-quick-start)
-- [💻 Technology Stack](#-technology-stack)
-- [📊 System Requirements](#-system-requirements)
-- [🛠️ Development](#️-development)
-- [📚 Documentation](#-documentation)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
-- [📞 Support & Contact](#-support--contact)
-- [🌟 Acknowledgments](#-acknowledgments)
+- [✨ 概要](#-概要)
+- [🛡️ 思想](#️-思想saas税を打ち破る)
+- [📸 スクリーンショット](#-スクリーンショット)
+- [🎯 機能ステータス](#-機能ステータス)
+- [⚠️ セキュリティに関する注意](#️-セキュリティに関する注意)
+- [🚀 クイックスタート](#-クイックスタート)
+- [💻 技術スタック](#-技術スタック)
+- [📊 システム要件](#-システム要件)
+- [🛠️ 開発](#️-開発)
+- [📚 ドキュメント](#-ドキュメント)
+- [🤝 コントリビューション](#-コントリビューション)
+- [📄 ライセンス](#-ライセンス)
+- [📞 サポート・お問い合わせ](#-サポートお問い合わせ)
+- [🌟 謝辞](#-謝辞)
 
 ---
 
-## ✨ Overview
+## ✨ 概要
 
-**EZTest** is a lightweight, open-source test management platform built with **Next.js** and designed for **self-hosting**. It's an efficient alternative to commercial tools like Testiny and TestRail — optimized to run on minimal hardware (**just 1 CPU core & 2GB RAM**).
+**EZTest** は、**Next.js** で構築された軽量なオープンソースのテスト管理プラットフォームで、**セルフホスト**向けに設計されています。Testiny や TestRail といった商用ツールに代わる効率的な選択肢であり、**わずか 1 CPU コア・2GB RAM** という最小限のハードウェアで動作するよう最適化されています。
 
-EZTest pairs a modern UI with powerful capabilities: project management, test organization, execution tracking, and team collaboration — all deployable in minutes with **Docker**.
+EZTest はモダンな UI と強力な機能を兼ね備えています。プロジェクト管理、テストの整理、実行トラッキング、チームコラボレーション — これらすべてを **Docker** で数分のうちにデプロイできます。
 
-> 👥 **New here?** Start with the [**User Guide**](docs/USER_GUIDE.md) — a simple, non-technical walkthrough of what EZTest is and how to use it.
+> 👥 **はじめての方へ** まずは [**ユーザーガイド**](docs/USER_GUIDE.md) をご覧ください。EZTest とは何か、どう使うのかを技術者でなくても分かるように解説しています。
 
 | | |
 |---|---|
-| 📌 **Current Status** | Active Development (**v0.1.0**) |
-| 🌐 **Demo Site** | [eztest.houseoffoss.com](https://eztest.houseoffoss.com/) |
-| 📄 **License** | AGPL-3.0 |
-| 👤 **Maintainers** | Philip Moses · Kavin (House of FOSS) |
+| 📌 **現在のステータス** | 開発進行中（**v0.1.0**） |
+| 🌐 **デモサイト** | [eztest.houseoffoss.com](https://eztest.houseoffoss.com/) |
+| 📄 **ライセンス** | AGPL-3.0 |
+| 👤 **メンテナー** | Philip Moses・Kavin（House of FOSS） |
 
 ---
 
-## 🛡️ Philosophy: Breaking the "SaaS Tax"
+## 🛡️ 思想：「SaaS税」を打ち破る
 
-> Software used to be a tool you **owned**; today, it's a subscription you **rent**.
+> かつてソフトウェアは「所有する道具」でした。しかし今では「レンタルするサブスクリプション」になっています。
 
-Test management tools today are often just **glorified, overpriced spreadsheets** — charging **$20–$40 per user, per month** for basic CRUD operations. A price that is no longer defensible in the age of AI Coding Agents.
+今日のテスト管理ツールは、しばしば**過剰に高額化した、ただのスプレッドシート**に過ぎません。基本的な CRUD 操作のために **1 ユーザーあたり月額 20〜40 ドル**を請求します。AI コーディングエージェントの時代において、もはや正当化できない価格です。
 
-**EZTest was born from a simple realization:**
+**EZTest はシンプルな気づきから生まれました：**
 
-> 💡 *If an AI agent costs \$20/month and can build software in no time, why pay \$20/user/month just to rent one?*
+> 💡 *AI エージェントが月額 20 ドルで、ソフトウェアをあっという間に作れる時代に、なぜたった 1 つのツールを借りるために 1 ユーザーあたり月額 20 ドルを払う必要があるのか？*
 
-The goal isn't to reinvent the wheel — it's to **break the cycle of mediocre, overpriced software**. We use **Claude Code and Cursor** to compress development cost to near-zero, and we pass that **"Efficiency Dividend"** straight to the community. 🎁
+車輪の再発明をするつもりはありません。目指すのは、**凡庸で割高なソフトウェアの連鎖を断ち切ること**です。私たちは **Claude Code と Cursor** を活用して開発コストをほぼゼロまで圧縮し、その**「効率化の配当」**をそのままコミュニティに還元します。🎁
 
 ---
 
-## 📸 Screenshots
+## 📸 スクリーンショット
 
 <div align="center">
 
-### 🏠 Public Homepage
+### 🏠 公開トップページ
 
 ![Home Page](./docs/images/screenshots/Home_Page.png)
 
-### 🖥️ Main Application
+### 🖥️ メインアプリケーション
 
-| 📂 **Projects Dashboard** | 📝 **Test Cases** |
+| 📂 **プロジェクトダッシュボード** | 📝 **テストケース** |
 |:---:|:---:|
 | ![Projects](./docs/images/screenshots/Project_List_Page.png) | ![Test Cases](./docs/images/screenshots/TestCase_List_Page.png) |
 
-| ▶️ **Test Runs** | 🐞 **Defect Tracking** |
+| ▶️ **テストラン** | 🐞 **不具合トラッキング** |
 |:---:|:---:|
 | ![Test Runs](./docs/images/screenshots/TestRun_List_Page.png) | ![Defects](./docs/images/screenshots/Defects_List_Page.png) |
 
@@ -89,249 +89,249 @@ The goal isn't to reinvent the wheel — it's to **break the cycle of mediocre, 
 
 ---
 
-## 🎯 Feature Status
+## 🎯 機能ステータス
 
-| Feature | Status | Details |
+| 機能 | ステータス | 詳細 |
 |---------|:------:|---------|
-| 🔐 **Authentication & Authorization** | ✅ Complete | Email/password auth, RBAC, granular permissions |
-| 👥 **User Management** | ✅ Complete | CRUD, team management, member roles |
-| 🧩 **Modules** | ✅ Complete | Project organization, feature grouping |
-| 🗂️ **Test Suites** | ✅ Complete | Hierarchical organization for execution |
-| 📝 **Test Cases** | ✅ Complete | Full CRUD, steps, priorities, statuses |
-| ▶️ **Test Runs** | ✅ Complete | Execution tracking, results, progress monitoring |
-| 📊 **Test Results** | ✅ Complete | Multiple statuses, comments, duration tracking |
-| 📎 **File Attachments** | ✅ Complete | Direct S3 upload, up to 500MB, presigned URLs |
-| 💬 **Comments & Collaboration** | ✅ Complete | Discussions on defects |
-| 📈 **Dashboard & Analytics** | 🚧 In Progress | Basic metrics available |
-| 🔗 **Requirements Traceability** | 📋 Planned | Link tests to requirements |
-| 🔌 **API Integrations** | 📋 Planned | Jira, GitHub, Azure DevOps |
-| ⚙️ **Automation Integration** | 📋 Planned | CI/CD, test frameworks |
+| 🔐 **認証・認可** | ✅ 完了 | メール／パスワード認証、RBAC、きめ細かい権限管理 |
+| 👥 **ユーザー管理** | ✅ 完了 | CRUD、チーム管理、メンバーロール |
+| 🧩 **モジュール** | ✅ 完了 | プロジェクトの整理、機能のグルーピング |
+| 🗂️ **テストスイート** | ✅ 完了 | 実行用の階層的な整理 |
+| 📝 **テストケース** | ✅ 完了 | 完全な CRUD、ステップ、優先度、ステータス |
+| ▶️ **テストラン** | ✅ 完了 | 実行トラッキング、結果、進捗モニタリング |
+| 📊 **テスト結果** | ✅ 完了 | 複数ステータス、コメント、所要時間トラッキング |
+| 📎 **ファイル添付** | ✅ 完了 | S3 への直接アップロード、最大 500MB、署名付き URL |
+| 💬 **コメント・コラボレーション** | ✅ 完了 | 不具合に関するディスカッション |
+| 📈 **ダッシュボード・分析** | 🚧 進行中 | 基本的なメトリクスを提供 |
+| 🔗 **要件トレーサビリティ** | 📋 計画中 | テストと要件の紐付け |
+| 🔌 **API 連携** | 📋 計画中 | Jira、GitHub、Azure DevOps |
+| ⚙️ **自動化連携** | 📋 計画中 | CI/CD、テストフレームワーク |
 
-> **Legend:** ✅ Complete &nbsp;•&nbsp; 🚧 In Progress &nbsp;•&nbsp; 📋 Planned
-
----
-
-## ⚠️ Security Notice
-
-> 🚨 **IMPORTANT:** This project requires **AWS S3 credentials** for file attachments.
-
-🔒 **Never commit real AWS credentials to the repository!**
-
-- ✅ `.env.local` is in `.gitignore` and won't be committed
-- ✅ Use `.env.example` as a template (placeholders only)
-- ✅ For deployment, use environment variables or **AWS IAM roles**
-- ✅ Create a dedicated IAM user with **S3-only permissions** (see [Attachments Documentation](./docs/features/attachments/README.md))
-- ✅ **Rotate credentials immediately** if accidentally exposed
+> **凡例：** ✅ 完了 &nbsp;•&nbsp; 🚧 進行中 &nbsp;•&nbsp; 📋 計画中
 
 ---
 
-## 🚀 Quick Start
+## ⚠️ セキュリティに関する注意
 
-> ⚡ **The fastest way to get started** — try EZTest with Docker!
+> 🚨 **重要：** 本プロジェクトはファイル添付のために **AWS S3 の認証情報** を必要とします。
 
-**Requirements:** Docker & Docker Compose
+🔒 **本物の AWS 認証情報を絶対にリポジトリへコミットしないでください！**
+
+- ✅ `.env.local` は `.gitignore` に含まれており、コミットされません
+- ✅ テンプレートとして `.env.example` を使用してください（プレースホルダーのみ）
+- ✅ デプロイ時は環境変数または **AWS IAM ロール** を使用してください
+- ✅ **S3 のみの権限**を持つ専用 IAM ユーザーを作成してください（[添付機能のドキュメント](./docs/features/attachments/README.md) を参照）
+- ✅ 誤って漏洩した場合は **直ちに認証情報をローテーション** してください
+
+---
+
+## 🚀 クイックスタート
+
+> ⚡ **最速で始める方法** — Docker で EZTest を試しましょう！
+
+**必要なもの：** Docker と Docker Compose
 
 ```bash
-# 1️⃣ Clone the repository
+# 1️⃣ リポジトリをクローン
 git clone https://github.com/houseoffoss/eztest.git
 cd eztest
 
-# 2️⃣ Configure environment
+# 2️⃣ 環境を設定
 cp .env.example .env
-# Edit .env with your settings
+# .env を自分の設定に合わせて編集
 
-# 3️⃣ Start the application
+# 3️⃣ アプリケーションを起動
 docker-compose up -d
 
-# 4️⃣ Initialize the database
+# 4️⃣ データベースを初期化
 docker-compose exec app npx prisma db push
 docker-compose exec app npx prisma db seed
 
-# 5️⃣ Open http://localhost:3000 🎉
+# 5️⃣ http://localhost:3000 を開く 🎉
 ```
 
-### 🔑 Default Admin Credentials
+### 🔑 デフォルトの管理者アカウント
 
-| Field | Value |
+| 項目 | 値 |
 |-------|-------|
-| 📧 **Email** | `admin@eztest.local` |
-| 🔒 **Password** | `Admin@123456` |
+| 📧 **メールアドレス** | `admin@eztest.local` |
+| 🔒 **パスワード** | `Admin@123456` |
 
-> 💡 You can also register a new account, or customize admin credentials by setting `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables **before** seeding.
+> 💡 新しいアカウントを登録することもできます。また、シード実行**前**に環境変数 `ADMIN_EMAIL` と `ADMIN_PASSWORD` を設定すれば、管理者アカウントをカスタマイズできます。
 
-> 📖 For production deployment and advanced configuration, see [**DOCKER.md**](./DOCKER.md).
+> 📖 本番デプロイや高度な設定については [**DOCKER.md**](./DOCKER.md) を参照してください。
 
 ---
 
-## 💻 Technology Stack
+## 💻 技術スタック
 
-| Layer | Technology | Version |
+| レイヤー | 技術 | バージョン |
 |-------|-----------|:-------:|
-| 🧱 **Framework** | Next.js | 15.5.6 |
-| ⚛️ **UI Library** | React | 19.1.0 |
-| 📘 **Language** | TypeScript | 5.x |
-| 🎨 **Styling** | Tailwind CSS | 4.x |
-| 🧩 **UI Components** | Radix UI | Latest |
-| 🗄️ **Database** | PostgreSQL | 16 |
+| 🧱 **フレームワーク** | Next.js | 15.5.6 |
+| ⚛️ **UI ライブラリ** | React | 19.1.0 |
+| 📘 **言語** | TypeScript | 5.x |
+| 🎨 **スタイリング** | Tailwind CSS | 4.x |
+| 🧩 **UI コンポーネント** | Radix UI | Latest |
+| 🗄️ **データベース** | PostgreSQL | 16 |
 | 🔧 **ORM** | Prisma | 5.22.0 |
-| 🔐 **Authentication** | NextAuth.js | 4.24.11 |
-| 🔑 **Password Hashing** | bcryptjs | 3.0.2 |
-| 📧 **Email** | Nodemailer | 6.10.1 |
-| ✔️ **Validation** | Zod | 4.1.12 |
-| 🎯 **Icons** | Lucide React | 0.546.0 |
-| 🐳 **Deployment** | Docker & Docker Compose | Latest |
+| 🔐 **認証** | NextAuth.js | 4.24.11 |
+| 🔑 **パスワードハッシュ化** | bcryptjs | 3.0.2 |
+| 📧 **メール** | Nodemailer | 6.10.1 |
+| ✔️ **バリデーション** | Zod | 4.1.12 |
+| 🎯 **アイコン** | Lucide React | 0.546.0 |
+| 🐳 **デプロイ** | Docker & Docker Compose | Latest |
 
 ---
 
-## 📊 System Requirements
+## 📊 システム要件
 
-| Specification | 🟢 Minimum | 🔵 Recommended | 🟣 Production |
+| スペック | 🟢 最小 | 🔵 推奨 | 🟣 本番 |
 |--------------|:----------:|:--------------:|:------------:|
-| 🧮 **CPU Cores** | 1 | 2 | 4+ |
+| 🧮 **CPU コア** | 1 | 2 | 4+ |
 | 🧠 **RAM** | 2GB | 4GB | 8GB+ |
-| 💾 **Storage** | 10GB | 20GB | 50GB+ |
-| 🗄️ **Database** | PostgreSQL 14+ | PostgreSQL 16 | PostgreSQL 16+ |
+| 💾 **ストレージ** | 10GB | 20GB | 50GB+ |
+| 🗄️ **データベース** | PostgreSQL 14+ | PostgreSQL 16 | PostgreSQL 16+ |
 | 🟩 **Node.js** | 18.x | 20.x | 20.x LTS |
 
 ---
 
-## 🛠️ Development
+## 🛠️ 開発
 
-> 🧑‍💻 **Contributing to EZTest?** Set up your local development environment below.
+> 🧑‍💻 **EZTest にコントリビュートしますか？** 以下の手順でローカル開発環境をセットアップしてください。
 
-**Requirements:** Node.js 18+, PostgreSQL 16
+**必要なもの：** Node.js 18+、PostgreSQL 16
 
-### ⚙️ Setup
+### ⚙️ セットアップ
 
 ```bash
-# Clone and install dependencies
+# クローンして依存関係をインストール
 git clone https://github.com/houseoffoss/eztest.git
 cd eztest
 npm install
 
-# Configure environment
+# 環境を設定
 cp .env.example .env
-# Update DATABASE_URL and other variables
+# DATABASE_URL やその他の変数を更新
 
-# Start PostgreSQL (or use your own server)
+# PostgreSQL を起動（自前のサーバーでも可）
 docker-compose up -d postgres
 
-# Set up the database
+# データベースをセットアップ
 npx prisma generate
 npx prisma db push
 npx prisma db seed
 
-# Start the dev server
+# 開発サーバーを起動
 npm run dev
-# Open http://localhost:3000 🎉
+# http://localhost:3000 を開く 🎉
 ```
 
-### 📋 Common Commands
+### 📋 よく使うコマンド
 
 ```bash
-npm run dev              # 🚀 Start dev server with Turbopack
-npm run build            # 📦 Build for production
-npm run lint             # 🔍 Check code quality
-npx prisma studio        # 🗃️ Visual database editor
-npx prisma generate      # 🔧 Generate Prisma Client
-npx prisma db push       # 🔄 Update database schema
-npx prisma db seed       # 🌱 Add sample data
+npm run dev              # 🚀 Turbopack で開発サーバーを起動
+npm run build            # 📦 本番用ビルド
+npm run lint             # 🔍 コード品質チェック
+npx prisma studio        # 🗃️ ビジュアルなデータベースエディタ
+npx prisma generate      # 🔧 Prisma Client を生成
+npx prisma db push       # 🔄 データベーススキーマを更新
+npx prisma db seed       # 🌱 サンプルデータを追加
 ```
 
-### 🔁 Workflow
+### 🔁 ワークフロー
 
-1. ✏️ Make code/schema changes
-2. 🔄 If schema changed: `npx prisma generate && npx prisma db push`
-3. 🧪 Test at http://localhost:3000
-4. 🔍 Run `npm run lint`
-5. ✅ Commit your changes
+1. ✏️ コード／スキーマを変更する
+2. 🔄 スキーマを変更した場合：`npx prisma generate && npx prisma db push`
+3. 🧪 http://localhost:3000 で動作確認する
+4. 🔍 `npm run lint` を実行する
+5. ✅ 変更をコミットする
 
-> 📖 **Full developer guide:** [Development Setup](./docs/contributing/development-setup.md) · [Code Patterns](./docs/architecture/patterns.md)
-
----
-
-## 📚 Documentation
-
-**👥 For Users**
-- [User Guide](./docs/USER_GUIDE.md) — Non-technical introduction
-- [Docker Deployment](./DOCKER.md) — Production setup
-
-**🧑‍💻 For Developers**
-- [Documentation Home](./docs/README.md) — Complete documentation index
-- [Architecture](./docs/architecture/README.md) — System design and patterns
-- [API Documentation](./docs/api/README.md) — Internal API reference
-
-**🗺️ Planning**
-- [ROADMAP](./ROADMAP.md) — Feature tracking and future plans
+> 📖 **開発者向け完全ガイド：** [開発環境セットアップ](./docs/contributing/development-setup.md) · [コードパターン](./docs/architecture/patterns.md)
 
 ---
 
-## 🤝 Contributing
+## 📚 ドキュメント
 
-We ❤️ contributions! Here's how you can help:
+**👥 ユーザー向け**
+- [ユーザーガイド](./docs/USER_GUIDE.md) — 技術者でなくても分かる入門
+- [Docker デプロイ](./DOCKER.md) — 本番セットアップ
 
-1. 🍴 **Fork** the repository
-2. 🌿 **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. ✨ **Make your changes** following our code patterns
-4. 🧪 **Test thoroughly** (ensure `npm run lint` passes)
-5. 💾 **Commit your changes** (`git commit -m 'Add amazing feature'`)
-6. 🚀 **Push to the branch** (`git push origin feature/amazing-feature`)
-7. 📬 **Open a Pull Request**
+**🧑‍💻 開発者向け**
+- [ドキュメントホーム](./docs/README.md) — ドキュメント総合インデックス
+- [アーキテクチャ](./docs/architecture/README.md) — システム設計とパターン
+- [API ドキュメント](./docs/api/README.md) — 内部 API リファレンス
 
-### 📐 Development Guidelines
-
-- 📘 Follow TypeScript best practices
-- 🧩 Use existing component patterns
-- 📝 Write meaningful commit messages
-- 📚 Update documentation for new features
-- 🔍 Ensure all linting passes before submitting a PR
+**🗺️ 計画**
+- [ROADMAP](./ROADMAP.md) — 機能の進捗と今後の計画
 
 ---
 
-## 📄 License
+## 🤝 コントリビューション
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+コントリビューションを ❤️ 歓迎します！次の流れでご協力いただけます。
 
-> ⚖️ **If you modify this software and run it as a network service, you must provide the complete corresponding source code to users of the service, as required by the AGPL.**
+1. 🍴 リポジトリを **Fork** する
+2. 🌿 **フィーチャーブランチを作成** する（`git checkout -b feature/amazing-feature`）
+3. ✨ コードパターンに沿って **変更を加える**
+4. 🧪 **十分にテスト** する（`npm run lint` が通ることを確認）
+5. 💾 **変更をコミット** する（`git commit -m 'Add amazing feature'`）
+6. 🚀 **ブランチに push** する（`git push origin feature/amazing-feature`）
+7. 📬 **プルリクエストを作成** する
 
-See the [**LICENSE**](./LICENSE) file for full details.
+### 📐 開発ガイドライン
+
+- 📘 TypeScript のベストプラクティスに従う
+- 🧩 既存のコンポーネントパターンを利用する
+- 📝 意味のあるコミットメッセージを書く
+- 📚 新機能にはドキュメントを更新する
+- 🔍 PR を提出する前にすべての lint を通す
+
+---
+
+## 📄 ライセンス
+
+本プロジェクトは **GNU Affero General Public License v3.0（AGPL-3.0）** の下でライセンスされています。
+
+> ⚖️ **本ソフトウェアを改変してネットワークサービスとして運用する場合は、AGPL の要求に従い、そのサービスの利用者に対して対応する完全なソースコードを提供しなければなりません。**
+
+詳細は [**LICENSE**](./LICENSE) ファイルを参照してください。
 
 **Copyright © 2025 Belsterns**
 
 ---
 
-## 📞 Support & Contact
+## 📞 サポート・お問い合わせ
 
 | | |
 |---|---|
-| 🌐 **Demo** | [eztest.houseoffoss.com](https://eztest.houseoffoss.com/) |
-| 📚 **Documentation** | [/docs](./docs/README.md) |
-| 🐛 **Issues** | Use the GitHub Issues tab above |
+| 🌐 **デモ** | [eztest.houseoffoss.com](https://eztest.houseoffoss.com/) |
+| 📚 **ドキュメント** | [/docs](./docs/README.md) |
+| 🐛 **不具合報告** | 上部の GitHub Issues タブをご利用ください |
 
-### 👤 Maintainers
+### 👤 メンテナー
 
 - **Philip Moses** — 📧 philip.moses@belsterns.com · 🏢 House of FOSS
 - **Kavin** — 📧 kavin.p@belsterns.com · 🏢 House of FOSS
 
 ---
 
-## 🌟 Acknowledgments
+## 🌟 謝辞
 
-Built with modern, open-source technologies:
+モダンなオープンソース技術で構築されています：
 
-- [Next.js](https://nextjs.org/) — React framework
-- [Prisma](https://www.prisma.io/) — Database ORM
-- [NextAuth.js](https://next-auth.js.org/) — Authentication
-- [Radix UI](https://www.radix-ui.com/) — Accessible UI components
-- [Tailwind CSS](https://tailwindcss.com/) — Utility-first CSS
-- [Lucide](https://lucide.dev/) — Icon library
+- [Next.js](https://nextjs.org/) — React フレームワーク
+- [Prisma](https://www.prisma.io/) — データベース ORM
+- [NextAuth.js](https://next-auth.js.org/) — 認証
+- [Radix UI](https://www.radix-ui.com/) — アクセシブルな UI コンポーネント
+- [Tailwind CSS](https://tailwindcss.com/) — ユーティリティファースト CSS
+- [Lucide](https://lucide.dev/) — アイコンライブラリ
 
 ---
 
 <div align="center">
 
-**🧪 EZTest** — Making test management accessible for everyone 🚀
+**🧪 EZTest** — すべての人にテスト管理を 🚀
 
-⭐ *If you find this project useful, consider giving it a star!*
+⭐ *このプロジェクトが役に立ったら、ぜひスターをお願いします！*
 
 </div>

@@ -62,7 +62,7 @@ const TESTER_TEAMS: Array<{ key: string; label: string; members: string[] }> = [
   {
     key: 'qa',
     label: 'QAチーム',
-    members: ['いちむら', '下向仁', '春日井亮火', 'Misa Yamada', '野口裕太'],
+    members: ['いちむら', '下向仁', '春日井亮火', 'Misa Yamada', '野口裕太', '冨士原武志', '鈴木征太郎'],
   },
 ];
 

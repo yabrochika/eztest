@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Calendar, User, Plus, Pencil, Trash2, Play } from 'lucide-react';
+import { Calendar, User, Plus, Pencil, Trash2, Play, Copy } from 'lucide-react';
 import { TestRun } from '../types';
 import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
 import { formatDateTime } from '@/lib/date-utils';
@@ -15,6 +15,7 @@ interface TestRunsKanbanViewProps {
   onViewDetails: (testRun: TestRun) => void;
   onEdit: (testRun: TestRun) => void;
   onDelete: (testRun: TestRun) => void;
+  onDuplicate?: (testRun: TestRun) => void;
   onCreate?: () => void;
 }
 
@@ -81,6 +82,7 @@ export function TestRunsKanbanView({
   onViewDetails,
   onEdit,
   onDelete,
+  onDuplicate,
   onCreate,
 }: TestRunsKanbanViewProps) {
   const grouped = useMemo(() => {
@@ -143,10 +145,12 @@ export function TestRunsKanbanView({
                       cardBorderClassName={col.cardBorderClassName}
                       canUpdate={canUpdate}
                       canDelete={canDelete}
+                      canDuplicate={canCreate}
                       onCardClick={onCardClick}
                       onViewDetails={onViewDetails}
                       onEdit={onEdit}
                       onDelete={onDelete}
+                      onDuplicate={onDuplicate}
                     />
                   ))
                 )}
@@ -165,10 +169,12 @@ interface KanbanCardProps {
   cardBorderClassName: string;
   canUpdate: boolean;
   canDelete: boolean;
+  canDuplicate?: boolean;
   onCardClick: (testRun: TestRun) => void;
   onViewDetails: (testRun: TestRun) => void;
   onEdit: (testRun: TestRun) => void;
   onDelete: (testRun: TestRun) => void;
+  onDuplicate?: (testRun: TestRun) => void;
 }
 
 function KanbanCard({
@@ -177,10 +183,12 @@ function KanbanCard({
   cardBorderClassName,
   canUpdate,
   canDelete,
+  canDuplicate = false,
   onCardClick,
   onViewDetails,
   onEdit,
   onDelete,
+  onDuplicate,
 }: KanbanCardProps) {
   const assignedUsers =
     testRun.assignedToList && testRun.assignedToList.length > 0
@@ -228,6 +236,13 @@ function KanbanCard({
                 onClick: () => onEdit(testRun),
                 show: canUpdate,
                 buttonName: `Kanban Card - Edit (${testRun.name})`,
+              },
+              {
+                label: '複製',
+                icon: Copy,
+                onClick: () => onDuplicate?.(testRun),
+                show: canDuplicate && !!onDuplicate,
+                buttonName: `Kanban Card - Duplicate (${testRun.name})`,
               },
               {
                 label: '削除',

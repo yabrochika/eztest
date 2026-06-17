@@ -7,6 +7,124 @@ import { attachmentStorage } from '@/lib/attachment-storage';
 import type { Attachment } from '@/lib/s3';
 import { uploadFileToS3 } from '@/lib/s3';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { TextareaWithAttachments } from '@/frontend/reusable-elements/textareas/TextareaWithAttachments';
+import { Button } from '@/frontend/reusable-elements/buttons/Button';
+import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
+import { Label } from '@/frontend/reusable-elements/labels/Label';
+import { Plus, Trash2 } from 'lucide-react';
+
+interface DraftStep {
+  key: string;
+  action: string;
+  expectedResult: string;
+  actionAttachments: Attachment[];
+  expectedResultAttachments: Attachment[];
+}
+
+function createEmptyStep(): DraftStep {
+  return {
+    key: `draft-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+    action: '',
+    expectedResult: '',
+    actionAttachments: [],
+    expectedResultAttachments: [],
+  };
+}
+
+interface StepsEditorProps {
+  steps: DraftStep[];
+  onChange: (steps: DraftStep[]) => void;
+  projectId?: string;
+}
+
+function StepsEditor({ steps, onChange, projectId }: StepsEditorProps) {
+  const updateStep = (key: string, patch: Partial<DraftStep>) => {
+    onChange(steps.map((s) => (s.key === key ? { ...s, ...patch } : s)));
+  };
+
+  const removeStep = (key: string) => {
+    onChange(steps.filter((s) => s.key !== key));
+  };
+
+  return (
+    <div className="space-y-3">
+      {steps.length === 0 ? (
+        <p className="text-white/50 text-sm text-center py-4 border border-dashed border-white/15 rounded-lg">
+          手順がまだありません。「手順を追加」で操作・期待結果・画像/動画を登録できます。
+        </p>
+      ) : (
+        steps.map((step, index) => (
+          <div
+            key={step.key}
+            className="border border-white/10 rounded-lg p-3 space-y-3 bg-white/[0.02]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-sm font-semibold text-blue-400">
+                  {index + 1}
+                </div>
+                <span className="text-xs text-white/50">手順 {index + 1}</span>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 cursor-pointer hover:bg-red-400/10 hover:text-red-400"
+                onClick={() => removeStep(step.key)}
+                aria-label="手順を削除"
+              >
+                <Trash2 className="w-4 h-4 text-red-400" />
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <Label>操作</Label>
+              <TextareaWithAttachments
+                variant="glass"
+                value={step.action}
+                onChange={(value) => updateStep(step.key, { action: value })}
+                placeholder="Enter action"
+                fieldName="action"
+                attachments={step.actionAttachments}
+                onAttachmentsChange={(attachments) => updateStep(step.key, { actionAttachments: attachments })}
+                entityType="teststep"
+                projectId={projectId}
+                showAttachments={true}
+                maxLength={1000}
+                showCharCount={false}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>期待結果</Label>
+              <TextareaWithAttachments
+                variant="glass"
+                value={step.expectedResult}
+                onChange={(value) => updateStep(step.key, { expectedResult: value })}
+                placeholder="Enter expected result"
+                fieldName="expectedResult"
+                attachments={step.expectedResultAttachments}
+                onAttachmentsChange={(attachments) => updateStep(step.key, { expectedResultAttachments: attachments })}
+                entityType="teststep"
+                projectId={projectId}
+                showAttachments={true}
+                maxLength={1000}
+                showCharCount={false}
+              />
+            </div>
+          </div>
+        ))
+      )}
+      <ButtonPrimary
+        type="button"
+        size="sm"
+        className="cursor-pointer"
+        onClick={() => onChange([...steps, createEmptyStep()])}
+      >
+        <Plus className="w-4 h-4 mr-2" />
+        手順を追加
+      </ButtonPrimary>
+    </div>
+  );
+}
 interface CreateTestCaseDialogProps {
   projectId: string;
   defaultModuleId?: string;
@@ -30,6 +148,7 @@ export function CreateTestCaseDialog({
   // const [expectedResultAttachments, setExpectedResultAttachments] = useState<Attachment[]>([]);
   const [preconditionsAttachments, setPreconditionsAttachments] = useState<Attachment[]>([]);
   const [postconditionsAttachments, setPostconditionsAttachments] = useState<Attachment[]>([]);
+  const [steps, setSteps] = useState<DraftStep[]>([]);
 
   // Fetch dynamic dropdown options
   const { options: priorityOptions } = useDropdownOptions('TestCase', 'priority');
@@ -246,6 +365,15 @@ export function CreateTestCaseDialog({
     //   onAttachmentsChange: setExpectedResultAttachments,
     // },
     {
+      name: 'steps',
+      label: 'テスト手順（画像・動画を添付可能）',
+      type: 'custom',
+      cols: 2,
+      customRender: () => (
+        <StepsEditor steps={steps} onChange={setSteps} projectId={projectId} />
+      ),
+    },
+    {
       name: 'evidence',
       label: '根拠コード',
       type: 'textarea',
@@ -346,11 +474,78 @@ export function CreateTestCaseDialog({
     return uploadedAttachments;
   };
 
+  /**
+   * 作成済みテストステップに、保存待ち（pending-）の添付をアップロードしてリンクする。
+   * 作成APIのレスポンスに含まれる steps[] は登録順なので、ドラフト手順と順番で対応付ける。
+   */
+  const linkStepAttachments = async (
+    createdSteps: Array<{ id: string; stepNumber: number }>,
+    draftSteps: DraftStep[]
+  ) => {
+    for (let index = 0; index < draftSteps.length; index++) {
+      const draft = draftSteps[index];
+      const createdStep = createdSteps[index];
+      if (!createdStep?.id) continue;
+
+      const fieldGroups: Array<{ fieldName: 'action' | 'expectedResult'; attachments: Attachment[] }> = [
+        { fieldName: 'action', attachments: draft.actionAttachments },
+        { fieldName: 'expectedResult', attachments: draft.expectedResultAttachments },
+      ];
+
+      const attachmentsToLink: Array<{ id: string; fieldName: string }> = [];
+
+      for (const group of fieldGroups) {
+        const pending = group.attachments.filter((att) => att.id.startsWith('pending-'));
+        for (const att of pending) {
+          // @ts-expect-error - Access the pending file object
+          const file = att._pendingFile;
+          if (!file) continue;
+          try {
+            const result = await uploadFileToS3({
+              file,
+              fieldName: group.fieldName,
+              entityType: 'teststep',
+              projectId,
+              onProgress: () => {},
+            });
+            if (result.success && result.attachment) {
+              attachmentsToLink.push({ id: result.attachment.id, fieldName: group.fieldName });
+            }
+          } catch (error) {
+            console.error('Failed to upload step attachment:', error);
+          }
+        }
+      }
+
+      if (attachmentsToLink.length > 0) {
+        try {
+          await fetch(`/api/teststeps/${createdStep.id}/attachments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ attachments: attachmentsToLink }),
+          });
+        } catch (error) {
+          console.error(`Failed to link attachments for step ${createdStep.id}:`, error);
+        }
+      }
+    }
+  };
+
   const handleSubmit = async (formData: Record<string, string>) => {
     // Upload all pending attachments first
     const uploadedAttachments = await uploadPendingAttachments();
 
     const estimatedTime = formData.estimatedTime ? parseInt(formData.estimatedTime) : undefined;
+
+    // 操作または期待結果のいずれかが入力されている手順のみ送信し、番号を振り直す
+    const nonEmptySteps = steps.filter(
+      (step) => step.action.trim().length > 0 || step.expectedResult.trim().length > 0
+    );
+    const stepsPayload = nonEmptySteps.map((step, index) => ({
+      stepNumber: index + 1,
+      action: step.action,
+      expectedResult: step.expectedResult,
+    }));
 
     const response = await fetch(`/api/projects/${projectId}/testcases`, {
       method: 'POST',
@@ -369,6 +564,7 @@ export function CreateTestCaseDialog({
         preconditions: formData.preconditions || undefined,
         postconditions: formData.postconditions || undefined,
         moduleId: formData.moduleId !== 'none' ? formData.moduleId : undefined,
+        steps: stepsPayload.length > 0 ? stepsPayload : undefined,
         // New fields
         rtcId: formData.rtcId || undefined,
         flowId: formData.flowId || undefined,
@@ -452,6 +648,17 @@ export function CreateTestCaseDialog({
       }
     }
 
+    // 手順の添付（画像・動画など）を、作成された各ステップへアップロード・リンク
+    const createdSteps: Array<{ id: string; stepNumber: number }> = Array.isArray(createdTestCase?.steps)
+      ? createdTestCase.steps
+      : [];
+    const hasStepAttachments = nonEmptySteps.some(
+      (step) => step.actionAttachments.length > 0 || step.expectedResultAttachments.length > 0
+    );
+    if (createdSteps.length > 0 && hasStepAttachments) {
+      await linkStepAttachments(createdSteps, nonEmptySteps);
+    }
+
     return createdTestCase;
   };
 
@@ -471,6 +678,8 @@ export function CreateTestCaseDialog({
         // Clear attachments after successful creation
         attachmentStorage.clearAllAttachments();
         attachmentStorage.clearContext();
+        // Reset step drafts so the next creation starts clean
+        setSteps([]);
       }
     },
     submitButtonName: 'Create Test Case Dialog - Create Test Case',

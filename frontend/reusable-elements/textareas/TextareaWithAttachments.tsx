@@ -115,14 +115,17 @@ function TextareaWithAttachments({
       setFileError('');
     }
   }, [attachments]);
-  // Fetch image URLs for attachments
+  // Fetch image / video URLs for attachments
   React.useEffect(() => {
     const fetchImageUrls = async () => {
       const urls: Record<string, string> = {};
       for (const attachment of attachments) {
         const isPending = attachment.id.startsWith('pending-');
-        
-        if (attachment.mimeType.startsWith('image/')) {
+        const isMedia =
+          attachment.mimeType.startsWith('image/') ||
+          attachment.mimeType.startsWith('video/');
+
+        if (isMedia) {
           // For pending attachments, use local object URL
           if (isPending) {
             // @ts-expect-error - Access the File object stored in _pendingFile
@@ -140,7 +143,7 @@ function TextareaWithAttachments({
             if (url) {
               urls[attachment.id] = url;
             } else {
-              console.warn(`[TextareaWithAttachments] Failed to resolve image URL for ${attachment.id}`);
+              console.warn(`[TextareaWithAttachments] Failed to resolve media URL for ${attachment.id}`);
             }
           }
         }
@@ -497,35 +500,47 @@ function TextareaWithAttachments({
                   </button>
                 </div>
               ))}
-              {attachments.some((att) => att.mimeType.startsWith('image/')) && (
+              {attachments.some((att) => att.mimeType.startsWith('image/') || att.mimeType.startsWith('video/')) && (
                 <div className="pt-2 grid grid-cols-4 gap-2">
                   {attachments
-                    .filter((att) => att.mimeType.startsWith('image/'))
-                    .map((att) => (
-                      <div key={`preview-${att.id}`} className="relative w-full aspect-square rounded overflow-hidden border border-white/15 bg-white/5">
-                        {imageUrls[att.id] ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={imageUrls[att.id]}
-                            alt={att.originalName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white/40 text-[10px]">
-                            読み込み中
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveInline(att.id)}
-                          className="absolute top-1.5 right-1.5 z-10 inline-flex items-center justify-center w-7 h-7 rounded-full border border-white/20 bg-black/65 hover:bg-red-600 text-white shadow-md hover:scale-105 transition-transform cursor-pointer"
-                          aria-label="添付を削除"
-                          title="添付を削除"
-                        >
-                          <X className="w-4 h-4" strokeWidth={2.5} />
-                        </button>
-                      </div>
-                    ))}
+                    .filter((att) => att.mimeType.startsWith('image/') || att.mimeType.startsWith('video/'))
+                    .map((att) => {
+                      const isVideo = att.mimeType.startsWith('video/');
+                      return (
+                        <div key={`preview-${att.id}`} className="relative w-full aspect-square rounded overflow-hidden border border-white/15 bg-white/5">
+                          {imageUrls[att.id] ? (
+                            isVideo ? (
+                              <video
+                                src={imageUrls[att.id]}
+                                className="w-full h-full object-cover bg-black"
+                                controls
+                                preload="metadata"
+                              />
+                            ) : (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={imageUrls[att.id]}
+                                alt={att.originalName}
+                                className="w-full h-full object-cover"
+                              />
+                            )
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-white/40 text-[10px]">
+                              読み込み中
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveInline(att.id)}
+                            className="absolute top-1.5 right-1.5 z-10 inline-flex items-center justify-center w-7 h-7 rounded-full border border-white/20 bg-black/65 hover:bg-red-600 text-white shadow-md hover:scale-105 transition-transform cursor-pointer"
+                            aria-label="添付を削除"
+                            title="添付を削除"
+                          >
+                            <X className="w-4 h-4" strokeWidth={2.5} />
+                          </button>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
               </div>
@@ -610,6 +625,7 @@ function TextareaWithAttachments({
             if (attachment.id !== hoveredId) return null;
             const isPending = attachment.id.startsWith('pending-');
             const isImage = attachment.mimeType.startsWith('image/');
+            const isVideo = attachment.mimeType.startsWith('video/');
             
             return (
               <div 
@@ -617,7 +633,7 @@ function TextareaWithAttachments({
                 onMouseEnter={() => setHoveredId(attachment.id)}
                 onMouseLeave={() => setHoveredId(null)}
               >
-                {/* Preview Image/Icon */}
+                {/* Preview Image/Video/Icon */}
                 <div className="relative h-64 bg-black/20 flex items-center justify-center">
                   {isImage ? (
                     imageUrls[attachment.id] ? (
@@ -638,6 +654,22 @@ function TextareaWithAttachments({
                         {getFileIcon(attachment.mimeType, "w-24 h-24")}
                         <p className="text-xs text-white/50">
                           {isPending ? 'Preview will load shortly...' : 'Loading image...'}
+                        </p>
+                      </div>
+                    )
+                  ) : isVideo ? (
+                    imageUrls[attachment.id] ? (
+                      <video
+                        src={imageUrls[attachment.id]}
+                        className="w-full h-full object-contain bg-black"
+                        controls
+                        preload="metadata"
+                      />
+                    ) : (
+                      <div className="text-white/60 flex items-center justify-center flex-col gap-2">
+                        {getFileIcon(attachment.mimeType, "w-24 h-24")}
+                        <p className="text-xs text-white/50">
+                          {isPending ? 'Preview will load shortly...' : 'Loading video...'}
                         </p>
                       </div>
                     )

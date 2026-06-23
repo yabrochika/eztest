@@ -117,17 +117,28 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
     }
   };
 
-  const handleMemberAdded = (member: unknown) => {
-    if (member) {
-      const newMember = member as ProjectMember;
-      setMembers([...members, newMember]);
-      setAddDialogOpen(false);
-      setAlert({
-        type: 'success',
-        title: 'メンバーを追加しました',
-        message: `${newMember.user?.name || 'ユーザー'} がプロジェクトに追加されました。`,
-      });
+  const handleMembersAdded = (newMembers: ProjectMember[]) => {
+    if (newMembers.length === 0) {
+      return;
     }
+
+    setMembers((prev) => {
+      const existingIds = new Set(prev.map((m) => m.user.id));
+      const uniqueNew = newMembers.filter((m) => !existingIds.has(m.user.id));
+      return [...prev, ...uniqueNew];
+    });
+    setAddDialogOpen(false);
+
+    const message =
+      newMembers.length === 1
+        ? `${newMembers[0].user?.name || 'ユーザー'} がプロジェクトに追加されました。`
+        : `${newMembers.length} 名のメンバーがプロジェクトに追加されました。`;
+
+    setAlert({
+      type: 'success',
+      title: 'メンバーを追加しました',
+      message,
+    });
   };
 
   const handleRemoveMember = (memberId: string, memberName: string) => {
@@ -239,9 +250,10 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
 
       <CreateAddMemberDialog
         projectId={projectId}
+        existingMembers={members}
         triggerOpen={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        onMemberAdded={handleMemberAdded}
+        onMembersAdded={handleMembersAdded}
       />
 
       <CreateMemberGroupDialog

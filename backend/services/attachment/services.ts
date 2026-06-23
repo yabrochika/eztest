@@ -131,6 +131,9 @@ export class AttachmentService {
     const bucket = getS3Bucket();
 
     // Initialize multipart upload
+    // NOTE: S3 のメタデータ値は HTTP ヘッダ (x-amz-meta-*) として送信されるため US-ASCII のみ許容される。
+    // 日本語などの非ASCIIファイル名をそのまま入れると署名/ヘッダ生成で失敗するため URL エンコードして格納する。
+    // 元の表示名は DB の originalName に保持されるため、ここでのエンコードは表示には影響しない。
     const multipartUpload = await s3Client.send(
       new CreateMultipartUploadCommand({
         Bucket: bucket,
@@ -138,7 +141,7 @@ export class AttachmentService {
         ContentType: fileType,
         ServerSideEncryption: 'AES256',
         Metadata: {
-          originalName: fileName,
+          originalName: encodeURIComponent(fileName),
           uploadedAt: new Date().toISOString(),
         },
       })

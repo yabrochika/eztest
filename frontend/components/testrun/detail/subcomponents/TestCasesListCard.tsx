@@ -9,8 +9,10 @@ import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import { formatDateTime } from '@/lib/date-utils';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { GroupedDataTable, type ColumnDef, type GroupConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
-import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2, ListTodo, UserCog } from 'lucide-react';
+import { Input } from '@/frontend/reusable-elements/inputs/Input';
+import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2, ListTodo, UserCog, Search, X } from 'lucide-react';
 import { TestResult, TestCase } from '../types';
+import { testCaseMatchesQuery } from '@/lib/testcase-search';
 import {
   getLayerSortKey,
   getTitleNumberSortKey,
@@ -108,6 +110,9 @@ export function TestCasesListCard({
   type SortKey = 'tcId' | 'testCase' | 'estimatedTime' | 'priority' | 'status' | 'executedBy' | 'executedAt';
   const [sortState, setSortState] = useState<{ key: SortKey; direction: 'asc' | 'desc' } | null>(null);
 
+  // テストケース一覧の絞り込み（TC番号・全項目・タイトルの曖昧一致）
+  const [searchQuery, setSearchQuery] = useState('');
+
   const toggleSort = (key: SortKey) => {
     setSortState((prev) => {
       if (!prev || prev.key !== key) return { key, direction: 'asc' };
@@ -160,11 +165,36 @@ export function TestCasesListCard({
     }
   };
 
-  // 一括選択用の補助関数・集計値（テーブルデータより上で評価しないため、ここでは ID 集合のみ作る）
+  // 一覧の元データ（テストケースを持つ結果のみ）
+  const allTableData: ResultRow[] = (results || [])
+    .filter((result) => result.testCase)
+    .map((result) => ({
+      id: result.testCase.id,
+      testCase: result.testCase,
+      testCaseId: result.testCaseId ?? null,
+      testCaseDeleted: result.testCaseDeleted === true || result.testCaseId == null,
+      status: result.status,
+      comment: result.comment,
+      duration: result.duration,
+      executedBy: result.executedBy,
+      executedAt: result.executedAt,
+      result,
+    }));
+
+  // 検索クエリで絞り込む。tcId（TC番号）を含むテストケースの全データを横断し、
+  // タイトルはタイプミス・表記揺れに強い曖昧一致で判定する。
+  const trimmedQuery = searchQuery.trim();
+  const tableData: ResultRow[] = trimmedQuery
+    ? allTableData.filter((row) =>
+        testCaseMatchesQuery(row.testCase, trimmedQuery, {
+          fuzzyTarget: row.testCase.title || row.testCase.name,
+        })
+      )
+    : allTableData;
+
+  // 一括選択は「表示中（＝絞り込み後）」の行を対象にする
   const selectedIdSet = new Set(selectedTestCaseIds);
-  const allVisibleIds = (results || [])
-    .filter((r) => r.testCase)
-    .map((r) => r.testCase.id);
+  const allVisibleIds = tableData.map((r) => r.testCase.id);
   const visibleSelectedCount = allVisibleIds.filter((id) => selectedIdSet.has(id)).length;
   const isAllSelected =
     allVisibleIds.length > 0 && visibleSelectedCount === allVisibleIds.length;
@@ -489,21 +519,6 @@ export function TestCasesListCard({
     },
   };
 
-  const tableData: ResultRow[] = (results || [])
-    .filter((result) => result.testCase)
-    .map((result) => ({
-      id: result.testCase.id,
-      testCase: result.testCase,
-      testCaseId: result.testCaseId ?? null,
-      testCaseDeleted: result.testCaseDeleted === true || result.testCaseId == null,
-      status: result.status,
-      comment: result.comment,
-      duration: result.duration,
-      executedBy: result.executedBy,
-      executedAt: result.executedAt,
-      result,
-    }));
-
   /**
    * 結果モーダル（ViewResultDialog）を開くべき行かを判定する。
    * ステータスが入力済み（NOT_STARTED 以外）の実行済み行はクリック時に
@@ -607,7 +622,7 @@ export function TestCasesListCard({
 
   return (
     <DetailCard
-      title={`テストケース (${results?.length || 0})`}
+      title={`テストケース (${trimmedQuery ? `${tableData.length} / ${allTableData.length}` : allTableData.length})`}
       contentClassName=""
       headerAction={
         hasHeaderAction ? (
@@ -713,26 +728,57 @@ export function TestCasesListCard({
           )}
         </div>
       ) : (
-        <GroupedDataTable
-          data={tableDataSorted}
-          columns={columns}
-          grouped={!sortState}
-          groupConfig={groupConfig}
-          defaultExpanded={true}
-          onRowClick={(row) => {
-            // マスターのテストケースが削除されている場合は遷移しない（404 を避ける）。
-            // スナップショットの表示はテストラン側で完結している。
-            if (row.testCaseDeleted || !row.testCaseId) return;
-            // 行クリックは常にテストケース詳細ページに遷移する。
-            // テストケース詳細ページの Execution History カードで
-            // 各実行のコメント・添付ファイルを確認できる
-            // （その行をクリックすればさらに ViewResultDialog で詳細表示）。
-            router.push(`/projects/${projectId}/testcases/${row.testCase.id}`);
-          }}
-          gridTemplateColumns={gridTemplateColumns}
-          gapClassName="gap-[24px]"
-          emptyMessage="テストケースはありません"
-        />
+        <>
+          <div className="relative mb-4">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+            <Input
+              variant="glass"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="テストケースを検索（TC番号・全項目・タイトルは曖昧一致）"
+              className="pl-10 pr-10"
+              aria-label="テストケースを検索"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 cursor-pointer"
+                aria-label="検索をクリア"
+                title="検索をクリア"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {trimmedQuery && tableData.length === 0 ? (
+            <p className="text-white/60 text-center py-8">
+              「{trimmedQuery}」に一致するテストケースはありません
+            </p>
+          ) : (
+            <GroupedDataTable
+              data={tableDataSorted}
+              columns={columns}
+              grouped={!sortState}
+              groupConfig={groupConfig}
+              defaultExpanded={true}
+              onRowClick={(row) => {
+                // マスターのテストケースが削除されている場合は遷移しない（404 を避ける）。
+                // スナップショットの表示はテストラン側で完結している。
+                if (row.testCaseDeleted || !row.testCaseId) return;
+                // 行クリックは常にテストケース詳細ページに遷移する。
+                // テストケース詳細ページの Execution History カードで
+                // 各実行のコメント・添付ファイルを確認できる
+                // （その行をクリックすればさらに ViewResultDialog で詳細表示）。
+                router.push(`/projects/${projectId}/testcases/${row.testCase.id}`);
+              }}
+              gridTemplateColumns={gridTemplateColumns}
+              gapClassName="gap-[24px]"
+              emptyMessage="テストケースはありません"
+            />
+          )}
+        </>
       )}
     </DetailCard>
   );

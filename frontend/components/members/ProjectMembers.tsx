@@ -16,6 +16,8 @@ import { CreateAddMemberDialog } from './subcomponents/AddMemberDialog';
 import { RemoveMemberDialog } from './subcomponents/RemoveMemberDialog';
 import { MemberGroupsCard } from './subcomponents/MemberGroupsCard';
 import { CreateMemberGroupDialog } from './subcomponents/CreateMemberGroupDialog';
+import { EditMemberGroupDialog } from './subcomponents/EditMemberGroupDialog';
+import { DeleteMemberGroupDialog } from './subcomponents/DeleteMemberGroupDialog';
 
 interface ProjectMembersProps {
   projectId: string;
@@ -30,6 +32,10 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
+  const [editGroupDialogOpen, setEditGroupDialogOpen] = useState(false);
+  const [groupToEdit, setGroupToEdit] = useState<ProjectMemberGroup | null>(null);
+  const [deleteGroupDialogOpen, setDeleteGroupDialogOpen] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<ProjectMemberGroup | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<{ id: string; name: string } | null>(null);
   const [alert, setAlert] = useState<FloatingAlertMessage | null>(null);
@@ -156,6 +162,65 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
     });
   };
 
+  const handleEditGroup = (group: ProjectMemberGroup) => {
+    setGroupToEdit(group);
+    setEditGroupDialogOpen(true);
+  };
+
+  const handleGroupUpdated = (group: ProjectMemberGroup) => {
+    setGroups((prev) => prev.map((g) => (g.id === group.id ? group : g)));
+    setEditGroupDialogOpen(false);
+    setGroupToEdit(null);
+    setAlert({
+      type: 'success',
+      title: 'グループを更新しました',
+      message: `${group.name} を更新しました。`,
+    });
+  };
+
+  const handleDeleteGroup = (group: ProjectMemberGroup) => {
+    setGroupToDelete(group);
+    setDeleteGroupDialogOpen(true);
+  };
+
+  const confirmDeleteGroup = async () => {
+    if (!groupToDelete) return;
+
+    try {
+      const response = await fetch(
+        `/api/projects/${projectId}/member-groups/${groupToDelete.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        setAlert({
+          type: 'error',
+          title: 'グループの削除に失敗しました',
+          message: data.error || 'グループを削除できませんでした。',
+        });
+        return;
+      }
+
+      setGroups((prev) => prev.filter((g) => g.id !== groupToDelete.id));
+      setAlert({
+        type: 'success',
+        title: 'グループを削除しました',
+        message: `${groupToDelete.name} を削除しました。`,
+      });
+      setGroupToDelete(null);
+      setDeleteGroupDialogOpen(false);
+    } catch {
+      setAlert({
+        type: 'error',
+        title: 'エラー',
+        message: 'グループを削除する際に予期しないエラーが発生しました。',
+      });
+    }
+  };
+
   const confirmRemoveMember = async () => {
     if (!memberToDelete || !project) return;
 
@@ -244,7 +309,12 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
             onRemoveMember={handleRemoveMember}
           />
 
-          <MemberGroupsCard groups={groups} />
+          <MemberGroupsCard
+            groups={groups}
+            isAdminOrManager={isAdminOrManager}
+            onEditGroup={handleEditGroup}
+            onDeleteGroup={handleDeleteGroup}
+          />
         </div>
       </div>
 
@@ -262,6 +332,32 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
         triggerOpen={createGroupDialogOpen}
         onOpenChange={setCreateGroupDialogOpen}
         onGroupCreated={handleGroupCreated}
+      />
+
+      <EditMemberGroupDialog
+        projectId={projectId}
+        members={members}
+        group={groupToEdit}
+        triggerOpen={editGroupDialogOpen}
+        onOpenChange={(open) => {
+          setEditGroupDialogOpen(open);
+          if (!open) {
+            setGroupToEdit(null);
+          }
+        }}
+        onGroupUpdated={handleGroupUpdated}
+      />
+
+      <DeleteMemberGroupDialog
+        group={groupToDelete}
+        triggerOpen={deleteGroupDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteGroupDialogOpen(open);
+          if (!open) {
+            setGroupToDelete(null);
+          }
+        }}
+        onConfirm={confirmDeleteGroup}
       />
 
       <RemoveMemberDialog

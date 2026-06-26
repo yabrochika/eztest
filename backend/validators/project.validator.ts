@@ -36,7 +36,7 @@ export const updateProjectSchema = z.object({
  */
 export const addProjectMemberSchema = z
   .object({
-    userId: z.string().uuid('Invalid user ID format').optional(),
+    userId: z.string().min(1, 'Invalid user ID').optional(),
     email: z.string().email('Invalid email format').optional(),
   })
   .refine((data: { userId?: string; email?: string }) => data.userId || data.email, {

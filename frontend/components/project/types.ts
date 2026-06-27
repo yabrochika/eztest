@@ -14,6 +14,7 @@ export interface Project {
   name: string;
   key: string;
   description: string | null;
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
   createdBy: {

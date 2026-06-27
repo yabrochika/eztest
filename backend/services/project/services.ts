@@ -1,15 +1,82 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 
 interface CreateProjectInput {
   name: string;
   key: string;
   description?: string;
   createdById: string;
+  tags?: string[];
 }
 
 interface UpdateProjectInput {
   name?: string;
   description?: string;
+  tags?: string[];
+}
+
+// Shape of the tags relation when included via Prisma
+type ProjectWithTags = { tags?: Array<{ tag: { name: string } }> };
+
+/**
+ * Normalize a free-form tag list: trim, drop empties, de-duplicate
+ * case-insensitively while preserving the first-seen casing.
+ */
+function normalizeTags(tags?: string[]): string[] {
+  if (!tags) return [];
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const raw of tags) {
+    const name = raw.trim();
+    if (!name) continue;
+    const lower = name.toLowerCase();
+    if (seen.has(lower)) continue;
+    seen.add(lower);
+    result.push(name);
+  }
+  return result;
+}
+
+/**
+ * Flatten the included `tags` relation into a simple string[] of tag names.
+ */
+function flattenTags<T extends ProjectWithTags>(project: T): Omit<T, 'tags'> & { tags: string[] } {
+  const { tags, ...rest } = project;
+  return {
+    ...rest,
+    tags: (tags ?? []).map((pt) => pt.tag.name),
+  };
+}
+
+/**
+ * Replace a project's tags with the given list within a transaction.
+ * Upserts Tag rows and rewrites the ProjectTag join entries.
+ */
+async function syncProjectTags(
+  tx: Prisma.TransactionClient,
+  projectId: string,
+  tags: string[]
+): Promise<void> {
+  const normalized = normalizeTags(tags);
+
+  await tx.projectTag.deleteMany({ where: { projectId } });
+
+  if (normalized.length === 0) return;
+
+  const tagRecords = await Promise.all(
+    normalized.map((name) =>
+      tx.tag.upsert({
+        where: { name },
+        create: { name },
+        update: {},
+      })
+    )
+  );
+
+  await tx.projectTag.createMany({
+    data: tagRecords.map((tag) => ({ projectId, tagId: tag.id })),
+    skipDuplicates: true,
+  });
 }
 
 interface AddMemberInput {
@@ -50,6 +117,11 @@ export class ProjectService {
               avatar: true,
             },
           },
+        },
+      },
+      tags: {
+        include: {
+          tag: true,
         },
       },
       _count: {
@@ -108,7 +180,7 @@ export class ProjectService {
 
       // Add defect counts to each project's _count
       return projects.map(project => ({
-        ...project,
+        ...flattenTags(project),
         _count: {
           ...project._count,
           defects: defectCountMap.get(project.id) || 0,
@@ -116,7 +188,7 @@ export class ProjectService {
       }));
     }
 
-    return projects;
+    return projects.map(flattenTags);
   }
 
   /**
@@ -140,42 +212,57 @@ export class ProjectService {
       throw new Error('Project key already exists (in deleted projects). Please choose a different key.');
     }
 
-    // Create project and automatically add creator as member
-    return await prisma.project.create({
-      data: {
-        name: data.name,
-        key: data.key.toUpperCase(),
-        description: data.description,
-        createdById: data.createdById,
-        members: {
-          create: {
-            userId: data.createdById,
-          },
-        },
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          },
-        },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-              },
+    // Create project, add creator as member, and attach tags atomically
+    const project = await prisma.$transaction(async (tx) => {
+      const created = await tx.project.create({
+        data: {
+          name: data.name,
+          key: data.key.toUpperCase(),
+          description: data.description,
+          createdById: data.createdById,
+          members: {
+            create: {
+              userId: data.createdById,
             },
           },
         },
-      },
+      });
+
+      await syncProjectTags(tx, created.id, data.tags ?? []);
+
+      return tx.project.findUniqueOrThrow({
+        where: { id: created.id },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+            },
+          },
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  avatar: true,
+                },
+              },
+            },
+          },
+          tags: {
+            include: {
+              tag: true,
+            },
+          },
+        },
+      });
     });
+
+    return flattenTags(project);
   }
 
   /**
@@ -228,6 +315,11 @@ export class ProjectService {
             joinedAt: 'asc',
           },
         },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
         ...(includeStats && {
           _count: {
             select: {
@@ -241,8 +333,12 @@ export class ProjectService {
       },
     });
 
+    if (!project) {
+      return project;
+    }
+
     // Add defect count if stats are included
-    if (project && includeStats && project._count) {
+    if (includeStats && project._count) {
       const defectCount = await prisma.defect.count({
         where: {
           projectId: project.id,
@@ -251,7 +347,7 @@ export class ProjectService {
       });
 
       return {
-        ...project,
+        ...flattenTags(project),
         _count: {
           ...project._count,
           defects: defectCount,
@@ -259,7 +355,7 @@ export class ProjectService {
       };
     }
 
-    return project;
+    return flattenTags(project);
   }
 
   /**
@@ -278,37 +374,55 @@ export class ProjectService {
       throw new Error('Project not found or has been deleted');
     }
 
-    return await prisma.project.update({
-      where: { 
-        id: projectId,
-      },
-      data: {
-        ...(data.name && { name: data.name }),
-        ...(data.description !== undefined && { description: data.description }),
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          },
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.project.update({
+        where: {
+          id: projectId,
         },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
+        data: {
+          ...(data.name && { name: data.name }),
+          ...(data.description !== undefined && { description: data.description }),
+        },
+      });
+
+      // Only rewrite tags when the caller explicitly provided them
+      if (data.tags !== undefined) {
+        await syncProjectTags(tx, projectId, data.tags);
+      }
+
+      return tx.project.findUniqueOrThrow({
+        where: { id: projectId },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+            },
+          },
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  avatar: true,
+                },
               },
             },
           },
+          tags: {
+            include: {
+              tag: true,
+            },
+          },
         },
-      },
+      });
     });
+
+    return flattenTags(updated);
   }
 
   /**

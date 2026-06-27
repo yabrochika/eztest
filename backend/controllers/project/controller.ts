@@ -34,13 +34,14 @@ export class ProjectController {
       );
     }
 
-    const { name, key, description } = validationResult.data;
+    const { name, key, description, tags } = validationResult.data;
 
     try {
       const project = await projectService.createProject({
         name,
         key,
         description,
+        tags,
         createdById: request.userInfo.id,
       });
 
@@ -88,12 +89,13 @@ export class ProjectController {
       );
     }
 
-    const { name, description } = validationResult.data;
+    const { name, description, tags } = validationResult.data;
 
     try {
       const project = await projectService.updateProject(projectId, {
         name,
         description: description ?? undefined,
+        tags,
       });
 
       return { data: project };

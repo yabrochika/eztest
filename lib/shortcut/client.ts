@@ -175,6 +175,31 @@ export async function listEpics(config: ShortcutConfig): Promise<ShortcutEpic[]>
   return shortcutFetch<ShortcutEpic[]>(config, '/epics');
 }
 
+export interface CreateEpicInput {
+  name: string;
+  description?: string;
+  groupId?: string;
+}
+
+export async function createEpic(
+  config: ShortcutConfig,
+  input: CreateEpicInput
+): Promise<ShortcutEpic> {
+  const payload: Record<string, unknown> = {
+    name: input.name,
+  };
+  if (input.description) {
+    payload.description = input.description;
+  }
+  if (input.groupId || config.groupId) {
+    payload.group_id = input.groupId ?? config.groupId;
+  }
+  return shortcutFetch<ShortcutEpic>(config, '/epics', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function getEpic(config: ShortcutConfig, epicId: number): Promise<ShortcutEpic> {
   return shortcutFetch<ShortcutEpic>(config, `/epics/${epicId}`);
 }

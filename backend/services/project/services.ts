@@ -23,6 +23,11 @@ interface CreateMemberGroupInput {
   createdById: string;
 }
 
+interface UpdateMemberGroupInput {
+  name?: string;
+  memberIds?: string[];
+}
+
 export class ProjectService {
   /**
    * Get all projects accessible to a user
@@ -538,6 +543,117 @@ export class ProjectService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Update project member group (rename and/or replace members)
+   */
+  async updateProjectMemberGroup(
+    projectId: string,
+    groupId: string,
+    data: UpdateMemberGroupInput
+  ) {
+    const existingGroup = await prisma.projectMemberGroup.findFirst({
+      where: { id: groupId, projectId },
+      select: { id: true },
+    });
+
+    if (!existingGroup) {
+      throw new Error('Group not found');
+    }
+
+    if (data.memberIds) {
+      const members = await prisma.projectMember.findMany({
+        where: {
+          projectId,
+          id: { in: data.memberIds },
+        },
+        select: { id: true },
+      });
+
+      if (members.length !== data.memberIds.length) {
+        throw new Error('Some members do not belong to this project');
+      }
+    }
+
+    const memberIds = data.memberIds;
+
+    try {
+      return await prisma.$transaction(async (tx) => {
+        if (memberIds) {
+          await tx.projectMemberGroupMember.deleteMany({
+            where: { groupId },
+          });
+        }
+
+        return await tx.projectMemberGroup.update({
+          where: { id: groupId },
+          data: {
+            ...(data.name !== undefined ? { name: data.name.trim() } : {}),
+            ...(memberIds
+              ? {
+                  members: {
+                    create: memberIds.map((projectMemberId) => ({
+                      projectMemberId,
+                    })),
+                  },
+                }
+              : {}),
+          },
+          include: {
+            createdBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            members: {
+              include: {
+                projectMember: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        avatar: true,
+                        role: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+      });
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+        throw new Error('Group name already exists');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Delete project member group
+   */
+  async deleteProjectMemberGroup(projectId: string, groupId: string) {
+    const existingGroup = await prisma.projectMemberGroup.findFirst({
+      where: { id: groupId, projectId },
+      select: { id: true },
+    });
+
+    if (!existingGroup) {
+      throw new Error('Group not found');
+    }
+
+    await prisma.projectMemberGroup.delete({
+      where: { id: groupId },
+    });
+
+    return { deletedGroupId: groupId };
   }
 
   /**

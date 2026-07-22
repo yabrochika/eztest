@@ -1,6 +1,20 @@
 import { z } from 'zod';
 
 /**
+ * Project tags schema (free-form, normalized server-side)
+ */
+const projectTagsSchema = z
+  .array(
+    z
+      .string()
+      .trim()
+      .min(1, 'Tag must not be empty')
+      .max(30, 'Tag must not exceed 30 characters')
+  )
+  .max(20, 'A project can have up to 20 tags')
+  .optional();
+
+/**
  * Project Creation Schema
  */
 export const createProjectSchema = z.object({
@@ -16,6 +30,7 @@ export const createProjectSchema = z.object({
     .regex(/^[A-Z0-9]+$/i, 'Key can only contain letters and numbers')
     .transform((val: string) => val.toUpperCase()),
   description: z.string().optional(),
+  tags: projectTagsSchema,
 });
 
 /**
@@ -29,6 +44,7 @@ export const updateProjectSchema = z.object({
     .trim()
     .optional(),
   description: z.string().nullish(),
+  tags: projectTagsSchema,
 });
 
 /**

@@ -30,6 +30,41 @@ export default function ProjectList() {
   // Compute permissions early for hooks
   const canCreateProject = hasPermissionCheck('projects:create');
 
+  // Group projects by tag for section-based display.
+  // A project with multiple tags appears under each of its tags.
+  // Projects without tags fall into the "未分類" bucket shown last.
+  const UNTAGGED = '__untagged__';
+  const groupedProjects = useMemo(() => {
+    const groups = new Map<string, Project[]>();
+    for (const project of projects) {
+      const tags = project.tags && project.tags.length > 0 ? project.tags : [UNTAGGED];
+      for (const tag of tags) {
+        const bucket = groups.get(tag);
+        if (bucket) {
+          bucket.push(project);
+        } else {
+          groups.set(tag, [project]);
+        }
+      }
+    }
+
+    const tagNames = Array.from(groups.keys())
+      .filter((t) => t !== UNTAGGED)
+      .sort((a, b) => a.localeCompare(b, 'ja'));
+
+    const ordered = tagNames.map((tag) => ({ tag, projects: groups.get(tag)! }));
+    if (groups.has(UNTAGGED)) {
+      ordered.push({ tag: UNTAGGED, projects: groups.get(UNTAGGED)! });
+    }
+    return ordered;
+  }, [projects]);
+
+  // Only render section headers when there is at least one real tag in use
+  const hasAnyTags = useMemo(
+    () => projects.some((p) => p.tags && p.tags.length > 0),
+    [projects]
+  );
+
   const navbarActions = useMemo(() => {
     const actions = [];
     
@@ -182,7 +217,7 @@ export default function ProjectList() {
       <div className="max-w-7xl mx-auto px-8 pb-8">
         {projects.length === 0 ? (
           <EmptyProjectsState onCreateProject={handleCreateProject} canCreateProject={canCreateProject} />
-        ) : (
+        ) : !hasAnyTags ? (
           <ResponsiveGrid
             columns={{ default: 1, md: 2, lg: 3 }}
             gap="md"
@@ -199,6 +234,38 @@ export default function ProjectList() {
               />
             ))}
           </ResponsiveGrid>
+        ) : (
+          <div className="space-y-10">
+            {groupedProjects.map(({ tag, projects: tagProjects }) => (
+              <section key={tag}>
+                <div className="flex items-center gap-3 mb-4">
+                  <h2 className="text-lg font-semibold text-white">
+                    {tag === UNTAGGED ? '未分類' : tag}
+                  </h2>
+                  <span className="text-xs text-white/50 bg-white/5 rounded-full px-2 py-0.5">
+                    {tagProjects.length}
+                  </span>
+                  <div className="flex-1 h-px bg-white/10" />
+                </div>
+                <ResponsiveGrid
+                  columns={{ default: 1, md: 2, lg: 3 }}
+                  gap="md"
+                >
+                  {tagProjects.map((project) => (
+                    <ProjectCard
+                      key={`${tag}-${project.id}`}
+                      project={project}
+                      onNavigate={(path) => router.push(path)}
+                      onDelete={() => openDeleteDialog(project)}
+                      canUpdate={hasPermissionCheck('projects:update')}
+                      canDelete={hasPermissionCheck('projects:delete')}
+                      canManageMembers={hasPermissionCheck('projects:manage_members')}
+                    />
+                  ))}
+                </ResponsiveGrid>
+              </section>
+            ))}
+          </div>
         )}
       </div>
 

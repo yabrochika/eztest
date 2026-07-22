@@ -1,6 +1,7 @@
 'use client';
 
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
+import { TagInput } from '@/frontend/reusable-elements/inputs/TagInput';
 import { Project } from '../types';
 
 interface CreateProjectDialogProps {
@@ -8,6 +9,17 @@ interface CreateProjectDialogProps {
   triggerOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
+
+/** Parse the JSON-encoded tags string stored in the dialog form state */
+const parseTags = (value: string): string[] => {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === 'string') : [];
+  } catch {
+    return [];
+  }
+};
 
 export const CreateProjectDialog = ({ onProjectCreated, triggerOpen, onOpenChange }: CreateProjectDialogProps) => {
   const fields: BaseDialogField[] = [
@@ -39,9 +51,23 @@ export const CreateProjectDialog = ({ onProjectCreated, triggerOpen, onOpenChang
       rows: 3,
       maxLength: 250,
     },
+    {
+      name: 'tags',
+      label: 'タグ',
+      type: 'custom',
+      customRender: (value, onChange) => (
+        <TagInput
+          id="create-project-tags"
+          value={parseTags(value)}
+          onChange={(tags) => onChange(JSON.stringify(tags))}
+          placeholder="タグを入力して Enter（例: STAGE, リリース後）"
+        />
+      ),
+    },
   ];
 
   const handleSubmit = async (formData: Record<string, string>) => {
+    const tags = parseTags(formData.tags);
     const response = await fetch('/api/projects', {
       method: 'POST',
       headers: {
@@ -51,6 +77,7 @@ export const CreateProjectDialog = ({ onProjectCreated, triggerOpen, onOpenChang
         name: formData.name,
         key: formData.key,
         description: formData.description || undefined,
+        tags: tags.length > 0 ? tags : undefined,
       }),
     });
 

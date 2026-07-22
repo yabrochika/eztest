@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Calendar, User, Plus, Pencil, Trash2, Play } from 'lucide-react';
+import { Calendar, User, Plus, Pencil, Trash2, Play, Copy } from 'lucide-react';
 import { TestRun } from '../types';
 import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
 import { formatDateTime } from '@/lib/date-utils';
@@ -15,6 +15,7 @@ interface TestRunsKanbanViewProps {
   onViewDetails: (testRun: TestRun) => void;
   onEdit: (testRun: TestRun) => void;
   onDelete: (testRun: TestRun) => void;
+  onDuplicate?: (testRun: TestRun) => void;
   onCreate?: () => void;
 }
 
@@ -23,6 +24,7 @@ interface TestRunsKanbanViewProps {
  * - NOT_STARTED, PLANNED → Not Started
  * - IN_PROGRESS         → In Progress
  * - PAUSED              → Paused
+ * - Regression test updated → Regression test updated
  * - COMPLETED, CANCELLED → Done
  */
 interface KanbanColumnDef {
@@ -63,6 +65,14 @@ const KANBAN_COLUMNS: KanbanColumnDef[] = [
     cardBorderClassName: 'border-amber-500/30',
   },
   {
+    key: 'regression_test_updated',
+    title: 'Regression test updated',
+    statuses: ['Regression test updated'],
+    titleClassName: 'text-violet-300',
+    cardClassName: 'bg-violet-500/10 hover:bg-violet-500/15',
+    cardBorderClassName: 'border-violet-500/30',
+  },
+  {
     key: 'done',
     title: 'Done',
     statuses: ['COMPLETED', 'CANCELLED'],
@@ -81,6 +91,7 @@ export function TestRunsKanbanView({
   onViewDetails,
   onEdit,
   onDelete,
+  onDuplicate,
   onCreate,
 }: TestRunsKanbanViewProps) {
   const grouped = useMemo(() => {
@@ -99,7 +110,7 @@ export function TestRunsKanbanView({
 
   return (
     <div className="overflow-x-auto -mx-2 px-2">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-w-[640px] lg:min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 min-w-[800px] lg:min-w-0">
         {KANBAN_COLUMNS.map((col) => {
           const items = grouped.get(col.key) ?? [];
           return (
@@ -143,10 +154,12 @@ export function TestRunsKanbanView({
                       cardBorderClassName={col.cardBorderClassName}
                       canUpdate={canUpdate}
                       canDelete={canDelete}
+                      canDuplicate={canCreate}
                       onCardClick={onCardClick}
                       onViewDetails={onViewDetails}
                       onEdit={onEdit}
                       onDelete={onDelete}
+                      onDuplicate={onDuplicate}
                     />
                   ))
                 )}
@@ -165,10 +178,12 @@ interface KanbanCardProps {
   cardBorderClassName: string;
   canUpdate: boolean;
   canDelete: boolean;
+  canDuplicate?: boolean;
   onCardClick: (testRun: TestRun) => void;
   onViewDetails: (testRun: TestRun) => void;
   onEdit: (testRun: TestRun) => void;
   onDelete: (testRun: TestRun) => void;
+  onDuplicate?: (testRun: TestRun) => void;
 }
 
 function KanbanCard({
@@ -177,10 +192,12 @@ function KanbanCard({
   cardBorderClassName,
   canUpdate,
   canDelete,
+  canDuplicate = false,
   onCardClick,
   onViewDetails,
   onEdit,
   onDelete,
+  onDuplicate,
 }: KanbanCardProps) {
   const assignedUsers =
     testRun.assignedToList && testRun.assignedToList.length > 0
@@ -228,6 +245,13 @@ function KanbanCard({
                 onClick: () => onEdit(testRun),
                 show: canUpdate,
                 buttonName: `Kanban Card - Edit (${testRun.name})`,
+              },
+              {
+                label: '複製',
+                icon: Copy,
+                onClick: () => onDuplicate?.(testRun),
+                show: canDuplicate && !!onDuplicate,
+                buttonName: `Kanban Card - Duplicate (${testRun.name})`,
               },
               {
                 label: '削除',

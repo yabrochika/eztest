@@ -98,7 +98,7 @@ export class TestSuiteController {
   async createTestSuite(request: NextRequest, projectId: string) {
     try {
       const body = await request.json();
-      const { name, description, order } = body;
+      const { name, description, status, order } = body;
 
       if (!name || !name.trim()) {
         return NextResponse.json(
@@ -129,6 +129,7 @@ export class TestSuiteController {
         projectId,
         name: name.trim(),
         description: description?.trim(),
+        status: typeof status === 'string' && status.trim() ? status.trim() : undefined,
         parentId: normalizedParentId ?? undefined,
         order,
       });
@@ -169,10 +170,11 @@ export class TestSuiteController {
       }
 
       const body = await request.json();
-      const { name, description, order } = body;
+      const { name, description, status, order } = body;
       const updateData: {
         name?: string;
         description?: string | null;
+        status?: string;
         parentId?: string | null;
         order?: number;
       } = {};
@@ -182,6 +184,9 @@ export class TestSuiteController {
       }
       if (Object.prototype.hasOwnProperty.call(body, 'description')) {
         updateData.description = typeof description === 'string' ? description.trim() : null;
+      }
+      if (Object.prototype.hasOwnProperty.call(body, 'status') && typeof status === 'string' && status.trim()) {
+        updateData.status = status.trim();
       }
       if (Object.prototype.hasOwnProperty.call(body, 'parentId')) {
         const normalizedParentId = normalizeParentId(body.parentId);

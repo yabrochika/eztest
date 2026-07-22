@@ -3,7 +3,7 @@ import { emailService } from '@/backend/services/email/services';
 import { CustomRequest } from '@/backend/utils/interceptor';
 import { BadRequestException, ConflictException, NotFoundException, InternalServerException, ValidationException } from '@/backend/utils/exceptions';
 import { ProjectMessages, ProjectMemberMessages } from '@/backend/constants/static_messages';
-import { createProjectSchema, updateProjectSchema, addProjectMemberSchema, createProjectMemberGroupSchema } from '@/backend/validators';
+import { createProjectSchema, updateProjectSchema, addProjectMemberSchema, createProjectMemberGroupSchema, updateProjectMemberGroupSchema } from '@/backend/validators';
 
 export class ProjectController {
   /**
@@ -34,13 +34,14 @@ export class ProjectController {
       );
     }
 
-    const { name, key, description } = validationResult.data;
+    const { name, key, description, tags } = validationResult.data;
 
     try {
       const project = await projectService.createProject({
         name,
         key,
         description,
+        tags,
         createdById: request.userInfo.id,
       });
 
@@ -88,12 +89,13 @@ export class ProjectController {
       );
     }
 
-    const { name, description } = validationResult.data;
+    const { name, description, tags } = validationResult.data;
 
     try {
       const project = await projectService.updateProject(projectId, {
         name,
         description: description ?? undefined,
+        tags,
       });
 
       return { data: project };
@@ -231,6 +233,59 @@ export class ProjectController {
         throw new BadRequestException('Some selected members are invalid for this project.');
       }
       throw new InternalServerException('Failed to create member group.');
+    }
+  }
+
+  /**
+   * PATCH /api/projects/[id]/member-groups/[groupId] - Update member group
+   * Permission already checked by route wrapper
+   */
+  async updateProjectMemberGroup(request: CustomRequest, projectId: string, groupId: string) {
+    const body = await request.json();
+
+    const validationResult = updateProjectMemberGroupSchema.safeParse(body);
+    if (!validationResult.success) {
+      throw new ValidationException(
+        'Validation failed',
+        validationResult.error.issues
+      );
+    }
+
+    const { name, memberIds } = validationResult.data;
+
+    try {
+      const group = await projectService.updateProjectMemberGroup(projectId, groupId, {
+        name,
+        memberIds,
+      });
+      return { data: group };
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Group not found') {
+        throw new NotFoundException('Member group not found in this project.');
+      }
+      if (error instanceof Error && error.message === 'Group name already exists') {
+        throw new ConflictException('A group with this name already exists in this project.');
+      }
+      if (error instanceof Error && error.message === 'Some members do not belong to this project') {
+        throw new BadRequestException('Some selected members are invalid for this project.');
+      }
+      throw new InternalServerException('Failed to update member group.');
+    }
+  }
+
+  /**
+   * DELETE /api/projects/[id]/member-groups/[groupId] - Delete member group
+   * Permission already checked by route wrapper
+   */
+  async deleteProjectMemberGroup(request: CustomRequest, projectId: string, groupId: string) {
+    try {
+      await projectService.deleteProjectMemberGroup(projectId, groupId);
+      return { message: 'Member group deleted successfully.' };
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Group not found') {
+        throw new NotFoundException('Member group not found in this project.');
+      }
+      throw new InternalServerException('Failed to delete member group.');
     }
   }
 

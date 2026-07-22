@@ -225,6 +225,7 @@ export class TestSuiteService {
     projectId: string;
     name: string;
     description?: string;
+    status?: string;
     parentId?: string;
     order?: number;
   }) {
@@ -239,6 +240,8 @@ export class TestSuiteService {
             projectId: data.projectId,
             name: data.name,
             description: data.description,
+            // status は未指定なら DB のデフォルト(NOT_STARTED)を使う。
+            ...(data.status !== undefined ? { status: data.status } : {}),
             parentId: data.parentId,
             order: data.order ?? 0,
           },
@@ -274,6 +277,7 @@ export class TestSuiteService {
     data: {
       name?: string;
       description?: string | null;
+      status?: string;
       parentId?: string | null;
       order?: number;
     }
@@ -281,6 +285,7 @@ export class TestSuiteService {
     const updatePayload: {
       name?: string;
       description?: string | null;
+      status?: string;
       parentId?: string | null;
       order?: number;
     } = {};
@@ -290,6 +295,9 @@ export class TestSuiteService {
     }
     if (Object.prototype.hasOwnProperty.call(data, 'description')) {
       updatePayload.description = data.description;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'status')) {
+      updatePayload.status = data.status;
     }
     if (Object.prototype.hasOwnProperty.call(data, 'parentId')) {
       updatePayload.parentId = data.parentId;

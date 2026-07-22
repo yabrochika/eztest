@@ -43,6 +43,8 @@ const STATIC_BADGE_COLORS: Record<string, { bg: string; text: string; border: st
   'PAUSED': { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
   'COMPLETED': { bg: 'bg-green-500/10', text: 'text-green-500', border: 'border-green-500/20' },
   'CANCELLED': { bg: 'bg-gray-500/10', text: 'text-gray-500', border: 'border-gray-500/20' },
+  // TestRun / TestSuite Status (shared value)
+  'Regression test updated': { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20' },
   
   // TestResult Status
   // Note: NOT_STARTED is already defined above for TestRun Status (slate)

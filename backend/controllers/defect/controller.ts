@@ -231,6 +231,33 @@ export class DefectController {
   }
 
   /**
+   * Create a new Shortcut epic and attach this defect as a story under it
+   */
+  async createShortcutEpicForDefect(
+    req: CustomRequest,
+    defectId: string,
+    body: { name?: string }
+  ) {
+    const name = typeof body?.name === 'string' ? body.name.trim() : '';
+    if (!name) {
+      throw new ValidationException('Epic name is required');
+    }
+    const appUrl = process.env.NEXTAUTH_URL || process.env.APP_URL || null;
+    try {
+      const data = await shortcutService.createEpicAndStoryForDefect(defectId, name, appUrl);
+      return {
+        data,
+        message: 'Created a new Shortcut epic for the defect',
+        statusCode: 201,
+      };
+    } catch (error) {
+      throw new ValidationException(
+        error instanceof Error ? error.message : 'Failed to create Shortcut epic'
+      );
+    }
+  }
+
+  /**
    * Update defect
    */
   async updateDefect(req: CustomRequest, defectId: string, body: unknown) {

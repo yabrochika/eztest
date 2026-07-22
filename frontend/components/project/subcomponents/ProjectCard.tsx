@@ -14,6 +14,7 @@ interface ProjectCardProps {
     name: string;
     key: string;
     description: string | null;
+    tags?: string[];
     updatedAt: string;
     members: Array<{
       id: string;
@@ -43,9 +44,20 @@ export const ProjectCard = ({ project, onNavigate, onDelete, canUpdate = false, 
   const hasActionPermissions = canUpdate || canDelete || canManageMembers;
 
   const badges = (
-    <Badge variant="outline" className="font-mono text-xs px-2 py-0.5 border-primary/40 bg-primary/10 text-primary">
-      {project.key}
-    </Badge>
+    <div className="flex flex-wrap items-center gap-1.5">
+      <Badge variant="outline" className="font-mono text-xs px-2 py-0.5 border-primary/40 bg-primary/10 text-primary">
+        {project.key}
+      </Badge>
+      {project.tags?.map((tag) => (
+        <Badge
+          key={tag}
+          variant="outline"
+          className="text-xs px-2 py-0.5 border-accent/40 bg-accent/10 text-accent"
+        >
+          {tag}
+        </Badge>
+      ))}
+    </div>
   );
 
   const header = hasActionPermissions && (

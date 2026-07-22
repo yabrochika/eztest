@@ -3,6 +3,7 @@ export interface TestSuite {
   tsId: string;
   name: string;
   description?: string;
+  status: string;
   order: number;
   parentId?: string;
   parent?: {
@@ -25,5 +26,6 @@ export interface Project {
 export interface TestSuiteFormData {
   name: string;
   description: string;
+  status?: string;
   parentId: string | null;
 }

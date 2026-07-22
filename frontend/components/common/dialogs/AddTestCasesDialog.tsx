@@ -15,9 +15,11 @@ import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimar
 import { CheckboxListItem } from '@/frontend/reusable-elements/checkboxes/CheckboxListItem';
 import { PriorityBadge } from '@/frontend/reusable-components/badges/PriorityBadge';
 import { Input } from '@/frontend/reusable-elements/inputs/Input';
+import { testCaseMatchesQuery } from '@/lib/testcase-search';
 
 interface TestCase {
   id: string;
+  tcId?: string;
   title?: string;
   name?: string;
   description?: string;
@@ -62,7 +64,7 @@ export function AddTestCasesDialog({
   const contextLabel = context === 'suite' ? 'このテストスイート' : 'このテストラン';
   const title = context === 'suite' ? 'テストスイートにテストケースを追加' : 'テストランにテストケースを追加';
 
-  // テストケース名（タイトル）による部分一致検索
+  // テストケースに紐づく全データ横断＋タイトルの曖昧（あいまい）一致検索
   const [searchQuery, setSearchQuery] = useState('');
 
   // ダイアログを閉じたら検索キーワードをリセット
@@ -71,12 +73,11 @@ export function AddTestCasesDialog({
   }, [open]);
 
   const filteredTestCases = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = searchQuery.trim();
     if (!q) return testCases;
-    return testCases.filter((tc) => {
-      const name = (tc.title || tc.name || '').toLowerCase();
-      return name.includes(q);
-    });
+    return testCases.filter((tc) =>
+      testCaseMatchesQuery(tc, q, { fuzzyTarget: tc.title || tc.name })
+    );
   }, [testCases, searchQuery]);
 
   return (
@@ -96,9 +97,9 @@ export function AddTestCasesDialog({
               variant="glass"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="テストケース名で検索（部分一致）"
+              placeholder="テストケースを検索（TC番号・全項目・タイトルは曖昧一致）"
               className="pl-10 pr-10"
-              aria-label="テストケース名で検索"
+              aria-label="テストケースを検索"
             />
             {searchQuery && (
               <button
@@ -138,7 +139,7 @@ export function AddTestCasesDialog({
                     id={testCase.id}
                     checked={selectedIds.includes(testCase.id)}
                     onCheckedChange={() => handleToggle(testCase.id)}
-                    label={testCase.title || testCase.name || '（タイトルなし）'}
+                    label={`${testCase.tcId ? `[${testCase.tcId}] ` : ''}${testCase.title || testCase.name || '（タイトルなし）'}`}
                     description={testCase.description}
                     rightContent={
                       showPriority && testCase.priority ? (

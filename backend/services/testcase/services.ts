@@ -123,23 +123,29 @@ export class TestCaseService {
    * Generate next test case ID for a project (e.g., TC-1, TC-2, TC-3...)
    */
   private async generateTestCaseId(projectId: string): Promise<string> {
-    // Get existing test cases to find the highest number
+    // Get existing test case IDs to find the highest number.
+    // NOTE: tcId is a string ("TC-<n>") so a DB-level `orderBy: { tcId: 'desc' }`
+    // sorts lexicographically ("TC-999" > "TC-2976"), which previously made this
+    // method start from the wrong number and then linearly scan thousands of IDs
+    // (one findFirst per candidate) until it found a free slot — taking >60s and
+    // hitting the gateway timeout. Compute the true numeric maximum in memory
+    // instead so the next ID is found immediately.
     const existingTestCases = await prisma.testCase.findMany({
       where: { projectId },
       select: { tcId: true },
-      orderBy: { tcId: 'desc' },
     });
 
-    let nextTestCaseNumber = 1;
-    if (existingTestCases.length > 0) {
-      // Extract number from existing TC-XXX format
-      const lastTcId = existingTestCases[0].tcId;
-      const match = lastTcId.match(/\d+/);
+    let maxTestCaseNumber = 0;
+    for (const { tcId: existingTcId } of existingTestCases) {
+      const match = existingTcId.match(/\d+/);
       if (match) {
-        nextTestCaseNumber = parseInt(match[0], 10) + 1;
+        const n = parseInt(match[0], 10);
+        if (n > maxTestCaseNumber) maxTestCaseNumber = n;
       }
     }
-    
+
+    let nextTestCaseNumber = maxTestCaseNumber + 1;
+
     // Generate ID in TC-XXX format without padding (TC-1, TC-2, etc.)
     let tcId = `TC-${nextTestCaseNumber}`;
     

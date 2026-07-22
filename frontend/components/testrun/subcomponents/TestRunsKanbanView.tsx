@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Calendar, User, Plus, Pencil, Trash2, Play, CheckCircle2, ArrowRightLeft } from 'lucide-react';
+import { Calendar, User, Plus, Pencil, Trash2, Play, CheckCircle2, ArrowRightLeft, Copy } from 'lucide-react';
 import { TestRun } from '../types';
 import { ActionMenu, type ActionMenuItem } from '@/frontend/reusable-components/menus/ActionMenu';
 import { formatDateTime } from '@/lib/date-utils';
@@ -15,6 +15,7 @@ interface TestRunsKanbanViewProps {
   onViewDetails: (testRun: TestRun) => void;
   onEdit: (testRun: TestRun) => void;
   onDelete: (testRun: TestRun) => void;
+  onDuplicate?: (testRun: TestRun) => void;
   onCreate?: () => void;
   /** カードのドロップ／メニュー操作でステータスを変更する */
   onStatusChange?: (testRun: TestRun, newStatus: string) => void;
@@ -110,6 +111,7 @@ export function TestRunsKanbanView({
   onViewDetails,
   onEdit,
   onDelete,
+  onDuplicate,
   onCreate,
   onStatusChange,
 }: TestRunsKanbanViewProps) {
@@ -218,6 +220,7 @@ export function TestRunsKanbanView({
                       cardBorderClassName={col.cardBorderClassName}
                       canUpdate={canUpdate}
                       canDelete={canDelete}
+                      canDuplicate={canCreate}
                       draggable={dndEnabled}
                       isDragging={draggingRun?.id === testRun.id}
                       onDragStart={(e) => {
@@ -239,6 +242,7 @@ export function TestRunsKanbanView({
                       onViewDetails={onViewDetails}
                       onEdit={onEdit}
                       onDelete={onDelete}
+                      onDuplicate={onDuplicate}
                     />
                   ))
                 )}
@@ -257,6 +261,7 @@ interface KanbanCardProps {
   cardBorderClassName: string;
   canUpdate: boolean;
   canDelete: boolean;
+  canDuplicate?: boolean;
   draggable: boolean;
   isDragging: boolean;
   onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
@@ -266,6 +271,7 @@ interface KanbanCardProps {
   onViewDetails: (testRun: TestRun) => void;
   onEdit: (testRun: TestRun) => void;
   onDelete: (testRun: TestRun) => void;
+  onDuplicate?: (testRun: TestRun) => void;
 }
 
 function KanbanCard({
@@ -274,6 +280,7 @@ function KanbanCard({
   cardBorderClassName,
   canUpdate,
   canDelete,
+  canDuplicate = false,
   draggable,
   isDragging,
   onDragStart,
@@ -283,6 +290,7 @@ function KanbanCard({
   onViewDetails,
   onEdit,
   onDelete,
+  onDuplicate,
 }: KanbanCardProps) {
   const assignedUsers =
     testRun.assignedToList && testRun.assignedToList.length > 0
@@ -368,6 +376,13 @@ function KanbanCard({
                 onClick: () => onEdit(testRun),
                 show: canUpdate,
                 buttonName: `Kanban Card - Edit (${testRun.name})`,
+              },
+              {
+                label: '複製',
+                icon: Copy,
+                onClick: () => onDuplicate?.(testRun),
+                show: canDuplicate && !!onDuplicate,
+                buttonName: `Kanban Card - Duplicate (${testRun.name})`,
               },
               {
                 label: '削除',

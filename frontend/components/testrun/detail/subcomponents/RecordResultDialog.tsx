@@ -24,6 +24,7 @@ import { Checkbox } from '@/frontend/reusable-elements/checkboxes/Checkbox';
 import { CheckCircle, XCircle, AlertCircle, Circle, Bug, Timer, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { ResultFormData, type TestCaseSnapshot } from '../types';
 import { CreateDefectDialog } from '@/frontend/components/defect/subcomponents/CreateDefectDialog';
+import { AttachmentDisplay } from '@/frontend/reusable-components/attachments/AttachmentDisplay';
 import { useDropdownOptions } from '@/hooks/useDropdownOptions';
 
 interface TestStep {
@@ -132,6 +133,52 @@ export function RecordResultDialog({
   const [testCaseDetail, setTestCaseDetail] = useState<TestCaseDetail | null>(null);
   const [loadingTestCase, setLoadingTestCase] = useState(false);
   const [testCaseExpanded, setTestCaseExpanded] = useState(true);
+
+  // テストステップの添付（操作 / 期待結果ごとに画像・動画などを表示）
+  const [stepAttachments, setStepAttachments] = useState<
+    Record<string, { action: Attachment[]; expectedResult: Attachment[] }>
+  >({});
+
+  useEffect(() => {
+    const steps = testCaseDetail?.steps;
+    if (!open || !steps || steps.length === 0) {
+      setStepAttachments({});
+      return;
+    }
+    let cancelled = false;
+    const fetchStepAttachments = async () => {
+      const result: Record<string, { action: Attachment[]; expectedResult: Attachment[] }> = {};
+      await Promise.all(
+        steps
+          .filter((step) => step.id)
+          .map(async (step) => {
+            try {
+              const response = await fetch(`/api/teststeps/${step.id}/attachments`);
+              if (!response.ok) return;
+              const data = await response.json();
+              const list: Attachment[] = data.data || [];
+              const grouped = { action: [] as Attachment[], expectedResult: [] as Attachment[] };
+              for (const att of list) {
+                const withType: Attachment = { ...att, entityType: 'teststep' };
+                if (att.fieldName === 'expectedResult') {
+                  grouped.expectedResult.push(withType);
+                } else {
+                  grouped.action.push(withType);
+                }
+              }
+              result[step.id] = grouped;
+            } catch (error) {
+              console.error('Error fetching step attachments:', error);
+            }
+          })
+      );
+      if (!cancelled) setStepAttachments(result);
+    };
+    fetchStepAttachments();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, testCaseDetail]);
 
   // 実行者の選択肢（プロジェクトメンバー）
   const [executorOptions, setExecutorOptions] = useState<ExecutorOption[]>([]);
@@ -620,14 +667,24 @@ export function RecordResultDialog({
                             {step.stepNumber}
                           </span>
                           <div className="flex-1 space-y-1">
-                            <p className="text-white/80">
+                            <div className="text-white/80">
                               <span className="text-white/40 text-xs">操作: </span>
                               {step.action}
-                            </p>
-                            <p className="text-white/60">
+                              {stepAttachments[step.id]?.action?.length > 0 && (
+                                <div className="mt-1">
+                                  <AttachmentDisplay attachments={stepAttachments[step.id].action} />
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-white/60">
                               <span className="text-white/40 text-xs">期待結果: </span>
                               {step.expectedResult}
-                            </p>
+                              {stepAttachments[step.id]?.expectedResult?.length > 0 && (
+                                <div className="mt-1">
+                                  <AttachmentDisplay attachments={stepAttachments[step.id].expectedResult} />
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/frontend/reusable-elements/inputs/Input';
 import { Label } from '@/frontend/reusable-elements/labels/Label';
 import { Textarea } from '@/frontend/reusable-elements/textareas/Textarea';
+import { TagInput } from '@/frontend/reusable-elements/inputs/TagInput';
 import { Save, Trash2 } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -20,6 +21,7 @@ interface Project {
   name: string;
   key: string;
   description: string | null;
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -41,9 +43,14 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
   
   const canDeleteProject = hasPermissionCheck('projects:delete');
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    tags: string[];
+  }>({
     name: '',
     description: '',
+    tags: [],
   });
 
   useEffect(() => {
@@ -60,6 +67,7 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
         setFormData({
           name: data.data.name,
           description: data.data.description || '',
+          tags: data.data.tags || [],
         });
       } else {
         setError('Failed to load project');
@@ -84,6 +92,7 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
         body: JSON.stringify({
           name: formData.name,
           description: formData.description || null,
+          tags: formData.tags,
         }),
       });
 
@@ -192,6 +201,19 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="settings-project-tags">タグ</Label>
+              <TagInput
+                id="settings-project-tags"
+                value={formData.tags}
+                onChange={(tags) => setFormData({ ...formData, tags })}
+                placeholder="タグを入力して Enter（例: STAGE, リリース後）"
+              />
+              <p className="text-xs text-muted-foreground">
+                タグはプロジェクト一覧のグループ分けに使われます
+              </p>
+            </div>
+
             {error && (
               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
                 {error}
@@ -216,6 +238,7 @@ export default function ProjectSettings({ projectId }: ProjectSettingsProps) {
                   setFormData({
                     name: project.name,
                     description: project.description || '',
+                    tags: project.tags || [],
                   });
                   setError('');
                   setSuccessMessage('');

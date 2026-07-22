@@ -138,10 +138,37 @@ model Project {
   defects     Defect[]
   apiKeys     ApiKey[]
   memberGroups ProjectMemberGroup[]
+  tags        ProjectTag[]
 
   @@index([key])
   @@index([createdById])
   @@index([isDeleted])
+}
+
+// Free-form tags that can be attached to multiple projects for grouping
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects  ProjectTag[]
+
+  @@index([name])
+}
+
+// Join table for the many-to-many relation between Project and Tag
+model ProjectTag {
+  projectId String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, tagId])
+  @@index([projectId])
+  @@index([tagId])
 }
 
 model ProjectMember {

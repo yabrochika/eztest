@@ -18,6 +18,7 @@ import { TestRunsEmptyState } from './subcomponents/TestRunsEmptyState';
 import { CreateTestRunDialog } from './subcomponents/CreateTestRunDialog';
 import { EditTestRunDialog } from './subcomponents/EditTestRunDialog';
 import { DeleteTestRunDialog } from './subcomponents/DeleteTestRunDialog';
+import { DuplicateTestRunDialog } from './subcomponents/DuplicateTestRunDialog';
 import { UploadTestNGXMLDialog } from './subcomponents/UploadTestNGXMLDialog';
 import { TestRun, Project, TestRunFilters } from './types';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -40,9 +41,11 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [uploadXMLDialogOpen, setUploadXMLDialogOpen] = useState(false);
   const [selectedTestRun, setSelectedTestRun] = useState<TestRun | null>(null);
+  const [duplicateSourceTestRun, setDuplicateSourceTestRun] = useState<TestRun | null>(null);
 
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
@@ -214,92 +217,80 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
   /**
    * テストランを複製する。
    * 既存テストランの詳細を取得し、設定値（説明・環境・端末・アサイン・テストケース等）を
-   * そのまま流用した新規テストランを作成する。ステータスは NOT_STARTED に戻し、
-   * 名前末尾に「 (コピー)」を付与する。作成後は新テストランの詳細ページへ遷移する。
+   * そのまま流用した新規テストランを、指定された新しい名前（ブランチ名）で作成する。
+   * ステータスは NOT_STARTED に戻す。作成後は新テストランの詳細ページへ遷移する。
+   * 失敗時は Error を throw し、呼び出し元のダイアログ内でエラー表示できるようにする。
    */
-  const handleDuplicateTestRun = async (sourceTestRun: TestRun) => {
-    try {
-      // 完全なテストケースID一覧を得るために詳細を取得する（一覧 API には testCaseId が含まれない）
-      const detailRes = await fetch(
-        `/api/projects/${projectId}/testruns/${sourceTestRun.id}`
-      );
-      const detailJson = await detailRes.json();
-      if (!detailRes.ok || !detailJson?.data) {
-        setAlert({
-          type: 'error',
-          title: '複製に失敗しました',
-          message: detailJson?.error || 'テストラン詳細の取得に失敗しました',
-        });
-        return;
-      }
-      const detail = detailJson.data as {
-        results?: Array<{ testCaseId?: string; testCase?: { id?: string } }>;
-      };
-
-      const testCaseIds = Array.from(
-        new Set(
-          (detail.results || [])
-            .map((r) => r.testCaseId || r.testCase?.id)
-            .filter((id): id is string => typeof id === 'string' && id.length > 0)
-        )
-      );
-
-      const newName = `${sourceTestRun.name} (コピー)`;
-
-      const payload: Record<string, unknown> = {
-        name: newName,
-        description: sourceTestRun.description ?? undefined,
-        executionType: sourceTestRun.executionType ?? 'MANUAL',
-        version: sourceTestRun.version ?? undefined,
-        environment: sourceTestRun.environment ?? undefined,
-        verificationEnvironment: sourceTestRun.verificationEnvironment ?? undefined,
-        verificationEnvironmentNote: sourceTestRun.verificationEnvironmentNote ?? undefined,
-        platform: sourceTestRun.platform ?? undefined,
-        device: sourceTestRun.device ?? undefined,
-        assignedToId: sourceTestRun.assignedTo?.id ?? undefined,
-        assignedToIds:
-          sourceTestRun.assignedToIds && sourceTestRun.assignedToIds.length > 0
-            ? sourceTestRun.assignedToIds
-            : sourceTestRun.assignedTo?.id
-              ? [sourceTestRun.assignedTo.id]
-              : undefined,
-        status: 'NOT_STARTED',
-        testCaseIds,
-      };
-
-      const createRes = await fetch(`/api/projects/${projectId}/testruns`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const createJson = await createRes.json();
-      if (!createRes.ok || !createJson?.data) {
-        setAlert({
-          type: 'error',
-          title: '複製に失敗しました',
-          message: createJson?.error || 'テストランの作成に失敗しました',
-        });
-        return;
-      }
-
-      setAlert({
-        type: 'success',
-        title: '成功',
-        message: `テストラン「${newName}」を作成しました`,
-      });
-      setTimeout(() => setAlert(null), 5000);
-
-      const newId = (createJson.data as { id?: string }).id;
-      if (newId) {
-        router.push(`/projects/${projectId}/testruns/${newId}`);
-      } else {
-        fetchTestRuns();
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '不明なエラーが発生しました';
-      setAlert({ type: 'error', title: '接続エラー', message });
-      console.error('Error duplicating test run:', error);
+  const handleDuplicateTestRun = async (sourceTestRun: TestRun, newName: string) => {
+    // 完全なテストケースID一覧を得るために詳細を取得する（一覧 API には testCaseId が含まれない）
+    const detailRes = await fetch(
+      `/api/projects/${projectId}/testruns/${sourceTestRun.id}`
+    );
+    const detailJson = await detailRes.json();
+    if (!detailRes.ok || !detailJson?.data) {
+      throw new Error(detailJson?.error || 'テストラン詳細の取得に失敗しました');
     }
+    const detail = detailJson.data as {
+      results?: Array<{ testCaseId?: string; testCase?: { id?: string } }>;
+    };
+
+    const testCaseIds = Array.from(
+      new Set(
+        (detail.results || [])
+          .map((r) => r.testCaseId || r.testCase?.id)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0)
+      )
+    );
+
+    const payload: Record<string, unknown> = {
+      name: newName,
+      description: sourceTestRun.description ?? undefined,
+      executionType: sourceTestRun.executionType ?? 'MANUAL',
+      version: sourceTestRun.version ?? undefined,
+      environment: sourceTestRun.environment ?? undefined,
+      verificationEnvironment: sourceTestRun.verificationEnvironment ?? undefined,
+      verificationEnvironmentNote: sourceTestRun.verificationEnvironmentNote ?? undefined,
+      platform: sourceTestRun.platform ?? undefined,
+      device: sourceTestRun.device ?? undefined,
+      assignedToId: sourceTestRun.assignedTo?.id ?? undefined,
+      assignedToIds:
+        sourceTestRun.assignedToIds && sourceTestRun.assignedToIds.length > 0
+          ? sourceTestRun.assignedToIds
+          : sourceTestRun.assignedTo?.id
+            ? [sourceTestRun.assignedTo.id]
+            : undefined,
+      status: 'NOT_STARTED',
+      testCaseIds,
+    };
+
+    const createRes = await fetch(`/api/projects/${projectId}/testruns`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const createJson = await createRes.json();
+    if (!createRes.ok || !createJson?.data) {
+      throw new Error(createJson?.error || 'テストランの作成に失敗しました');
+    }
+
+    setAlert({
+      type: 'success',
+      title: '成功',
+      message: `テストラン「${newName}」を作成しました`,
+    });
+    setTimeout(() => setAlert(null), 5000);
+
+    const newId = (createJson.data as { id?: string }).id;
+    if (newId) {
+      router.push(`/projects/${projectId}/testruns/${newId}`);
+    } else {
+      fetchTestRuns();
+    }
+  };
+
+  const openDuplicateDialog = (testRun: TestRun) => {
+    setDuplicateSourceTestRun(testRun);
+    setDuplicateDialogOpen(true);
   };
 
   /**
@@ -581,6 +572,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
               setSelectedTestRun(testRun);
               setDeleteDialogOpen(true);
             }}
+            onDuplicate={(testRun) => openDuplicateDialog(testRun)}
             onCreate={() => setCreateDialogOpen(true)}
             onStatusChange={handleStatusChange}
           />
@@ -610,7 +602,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
                   setSelectedTestRun(testRun);
                   setDeleteDialogOpen(true);
                 }}
-                onDuplicate={() => handleDuplicateTestRun(testRun)}
+                onDuplicate={() => openDuplicateDialog(testRun)}
               />
             ))}
           </ResponsiveGrid>
@@ -639,6 +631,25 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
           triggerOpen={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleDeleteTestRun}
+        />
+
+        {/* Duplicate Dialog */}
+        <DuplicateTestRunDialog
+          key={duplicateSourceTestRun?.id ?? 'none'}
+          testRun={duplicateSourceTestRun}
+          open={duplicateDialogOpen}
+          onOpenChange={(open) => {
+            setDuplicateDialogOpen(open);
+            if (!open) {
+              setDuplicateSourceTestRun(null);
+            }
+          }}
+          onDuplicate={(newName) => {
+            if (!duplicateSourceTestRun) {
+              throw new Error('複製元のテストランが見つかりません');
+            }
+            return handleDuplicateTestRun(duplicateSourceTestRun, newName);
+          }}
         />
 
         {/* Export Dialog */}

@@ -2,6 +2,7 @@
 
 import { BaseDialog, BaseDialogField, BaseDialogConfig } from '@/frontend/reusable-components/dialogs/BaseDialog';
 import { TestSuite } from '../types';
+import { STATUS_OPTIONS } from '../constants/testSuiteFormConfig';
 
 export interface CreateTestSuiteDialogProps {
   projectId: string;
@@ -45,6 +46,14 @@ export function CreateTestSuiteDialog({
       maxLength: 250,
     },
     {
+      name: 'status',
+      label: 'ステータス',
+      type: 'select',
+      placeholder: 'ステータスを選択',
+      defaultValue: 'NOT_STARTED',
+      options: STATUS_OPTIONS,
+    },
+    {
       name: 'parentId',
       label: 'Parent Suite',
       type: 'select',
@@ -74,6 +83,7 @@ export function CreateTestSuiteDialog({
       body: JSON.stringify({
         name: formData.name,
         description: formData.description || undefined,
+        status: formData.status || undefined,
         parentId: validParentId,
       }),
     });

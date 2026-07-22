@@ -1,6 +1,7 @@
 ﻿import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { FormBuilder, FormFieldConfig } from '@/frontend/reusable-components';
 import { TestSuiteFormData } from '../types';
+import { STATUS_OPTIONS } from '../../constants/testSuiteFormConfig';
 
 interface TestSuiteDetailsCardProps {
   isEditing: boolean;
@@ -18,6 +19,14 @@ export function TestSuiteDetailsCard({
   errors = {},
 }: TestSuiteDetailsCardProps) {
   const fields: FormFieldConfig[] = [
+    {
+      name: 'status',
+      label: 'ステータス',
+      type: 'select',
+      placeholder: 'ステータスを選択',
+      options: STATUS_OPTIONS,
+      cols: 1,
+    },
     {
       name: 'description',
       label: 'Description',

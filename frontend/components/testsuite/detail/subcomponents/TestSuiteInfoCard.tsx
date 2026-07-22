@@ -1,10 +1,14 @@
 ﻿import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { Button } from '@/frontend/reusable-elements/buttons/Button';
+import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { StatisticsSection } from '@/frontend/reusable-components/data/StatisticsSection';
 import { DateInfoSection } from '@/frontend/reusable-components/data/DateInfoSection';
 import { Folder } from 'lucide-react';
+import { useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { getDynamicBadgeProps } from '@/lib/badge-color-utils';
 
 interface TestSuiteInfoCardProps {
+  status?: string;
   parent?: {
     id: string;
     name: string;
@@ -17,6 +21,7 @@ interface TestSuiteInfoCardProps {
 }
 
 export function TestSuiteInfoCard({
+  status,
   parent,
   testCasesCount,
   childrenCount,
@@ -24,8 +29,28 @@ export function TestSuiteInfoCard({
   updatedAt,
   onParentClick,
 }: TestSuiteInfoCardProps) {
+  const { options: statusOptions } = useDropdownOptions('TestSuite', 'status');
+  const statusBadgeProps = getDynamicBadgeProps(status, statusOptions);
+  const statusLabel =
+    statusOptions.find((opt) => opt.value === status)?.label ||
+    status?.replace(/_/g, ' ') ||
+    '未設定';
+
   return (
     <DetailCard title="Information" contentClassName="space-y-3">
+      {status && (
+        <div>
+          <h4 className="text-sm font-medium text-white/60 mb-1">Status</h4>
+          <Badge
+            variant="outline"
+            className={statusBadgeProps.className}
+            style={statusBadgeProps.style}
+          >
+            {statusLabel}
+          </Badge>
+        </div>
+      )}
+
       {parent && (
         <div>
           <h4 className="text-sm font-medium text-white/60 mb-1">

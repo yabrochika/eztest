@@ -258,8 +258,13 @@ export default function TestSuiteList({ projectId }: TestSuiteListProps) {
                     <td className="px-3 py-3 font-medium text-white">
                       {suite.name}
                     </td>
-                    <td className="px-3 py-3 text-white/50 max-w-xs truncate">
-                      {suite.description || '—'}
+                    <td className="px-3 py-3 text-white/50 max-w-xs">
+                      <p
+                        className="break-words line-clamp-2"
+                        title={suite.description || undefined}
+                      >
+                        {suite.description || '—'}
+                      </p>
                     </td>
                     <td className="px-3 py-3 text-center text-white/70">
                       <span className="inline-flex items-center gap-1">

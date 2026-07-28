@@ -293,6 +293,55 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
     setDuplicateDialogOpen(true);
   };
 
+  /**
+   * カンバンの D&D・ステータス変更メニューからテストランのステータスを更新する。
+   * UX のため楽観的に画面へ反映し、失敗時は元のステータスへ戻す。
+   */
+  const handleStatusChange = async (testRun: TestRun, newStatus: string) => {
+    if (testRun.status === newStatus) return;
+
+    const previousStatus = testRun.status;
+    const newStatusTyped = newStatus as TestRun['status'];
+
+    // 楽観的更新
+    setTestRuns((prev) =>
+      prev.map((tr) => (tr.id === testRun.id ? { ...tr, status: newStatusTyped } : tr))
+    );
+
+    try {
+      const response = await fetch(
+        `/api/projects/${projectId}/testruns/${testRun.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'ステータスの更新に失敗しました');
+      }
+
+      setAlert({
+        type: 'success',
+        title: '成功',
+        message: `テストラン「${testRun.name}」のステータスを更新しました`,
+      });
+      setTimeout(() => setAlert(null), 4000);
+      // サーバー側の派生値（進捗など）を反映するため再取得する。
+      fetchTestRuns();
+    } catch (error) {
+      // 失敗時は元のステータスへ戻す
+      setTestRuns((prev) =>
+        prev.map((tr) => (tr.id === testRun.id ? { ...tr, status: previousStatus } : tr))
+      );
+      const message =
+        error instanceof Error ? error.message : '不明なエラーが発生しました';
+      setAlert({ type: 'error', title: 'ステータス更新に失敗しました', message });
+    }
+  };
+
   const handleTestRunUpdated = (updatedTestRun: { id: string; name: string }) => {
     setEditDialogOpen(false);
     setSelectedTestRun(null);
@@ -525,6 +574,7 @@ export default function TestRunsList({ projectId }: TestRunsListProps) {
             }}
             onDuplicate={(testRun) => openDuplicateDialog(testRun)}
             onCreate={() => setCreateDialogOpen(true)}
+            onStatusChange={handleStatusChange}
           />
         ) : (
           <ResponsiveGrid

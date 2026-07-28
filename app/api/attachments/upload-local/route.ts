@@ -1,5 +1,5 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authenticateRequest } from '@/lib/auth/apiKeyAuth';
+import type { NextRequest } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
@@ -12,8 +12,8 @@ import { prisma } from '@/lib/prisma';
  */
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = await authenticateRequest(request as unknown as NextRequest);
+    if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

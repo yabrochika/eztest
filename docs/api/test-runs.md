@@ -14,7 +14,14 @@ API endpoints for test run management and execution.
 | `POST` | `/api/testruns/:id/start` | Start execution |
 | `POST` | `/api/testruns/:id/complete` | Complete test run |
 | `GET` | `/api/testruns/:id/results` | Get results |
-| `POST` | `/api/testruns/:id/results` | Record result |
+| `POST` | `/api/testruns/:id/results` | Record result (upsert) |
+| `PATCH` | `/api/testruns/:id/results` | Partially update a result (executedAt 維持) |
+
+> **認証:** 全エンドポイントは セッション(Cookie) または APIキー(`Authorization: Bearer <APIキー>`) に対応。
+> 以下の例では Cookie を使っているが、`Authorization: Bearer <APIキー>` に置き換えても動作する。
+>
+> **添付:** 各結果は `attachments` 配列を含み（`GET /api/testruns/:id` および一覧 `GET /api/projects/:id/testruns`）、
+> API から添付の成否を検証できる。
 
 ---
 
@@ -372,6 +379,15 @@ Cookie: next-auth.session-token=...
 | `comment` | string | No | Execution notes |
 | `errorMessage` | string | No | Error details (for failures) |
 | `stackTrace` | string | No | Stack trace |
+| `executedById` | string | No | 実行者ユーザーID（省略時は認証ユーザー）。対象プロジェクトのメンバーのみ指定可 |
+| `executedAt` | string | No | 検証実施日時（ISO8601, 例 `2026-06-10T09:00:00.000Z`）。省略時は投稿時刻 |
+
+> このエンドポイントは upsert です。同じ `testCaseId` に対して再 POST すると結果全体が
+> 上書きされ、`executedAt` を省略すると投稿時刻に更新されます。コメントだけ直したい等の
+> 部分更新では下記の **PATCH** を使うと `executedAt` が維持されます。
+
+> `testCaseId` がマスターに存在しない（削除済みなど）場合、外部キー違反ではなく
+> `422` の分かりやすいエラーメッセージを返します。
 
 **Response (201 Created):**
 ```json
@@ -383,9 +399,63 @@ Cookie: next-auth.session-token=...
     "status": "PASSED",
     "duration": 120,
     "comment": "All steps executed successfully",
-    "executedAt": "2024-01-15T10:35:00Z"
+    "executedAt": "2024-01-15T10:35:00Z",
+    "attachments": []
   },
   "message": "Result recorded successfully"
+}
+```
+
+---
+
+## PATCH /api/testruns/:id/results
+
+既存のテスト結果を**部分更新**する。送信したフィールドだけを更新し、
+送信しなかったフィールド（特に `executedAt`）はそのまま維持する。
+階層型パス `PATCH /api/projects/:projectId/testruns/:id/results` でも同じ動作。
+
+**必要権限:** `testruns:update`
+
+**Request:**
+```http
+PATCH /api/testruns/run_abc123/results
+Content-Type: application/json
+Authorization: Bearer <APIキー>
+
+{
+  "testCaseId": "tc_1",
+  "comment": "コメントだけ修正"
+}
+```
+
+**Request Body:** （`testCaseId` のみ必須。他は更新したいものだけを指定）
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `testCaseId` | string | Yes | 更新対象を特定するテストケースID |
+| `status` | string | No | PASSED, FAILED, BLOCKED, SKIPPED, RETEST |
+| `duration` | number | No | Duration in seconds |
+| `comment` | string | No | Execution notes |
+| `errorMessage` | string | No | Error details |
+| `stackTrace` | string | No | Stack trace |
+| `executedById` | string | No | 実行者ユーザーID（対象プロジェクトのメンバーのみ） |
+| `executedAt` | string | No | 検証実施日時（ISO8601）。指定時のみ更新される |
+
+> `testCaseId` の結果がまだ存在しない場合は `404` を返す（先に POST で作成すること）。
+> 更新対象フィールドが1つも指定されていない場合は `422`。
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "result_1",
+    "testRunId": "run_abc123",
+    "testCaseId": "tc_1",
+    "status": "PASSED",
+    "comment": "コメントだけ修正",
+    "executedAt": "2024-01-15T10:35:00Z",
+    "attachments": []
+  }
 }
 ```
 
@@ -436,14 +506,24 @@ curl -X POST http://localhost:3000/api/projects/proj_123/testruns \
 curl -X POST http://localhost:3000/api/testruns/run_123/start \
   -H "Cookie: next-auth.session-token=..."
 
-# Record result
+# Record result (APIキー認証 + executedAt 指定の例)
 curl -X POST http://localhost:3000/api/testruns/run_123/results \
   -H "Content-Type: application/json" \
-  -H "Cookie: next-auth.session-token=..." \
+  -H "Authorization: Bearer <APIキー>" \
   -d '{
     "testCaseId": "tc_1",
     "status": "PASSED",
-    "duration": 120
+    "duration": 120,
+    "executedAt": "2026-06-10T09:00:00.000Z"
+  }'
+
+# Partial update (executedAt を維持したままコメントだけ修正)
+curl -X PATCH http://localhost:3000/api/testruns/run_123/results \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <APIキー>" \
+  -d '{
+    "testCaseId": "tc_1",
+    "comment": "コメントだけ修正"
   }'
 ```
 

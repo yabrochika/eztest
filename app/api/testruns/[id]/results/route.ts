@@ -15,3 +15,19 @@ export const POST = hasPermission(
   'testruns',
   'update'
 );
+
+/**
+ * PATCH /api/testruns/[id]/results
+ * Partially update an existing test result
+ * 送信されたフィールドだけを更新し、未送信の executedAt は維持する。
+ * Required permission: testruns:update
+ */
+export const PATCH = hasPermission(
+  async (request, context) => {
+    const { id } = await context!.params;
+    const body = await request.json();
+    return testRunController.updateTestResult(body, id, request.userInfo.id);
+  },
+  'testruns',
+  'update'
+);

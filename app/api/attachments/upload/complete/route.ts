@@ -1,6 +1,6 @@
 import { attachmentController } from '@/backend/controllers/attachment/controller';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authenticateRequest } from '@/lib/auth/apiKeyAuth';
+import type { NextRequest } from 'next/server';
 
 /**
  * POST /api/attachments/upload/complete
@@ -8,11 +8,13 @@ import { authOptions } from '@/lib/auth';
  * Purpose: Finalize S3 multipart upload and persist attachment record to database
  * Request body: uploadId, s3Key, parts, fileName, fileSize, fileType, testCaseId, fieldName
  * Returns: success boolean and attachment metadata
+ *
+ * 認証: セッション(Cookie) または APIキー(Authorization: Bearer <key>)。
  */
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = await authenticateRequest(request as unknown as NextRequest);
+    if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

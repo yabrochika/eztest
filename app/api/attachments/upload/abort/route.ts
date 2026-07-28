@@ -1,6 +1,6 @@
 import { attachmentController } from '@/backend/controllers/attachment/controller';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authenticateRequest } from '@/lib/auth/apiKeyAuth';
+import type { NextRequest } from 'next/server';
 
 /**
  * DELETE /api/attachments/upload/abort
@@ -9,11 +9,13 @@ import { authOptions } from '@/lib/auth';
  * Query params: uploadId, fileKey
  * NOTE: Should be POST not DELETE for semantic correctness (state-changing operation)
  * Returns: success message
+ *
+ * 認証: セッション(Cookie) または APIキー(Authorization: Bearer <key>)。
  */
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = await authenticateRequest(request as unknown as NextRequest);
+    if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

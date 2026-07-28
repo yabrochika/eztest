@@ -1,6 +1,6 @@
 import { attachmentController } from '@/backend/controllers/attachment/controller';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authenticateRequest } from '@/lib/auth/apiKeyAuth';
+import type { NextRequest } from 'next/server';
 
 /**
  * GET /api/attachments/[id]
@@ -36,16 +36,19 @@ export async function GET(
 /**
  * PATCH /api/attachments/[id]
  * Update attachment metadata (link to entity)
- * Purpose: Link or unlink attachments to/from test cases or test steps
- * Updates: testCaseId, testStepId fields
+ * Purpose: Link or unlink attachments to/from test cases, test steps, or test results
+ * Updates: testCaseId, testStepId, testResultId fields
+ *
+ * 認証: セッション(Cookie) または APIキー(Authorization: Bearer <key>)。
+ * エビデンス添付を結果に紐付ける際もAPIキーで完結できるようにする。
  */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = await authenticateRequest(request as unknown as NextRequest);
+    if (!user) {
       return Response.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -89,8 +92,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = await authenticateRequest(request as unknown as NextRequest);
+    if (!user) {
       return Response.json(
         { error: 'Unauthorized' },
         { status: 401 }

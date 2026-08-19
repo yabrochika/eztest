@@ -10,7 +10,7 @@ import { formatDateTime } from '@/lib/date-utils';
 import { DetailCard } from '@/frontend/reusable-components/cards/DetailCard';
 import { GroupedDataTable, type ColumnDef, type GroupConfig } from '@/frontend/reusable-components/tables/GroupedDataTable';
 import { Input } from '@/frontend/reusable-elements/inputs/Input';
-import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2, ListTodo, UserCog, Search, X } from 'lucide-react';
+import { AlertCircle, Plus, Bug, ListChecks, ChevronDown, Trash2, FilePen, UserPlus, Search, X, CircleDot } from 'lucide-react';
 import { TestResult, TestCase } from '../types';
 import { testCaseMatchesQuery } from '@/lib/testcase-search';
 import {
@@ -47,19 +47,20 @@ interface TestCasesListCardProps {
   getResultIcon: (status?: string) => React.JSX.Element;
   /**
    * 一括操作（ステータス変更 / コメント追記）を有効にするかどうか。
-   * true の時、行頭にチェックボックス列を出し、選択中件数に応じて
-   * ヘッダ右側に「一括ステータス・コメント」ボタンを表示する。
+   * true の時、行頭にチェックボックス列を出し、選択中はテーブル上に編成バーを表示する。
    */
   enableBulkActions?: boolean;
   /** 現在選択中のテストケースID 配列 */
   selectedTestCaseIds?: string[];
   /** 選択 ID 配列の変更通知 */
   onSelectedTestCaseIdsChange?: (ids: string[]) => void;
-  /** 「一括ステータス・コメント」ボタン押下時のハンドラ */
+  /** 「結果を一括記録」ボタン押下時のハンドラ */
   onBulkUpdateRequest?: () => void;
-  /** 「一括実行者登録」ボタン押下時のハンドラ */
+  /** 「ステータスを一括変更」でステータスを選んだときのハンドラ */
+  onBulkStatusChange?: (status: string) => void;
+  /** 「実行者を一括変更」ボタン押下時のハンドラ */
   onBulkAssignExecutorRequest?: () => void;
-  /** 「一括除外」ボタン押下時のハンドラ */
+  /** 「テストランから外す」ボタン押下時のハンドラ */
   onBulkExcludeRequest?: () => void;
 }
 
@@ -95,6 +96,7 @@ export function TestCasesListCard({
   selectedTestCaseIds = [],
   onSelectedTestCaseIdsChange,
   onBulkUpdateRequest,
+  onBulkStatusChange,
   onBulkAssignExecutorRequest,
   onBulkExcludeRequest,
 }: TestCasesListCardProps) {
@@ -228,11 +230,12 @@ export function TestCasesListCard({
     key: 'select',
     label: '',
     width: '40px',
+    stopRowClick: true,
     renderHeader: () => (
       <div
-        className="flex items-center justify-center"
+        className="flex items-center justify-center w-full min-h-[28px]"
         onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
         title={isAllSelected ? '全選択を解除' : '全選択'}
       >
         <Checkbox
@@ -244,9 +247,9 @@ export function TestCasesListCard({
     ),
     render: (row: ResultRow) => (
       <div
-        className="flex items-center justify-center"
+        className="flex items-center justify-center w-full min-h-[28px]"
         onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
         <Checkbox
           checked={selectedIdSet.has(row.testCase.id)}
@@ -615,88 +618,67 @@ export function TestCasesListCard({
     ? [selectionColumn, ...dataColumns]
     : dataColumns;
   const gridTemplateColumns = bulkActionsActive
-    ? '40px 120px 870px 120px 110px 140px 70px 200px 175px'
-    : '120px 870px 120px 110px 140px 70px 200px 175px';
+    ? '40px minmax(4.5rem, 6rem) minmax(0, 1fr) minmax(4.5rem, 6rem) minmax(4.5rem, 5.5rem) minmax(5.5rem, 7.5rem) 3.5rem minmax(6rem, 8.5rem) minmax(6.5rem, 8.5rem)'
+    : 'minmax(4.5rem, 6rem) minmax(0, 1fr) minmax(4.5rem, 6rem) minmax(4.5rem, 5.5rem) minmax(5.5rem, 7.5rem) 3.5rem minmax(6rem, 8.5rem) minmax(6.5rem, 8.5rem)';
 
-  const hasHeaderAction = (results && results.length > 0 && canCreate) || bulkActionsActive;
+  const canExcludeSelected =
+    Boolean(onBulkExcludeRequest) &&
+    testRunStatus !== 'COMPLETED' &&
+    testRunStatus !== 'CANCELLED';
+  const showSelectionBar = bulkActionsActive && visibleSelectedCount > 0;
+  const barButtonClassName = 'text-sm font-bold';
+  const selectedExecutorPreviews: Array<{
+    key: string;
+    name: string;
+    email?: string;
+    avatar?: string | null;
+  }> = [];
+  if (showSelectionBar) {
+    const seenExecutors = new Set<string>();
+    for (const row of tableData) {
+      if (!selectedIdSet.has(row.testCase.id)) continue;
+      const user = row.executedBy;
+      if (!user?.name) continue;
+      const key = user.email || user.name;
+      if (seenExecutors.has(key)) continue;
+      seenExecutors.add(key);
+      selectedExecutorPreviews.push({
+        key,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+      });
+      if (selectedExecutorPreviews.length >= 2) break;
+    }
+  }
 
   return (
     <DetailCard
       title={`テストケース (${trimmedQuery ? `${tableData.length} / ${allTableData.length}` : allTableData.length})`}
       contentClassName=""
       headerAction={
-        hasHeaderAction ? (
+        results && results.length > 0 && canCreate && !showSelectionBar ? (
           <div className="flex gap-2 flex-wrap justify-end items-center">
-            {bulkActionsActive && visibleSelectedCount > 0 && (
-              <>
-                <span className="text-xs text-white/70 mr-1">
-                  選択中: {visibleSelectedCount} 件
-                </span>
-                <Button
-                  variant="glass"
-                  size="sm"
-                  onClick={() => onSelectedTestCaseIdsChange?.([])}
-                  buttonName="Test Cases List Card - Clear Selection"
-                >
-                  選択解除
-                </Button>
-                <Button
-                  variant="glass"
-                  size="sm"
-                  onClick={() => onBulkAssignExecutorRequest?.()}
-                  disabled={!onBulkAssignExecutorRequest}
-                  buttonName="Test Cases List Card - Bulk Assign Executor"
-                >
-                  <UserCog className="w-4 h-4 mr-2" />
-                  一括実行者登録
-                </Button>
-                {onBulkExcludeRequest &&
-                  testRunStatus !== 'COMPLETED' &&
-                  testRunStatus !== 'CANCELLED' && (
-                    <Button
-                      variant="glass"
-                      size="sm"
-                      onClick={() => onBulkExcludeRequest()}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                      buttonName="Test Cases List Card - Bulk Exclude"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      一括除外
-                    </Button>
-                  )}
-                <ButtonPrimary
-                  size="sm"
-                  onClick={() => onBulkUpdateRequest?.()}
-                  disabled={!onBulkUpdateRequest}
-                  buttonName="Test Cases List Card - Bulk Update"
-                >
-                  <ListTodo className="w-4 h-4 mr-2" />
-                  一括ステータス・コメント
-                </ButtonPrimary>
-              </>
-            )}
-            {results && results.length > 0 && canCreate && (
-              <>
-                <Button
-                  variant="glass"
-                  size="sm"
-                  onClick={onAddTestSuites}
-                  disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  テストスイートを追加
-                </Button>
-                <Button
-                  variant="glass"
-                  size="sm"
-                  onClick={onAddTestCases}
-                  disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  テストケースを追加
-                </Button>
-              </>
-            )}
+            <Button
+              variant="glass"
+              size="sm"
+              className={barButtonClassName}
+              onClick={onAddTestSuites}
+              disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              テストスイートを追加
+            </Button>
+            <Button
+              variant="glass"
+              size="sm"
+              className={barButtonClassName}
+              onClick={onAddTestCases}
+              disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              テストケースを追加
+            </Button>
           </div>
         ) : undefined
       }
@@ -752,11 +734,175 @@ export function TestCasesListCard({
             )}
           </div>
 
+          {showSelectionBar && (
+            <div
+              role="toolbar"
+              aria-label="選択したテストケースの操作"
+              className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-white/15 border-l-4 border-l-orange-500 bg-[#101a2b]/90 px-3 py-2 backdrop-blur-xl animate-in fade-in-0 slide-in-from-top-2 duration-200"
+            >
+              <div className="flex items-center gap-2 pr-2">
+                <div className="relative flex items-center pl-3">
+                  {selectedExecutorPreviews.map((user, index) => {
+                    const initials = user.name
+                      .trim()
+                      .split(/\s+/)
+                      .map((part) => part.charAt(0))
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase();
+                    return (
+                      <Avatar
+                        key={user.key}
+                        className={`absolute size-7 ${getAvatarColorClass(user.email || user.name)}`}
+                        style={{ left: `${index * 12}px`, zIndex: index }}
+                        title={user.name}
+                      >
+                        {user.avatar ? (
+                          <AvatarImage src={user.avatar} alt={user.name} />
+                        ) : null}
+                        <AvatarFallback
+                          className={`text-[10px] font-extrabold tracking-tight ${getAvatarColorClass(user.email || user.name)}`}
+                        >
+                          {initials || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                    );
+                  })}
+                  <span
+                    className="relative z-10 flex size-8 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white"
+                    style={{ marginLeft: selectedExecutorPreviews.length > 0 ? '20px' : 0 }}
+                  >
+                    {visibleSelectedCount}
+                  </span>
+                </div>
+                <span className="text-sm font-medium text-white whitespace-nowrap">
+                  {visibleSelectedCount}件 選択中
+                </span>
+              </div>
+
+              <div className="hidden sm:block h-6 w-px bg-white/15" aria-hidden="true" />
+
+              <ButtonPrimary
+                size="sm"
+                className={barButtonClassName}
+                onClick={() => onBulkUpdateRequest?.()}
+                disabled={!onBulkUpdateRequest}
+                buttonName="Test Cases List Card - Bulk Update"
+              >
+                <FilePen className="w-4 h-4 mr-2" />
+                結果を一括記録
+              </ButtonPrimary>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="glass"
+                    size="sm"
+                    className={barButtonClassName}
+                    disabled={!onBulkStatusChange || loadingStatus}
+                    buttonName="Test Cases List Card - Bulk Status"
+                  >
+                    <CircleDot className="w-4 h-4 mr-2" />
+                    ステータスを一括変更
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-[12rem]">
+                  {statusOptions.length === 0 ? (
+                    <DropdownMenuItem disabled>
+                      {loadingStatus ? '読み込み中…' : 'ステータスがありません'}
+                    </DropdownMenuItem>
+                  ) : (
+                    statusOptions.map((opt) => {
+                      const badgeProps = getDynamicBadgeProps(opt.value, statusOptions);
+                      return (
+                        <DropdownMenuItem
+                          key={opt.value}
+                          onClick={() => onBulkStatusChange?.(opt.value)}
+                        >
+                          <Badge
+                            variant="outline"
+                            className={`text-xs px-2 py-0.5 ${badgeProps.className}`}
+                            style={badgeProps.style}
+                          >
+                            {opt.label}
+                          </Badge>
+                        </DropdownMenuItem>
+                      );
+                    })
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                variant="glass"
+                size="sm"
+                className={barButtonClassName}
+                onClick={() => onBulkAssignExecutorRequest?.()}
+                disabled={!onBulkAssignExecutorRequest}
+                buttonName="Test Cases List Card - Bulk Assign Executor"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                実行者を一括変更
+              </Button>
+              {canExcludeSelected && (
+                <Button
+                  variant="glass"
+                  size="sm"
+                  onClick={() => onBulkExcludeRequest?.()}
+                  className={`text-red-400 hover:text-red-300 hover:bg-red-500/10 ${barButtonClassName}`}
+                  buttonName="Test Cases List Card - Bulk Exclude"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  テストランから外す
+                </Button>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onSelectedTestCaseIdsChange?.([])}
+                className={`text-white/70 hover:text-white ${barButtonClassName}`}
+                buttonName="Test Cases List Card - Clear Selection"
+              >
+                <X className="w-4 h-4 mr-1" />
+                選択を解除
+              </Button>
+
+              {canCreate && (
+                <>
+                  <div className="hidden sm:block h-6 w-px bg-white/15" aria-hidden="true" />
+                  <Button
+                    variant="glass"
+                    size="sm"
+                    className={barButtonClassName}
+                    onClick={onAddTestSuites}
+                    disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
+                    buttonName="Test Cases List Card - Add Test Suites"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    テストスイートを追加
+                  </Button>
+                  <Button
+                    variant="glass"
+                    size="sm"
+                    className={barButtonClassName}
+                    onClick={onAddTestCases}
+                    disabled={testRunStatus === 'COMPLETED' || testRunStatus === 'CANCELLED'}
+                    buttonName="Test Cases List Card - Add Test Cases"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    テストケースを追加
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
           {trimmedQuery && tableData.length === 0 ? (
             <p className="text-white/60 text-center py-8">
               「{trimmedQuery}」に一致するテストケースはありません
             </p>
           ) : (
+            <div className="w-full min-w-0 overflow-x-auto">
             <GroupedDataTable
               data={tableDataSorted}
               columns={columns}
@@ -774,9 +920,10 @@ export function TestCasesListCard({
                 router.push(`/projects/${projectId}/testcases/${row.testCase.id}`);
               }}
               gridTemplateColumns={gridTemplateColumns}
-              gapClassName="gap-[24px]"
+              gapClassName="gap-x-3 gap-y-1"
               emptyMessage="テストケースはありません"
             />
+            </div>
           )}
         </>
       )}

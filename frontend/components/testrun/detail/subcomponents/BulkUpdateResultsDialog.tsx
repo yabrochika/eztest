@@ -107,7 +107,7 @@ export function BulkUpdateResultsDialog({
         appendComment: trimmedComment,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : '一括更新に失敗しました');
+      setError(e instanceof Error ? e.message : '結果の一括記録に失敗しました');
     }
   };
 
@@ -115,9 +115,9 @@ export function BulkUpdateResultsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>選択したテストケースを一括更新</DialogTitle>
+          <DialogTitle>結果を一括記録</DialogTitle>
           <DialogDescription>
-            選択中の {selectedCount} 件のテストケースについて、ステータス変更とコメント追記を一括で適用します。
+            選択中の {selectedCount} 件に、ステータスとコメントをまとめて記録します。どちらか一方だけでも記録できます。
           </DialogDescription>
         </DialogHeader>
 

@@ -37,6 +37,16 @@ import { useFormPersistence, clearPersistedForm } from '@/hooks/useFormPersisten
 import { FileExportDialog } from '@/frontend/reusable-components/dialogs/FileExportDialog';
 import { EditTestRunDialog } from '@/frontend/components/testrun/subcomponents/EditTestRunDialog';
 import { ConfirmDeleteDialog } from '@/frontend/reusable-components/dialogs/ConfirmDeleteDialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/frontend/reusable-elements/dialogs/Dialog';
+import { Button } from '@/frontend/reusable-elements/buttons/Button';
+import { ButtonPrimary } from '@/frontend/reusable-elements/buttons/ButtonPrimary';
 
 interface TestRunDetailProps {
   testRunId: string;
@@ -96,6 +106,10 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   // 一括除外用のダイアログ状態
   const [bulkExcludeDialogOpen, setBulkExcludeDialogOpen] = useState(false);
   const [bulkExcluding, setBulkExcluding] = useState(false);
+  // 一括で FAILED にしたあと、Defect 記載の有無を確認する
+  const [bulkDefectPromptOpen, setBulkDefectPromptOpen] = useState(false);
+  const [bulkFailedTestCaseIds, setBulkFailedTestCaseIds] = useState<string[]>([]);
+  const [bulkDefectComment, setBulkDefectComment] = useState('');
 
   const [excludeTarget, setExcludeTarget] = useState<{
     testCaseId: string;
@@ -124,6 +138,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   // Check permissions for navbar
   const canUpdateTestRun = hasPermissionCheck('testruns:update');
   const canCreateTestRun = hasPermissionCheck('testruns:create');
+  const canCreateDefect = hasPermissionCheck('defects:create');
   hasPermissionCheck('testruns:read');
 
   const executionTypeLabel = useMemo(() => {
@@ -689,7 +704,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     if (!projectId) {
       setFloatingAlert({
         type: 'error',
-        title: '一括更新に失敗しました',
+        title: '結果の一括記録に失敗しました',
         message: 'プロジェクト情報を取得できませんでした',
       });
       return;
@@ -760,12 +775,20 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
 
       await fetchTestRun();
 
+      const failedTestCaseIds = status === 'FAILED'
+        ? bulkSelectedTestCaseIds.filter(
+            (id) => !failures.some((f) => f.testCaseId === id)
+          )
+        : [];
+
       if (failures.length === 0) {
         setBulkUpdateDialogOpen(false);
         setBulkSelectedTestCaseIds([]);
         setFloatingAlert({
           type: 'success',
-          title: '一括更新しました',
+          title: status && appendComment.length === 0
+            ? 'ステータスを一括変更しました'
+            : '結果を一括記録しました',
           message: `${successCount} 件のテストケースを更新しました`,
         });
       } else {
@@ -776,10 +799,18 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         });
         console.error('Bulk update partial failure:', failures);
       }
+
+      if (failedTestCaseIds.length > 0 && canCreateDefect) {
+        setBulkFailedTestCaseIds(failedTestCaseIds);
+        setBulkDefectComment(appendComment);
+        setBulkDefectPromptOpen(true);
+      }
     } catch (error) {
       setFloatingAlert({
         type: 'error',
-        title: '一括更新に失敗しました',
+        title: status && appendComment.length === 0
+          ? 'ステータスの一括変更に失敗しました'
+          : '結果の一括記録に失敗しました',
         message: error instanceof Error ? error.message : '不明なエラー',
       });
     } finally {
@@ -809,7 +840,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     if (!projectId) {
       setFloatingAlert({
         type: 'error',
-        title: '実行者の一括登録に失敗しました',
+        title: '実行者の一括変更に失敗しました',
         message: 'プロジェクト情報を取得できませんでした',
       });
       return;
@@ -872,13 +903,13 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         setBulkSelectedTestCaseIds([]);
         setFloatingAlert({
           type: 'success',
-          title: '実行者を一括登録しました',
-          message: `${successCount} 件のテストケースに実行者を登録しました`,
+          title: '実行者を一括変更しました',
+          message: `${successCount} 件のテストケースの実行者を変更しました`,
         });
       } else {
         setFloatingAlert({
           type: 'error',
-          title: `${failures.length} 件の登録に失敗しました`,
+          title: `${failures.length} 件の実行者変更に失敗しました`,
           message: `${successCount} 件は成功しました。詳細はコンソールを確認してください。`,
         });
         console.error('Bulk assign executor partial failure:', failures);
@@ -886,7 +917,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     } catch (error) {
       setFloatingAlert({
         type: 'error',
-        title: '実行者の一括登録に失敗しました',
+        title: '実行者の一括変更に失敗しました',
         message: error instanceof Error ? error.message : '不明なエラー',
       });
     } finally {
@@ -1070,6 +1101,25 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setCreateDefectDialogOpen(true);
   };
 
+  const dismissBulkDefectPrompt = () => {
+    setBulkDefectPromptOpen(false);
+    setBulkFailedTestCaseIds([]);
+    setBulkDefectComment('');
+  };
+
+  const openNextBulkDefectForm = () => {
+    const [nextId, ...rest] = bulkFailedTestCaseIds;
+    if (!nextId) {
+      dismissBulkDefectPrompt();
+      return;
+    }
+    setBulkFailedTestCaseIds(rest);
+    setBulkDefectPromptOpen(false);
+    setDefectSeed({ comment: bulkDefectComment, attachments: [] });
+    setSelectedTestCaseForDefect(nextId);
+    setCreateDefectDialogOpen(true);
+  };
+
   const handleCreateStoryForDefect = async (defect: { id: string; defectId: string; title: string }) => {
     setDefectForStory(defect);
 
@@ -1208,14 +1258,14 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         setBulkSelectedTestCaseIds([]);
         setFloatingAlert({
           type: 'success',
-          title: '一括除外しました',
-          message: `${successCount} 件のテストケースをテストランから除外しました`,
+          title: 'テストランから外しました',
+          message: `${successCount} 件のテストケースをテストランから外しました`,
         });
       } else {
         setBulkSelectedTestCaseIds([]);
         setFloatingAlert({
           type: 'error',
-          title: `${failures.length} 件の除外に失敗しました`,
+          title: `${failures.length} 件を外せませんでした`,
           message: `${successCount} 件は成功しました。詳細はコンソールを確認してください。`,
         });
         console.error('Bulk exclude partial failure:', failures);
@@ -1223,7 +1273,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     } catch (error) {
       setFloatingAlert({
         type: 'error',
-        title: '一括除外に失敗しました',
+        title: 'テストランから外せませんでした',
         message: error instanceof Error ? error.message : '不明なエラー',
       });
     } finally {
@@ -1238,6 +1288,11 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setCreateDefectDialogOpen(false);
     setDefectRefreshTrigger(prev => prev + 1);
     await fetchTestRun();
+    if (bulkFailedTestCaseIds.length > 0) {
+      setBulkDefectPromptOpen(true);
+    } else {
+      setBulkDefectComment('');
+    }
   };
 
   const getResultIcon = (status?: string) => {
@@ -1318,7 +1373,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
   }
 
   return (
-    <div className="flex-1">
+    <div className="flex-1 min-w-0">
       {/* Navbar */}
       <Navbar
         brandLabel={null}
@@ -1342,7 +1397,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
         actions={navbarActions}
       />
 
-      <div className="p-4 md:p-6 lg:p-8 pt-8 space-y-6">
+      <div className="p-4 md:p-6 lg:p-8 pt-8 space-y-6 min-w-0">
         <TestRunHeader
           testRun={testRun}
           executionTypeLabel={executionTypeLabel}
@@ -1388,6 +1443,9 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           selectedTestCaseIds={bulkSelectedTestCaseIds}
           onSelectedTestCaseIdsChange={setBulkSelectedTestCaseIds}
           onBulkUpdateRequest={() => setBulkUpdateDialogOpen(true)}
+          onBulkStatusChange={(status) => {
+            void handleBulkUpdate({ status, appendComment: '' });
+          }}
           onBulkAssignExecutorRequest={() => setBulkAssignExecutorDialogOpen(true)}
           onBulkExcludeRequest={() => setBulkExcludeDialogOpen(true)}
         />
@@ -1536,6 +1594,9 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
               if (!open) {
                 setSelectedTestCaseForDefect(null);
                 setDefectSeed({ comment: '', attachments: [] });
+                if (bulkFailedTestCaseIds.length > 0) {
+                  setBulkDefectPromptOpen(true);
+                }
               }
             }}
             onDefectCreated={handleDefectCreated}
@@ -1640,7 +1701,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
 
         <ConfirmDeleteDialog
           open={bulkExcludeDialogOpen}
-          title="テストケースを一括除外"
+          title="テストランから外す"
           description={(() => {
             const selectedResults = testRun.results.filter(
               (r) => r.testCaseId != null && bulkSelectedTestCaseIds.includes(r.testCaseId)
@@ -1649,14 +1710,14 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
             const executedCount = selectedResults.filter(
               (r) => r.status && r.status !== 'NOT_STARTED' && r.status !== 'SKIPPED'
             ).length;
-            const base = `選択中の ${count} 件のテストケースを、このテストランから除外します。`;
+            const base = `選択中の ${count} 件のテストケースを、このテストランから外します。`;
             const warn =
               executedCount > 0
                 ? `\nうち ${executedCount} 件は実行済みです。実行結果・コメント・添付ファイルも併せて削除されます。`
                 : '';
             return `${base}${warn}\nこの操作は取り消せません。`;
           })()}
-          confirmLabel="一括除外する"
+          confirmLabel="外す"
           cancelLabel="キャンセル"
           isLoading={bulkExcluding}
           onOpenChange={(open) => {
@@ -1665,6 +1726,42 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
           onConfirm={handleConfirmBulkExclude}
           dialogName="Test Run Detail - Bulk Exclude Test Cases"
         />
+
+        <Dialog
+          open={bulkDefectPromptOpen}
+          onOpenChange={(open) => {
+            if (!open) dismissBulkDefectPrompt();
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Defect を記載しますか？</DialogTitle>
+              <DialogDescription>
+                {bulkFailedTestCaseIds.length} 件のテストケースが Failed です。
+                <br />
+                Defect を記載するを選ぶと、作成画面を開きます。
+                {bulkFailedTestCaseIds.length > 1 ? ' 1件ずつ開きます。' : ''}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="ghost"
+                className="text-sm font-bold"
+                onClick={dismissBulkDefectPrompt}
+                buttonName="Test Run Detail - Skip Bulk Defect"
+              >
+                記載しない
+              </Button>
+              <ButtonPrimary
+                className="text-sm font-bold"
+                onClick={openNextBulkDefectForm}
+                buttonName="Test Run Detail - Write Bulk Defect"
+              >
+                記載する
+              </ButtonPrimary>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <FloatingAlert

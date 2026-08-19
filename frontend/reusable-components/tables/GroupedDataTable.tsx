@@ -13,6 +13,8 @@ export interface ColumnDef<T> {
   renderHeader?: () => ReactNode;
   className?: string;
   align?: 'left' | 'center' | 'right';
+  /** true のとき、このセル上のクリックは行クリック（詳細遷移など）を起こさない */
+  stopRowClick?: boolean;
 }
 
 export interface GroupConfig<T> {
@@ -179,7 +181,7 @@ export function GroupedDataTable<T = Record<string, unknown>>({
   // Render header row
   const renderHeader = () => (
     <div
-      className={`grid ${gapClassName} px-3 py-1.5 text-xs font-semibold text-white/60 border-b border-white/10 ${headerClassName}`}
+      className={`grid w-full min-w-0 ${gapClassName} px-3 py-1.5 text-xs font-semibold text-white/60 border-b border-white/10 ${headerClassName}`}
       style={{ gridTemplateColumns: getGridColumns() }}
     >
       {columns.map((col) => (
@@ -205,16 +207,30 @@ export function GroupedDataTable<T = Record<string, unknown>>({
     return (
       <div
         key={index}
-        className={`grid ${gapClassName} px-3 py-1.5 cursor-pointer transition-colors items-center text-sm rounded-sm hover:bg-accent/20 ${
+        className={`grid w-full min-w-0 ${gapClassName} px-3 py-1.5 cursor-pointer transition-colors items-center text-sm rounded-sm hover:bg-accent/20 ${
           index % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.04] border-b border-white/10'
         } ${rowClassName}`}
         style={{ gridTemplateColumns: getGridColumns() }}
-        onClick={() => onRowClick?.(row)}
+        onClick={(e) => {
+          if (!onRowClick) return;
+          const target = e.target as HTMLElement | null;
+          if (
+            target?.closest(
+              'button, a, input, textarea, select, label, [role="checkbox"], [role="menuitem"], [data-slot="checkbox"], [data-stop-row-click]'
+            )
+          ) {
+            return;
+          }
+          onRowClick(row);
+        }}
       >
         {columns.map((col) => (
           <div
             key={col.key}
-            className={`${col.className || ''} ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''}`}
+            className={`min-w-0 ${col.className || ''} ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''}`}
+            data-stop-row-click={col.stopRowClick ? '' : undefined}
+            onClick={col.stopRowClick ? (e) => e.stopPropagation() : undefined}
+            onPointerDown={col.stopRowClick ? (e) => e.stopPropagation() : undefined}
           >
             {col.render ? col.render(row, index) : String((row as Record<string, unknown>)[col.key] || '')}
           </div>

@@ -136,7 +136,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   return (
     <div className="min-h-screen flex">
       <Sidebar items={sidebarItems} projectId={projectId || undefined} />
-      <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-60'}`}>
+      <div className={`flex-1 min-w-0 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-60'}`}>
         {children}
       </div>
     </div>

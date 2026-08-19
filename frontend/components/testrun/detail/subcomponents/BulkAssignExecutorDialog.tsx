@@ -113,7 +113,7 @@ export function BulkAssignExecutorDialog({
     try {
       await onSubmit({ executedById });
     } catch (e) {
-      setError(e instanceof Error ? e.message : '実行者の一括登録に失敗しました');
+      setError(e instanceof Error ? e.message : '実行者の一括変更に失敗しました');
     }
   };
 
@@ -121,9 +121,9 @@ export function BulkAssignExecutorDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>選択したテストケースに実行者を一括登録</DialogTitle>
+          <DialogTitle>実行者を一括変更</DialogTitle>
           <DialogDescription>
-            選択中の {selectedCount} 件のテストケースに、同じ実行者を一括で登録します。各テストケースの既存の実行者は上書きされます。
+            選択中の {selectedCount} 件に、同じ実行者を設定します。すでに実行者がいる場合は上書きされます。
           </DialogDescription>
         </DialogHeader>
 

@@ -416,7 +416,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setResultForm({
       status: resolvedStatus,
       comment: existingResult?.comment || '',
-      executedById: existingResult?.executedBy?.id || existingResult?.executedById || currentUserId,
+      executedById: currentUserId,
     });
     setResultCommentAttachments(mapResultAttachments(existingResult));
   }, [selectedTestCase, sortedTestCases, testRun?.results, setResultForm, mapResultAttachments, currentUserId]);
@@ -446,7 +446,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
       setResultForm({
         status: resolvedStatus,
         comment: nextResult?.comment || '',
-        executedById: nextResult?.executedBy?.id || nextResult?.executedById || currentUserId,
+        executedById: currentUserId,
       });
       setResultCommentAttachments(mapResultAttachments(nextResult));
       setResultDialogOpen(true);
@@ -477,7 +477,7 @@ export default function TestRunDetail({ testRunId }: TestRunDetailProps) {
     setResultForm({
       status: resolvedStatus,
       comment: existingResult?.comment || '',
-      executedById: existingResult?.executedBy?.id || existingResult?.executedById || currentUserId,
+      executedById: currentUserId,
     });
 
     setResultCommentAttachments(mapResultAttachments(existingResult));

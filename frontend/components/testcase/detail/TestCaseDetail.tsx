@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { TopBar } from '@/frontend/reusable-components/layout/TopBar';
 import { FloatingAlert, type FloatingAlertMessage } from '@/frontend/reusable-components/alerts/FloatingAlert';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -36,6 +37,8 @@ interface TestCaseDetailProps {
 
 export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id || '';
   const { hasPermission: hasPermissionCheck } = usePermissions();
   const [testCase, setTestCase] = useState<TestCase | null>(null);
   const [loading, setLoading] = useState(true);
@@ -149,7 +152,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
     setResultForm({
       status: currentResult.status && currentResult.status !== 'NOT_STARTED' ? currentResult.status : '',
       comment: '',
-      executedById: '',
+      executedById: currentUserId,
     });
     setResultCommentAttachments([]);
     setRecordResultOpen(true);
@@ -197,6 +200,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
             status: resultForm.status,
             comment: resultForm.comment,
             duration: durationSeconds,
+            executedById: resultForm.executedById || currentUserId || undefined,
           }),
         }
       );
@@ -1061,6 +1065,7 @@ export default function TestCaseDetail({ testCaseId }: TestCaseDetailProps) {
             testCaseName={testCase.title}
             testCaseId={testCase.id}
             projectId={activeTestRun.projectId}
+            testRunName={activeTestRun.name}
             testRunEnvironment={activeTestRun.environment || undefined}
             testRunPlatform={activeTestRun.platform || undefined}
             testRunDevice={activeTestRun.device || undefined}

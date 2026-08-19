@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Dialog,
@@ -50,7 +50,8 @@ interface SelectTestRunDialogProps {
   onSelect: (testRun: SelectableTestRun, currentResult: SelectableTestRunResult) => void;
 }
 
-const ACTIVE_STATUSES = new Set(['NOT_STARTED', 'PLANNED', 'IN_PROGRESS']);
+/** カンバンの Done 列。テストケース画面からの実行対象には含めない */
+const DONE_STATUSES = new Set(['COMPLETED', 'CANCELLED']);
 
 export function SelectTestRunDialog({
   open,
@@ -61,22 +62,35 @@ export function SelectTestRunDialog({
   const router = useRouter();
   const [items, setItems] = useState<TestRunWithResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(false);
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
 
   const { options: testRunStatusOptions } = useDropdownOptions('TestRun', 'status');
   const { options: resultStatusOptions } = useDropdownOptions('TestResult', 'status');
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setItems([]);
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
         setLoading(true);
         const res = await fetch(`/api/testcases/${testCaseId}/testruns`);
         const data = await res.json();
-        if (!cancelled) {
-          setItems(Array.isArray(data?.data) ? data.data : []);
+        if (cancelled) return;
+        const loaded: TestRunWithResult[] = Array.isArray(data?.data) ? data.data : [];
+        const selectable = loaded.filter((i) => !DONE_STATUSES.has(i.testRun.status));
+
+        // 進行中が1件だけなら選択ダイアログを出さず、そのテストランへ結果記録する
+        const inProgress = selectable.filter((i) => i.testRun.status === 'IN_PROGRESS');
+        if (inProgress.length === 1) {
+          onSelectRef.current(inProgress[0].testRun, inProgress[0].result);
+          return;
         }
+
+        setItems(selectable);
       } catch (err) {
         console.error('Failed to load test runs for test case:', err);
         if (!cancelled) setItems([]);
@@ -89,9 +103,7 @@ export function SelectTestRunDialog({
     };
   }, [open, testCaseId]);
 
-  const activeItems = items.filter((i) => ACTIVE_STATUSES.has(i.testRun.status));
-  const completedItems = items.filter((i) => !ACTIVE_STATUSES.has(i.testRun.status));
-  const visibleItems = showCompleted ? [...activeItems, ...completedItems] : activeItems;
+  const inProgressCount = items.filter((i) => i.testRun.status === 'IN_PROGRESS').length;
 
   const renderStatusBadge = (status: string, kind: 'testrun' | 'result') => {
     const options = kind === 'testrun' ? testRunStatusOptions : resultStatusOptions;
@@ -110,7 +122,9 @@ export function SelectTestRunDialog({
         <DialogHeader>
           <DialogTitle>テスト実行 — テストランを選択</DialogTitle>
           <DialogDescription>
-            このテストケースを含むテストランを選択して結果を記録します。
+            {inProgressCount > 1
+              ? '進行中のテストランが複数あるため、結果を記録するテストランを選択してください。'
+              : 'このテストケースを含むテストランを選択して結果を記録します。'}
           </DialogDescription>
         </DialogHeader>
 
@@ -121,25 +135,11 @@ export function SelectTestRunDialog({
             </div>
           ) : items.length === 0 ? (
             <div className="py-12 text-center text-white/60 text-sm">
-              このテストケースを含むテストランがありません。
-            </div>
-          ) : visibleItems.length === 0 ? (
-            <div className="py-12 text-center text-white/60 text-sm">
-              アクティブなテストランがありません。
-              <div className="mt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowCompleted(true)}
-                  buttonName="Select Test Run Dialog - Show Completed"
-                >
-                  完了済みも表示する
-                </Button>
-              </div>
+              実行可能なテストランがありません。Done のテストランは対象外です。
             </div>
           ) : (
             <ul className="space-y-2">
-              {visibleItems.map(({ testRun, result }) => (
+              {items.map(({ testRun, result }) => (
                 <li
                   key={testRun.id}
                   className="group rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
@@ -193,19 +193,7 @@ export function SelectTestRunDialog({
           )}
         </div>
 
-        <DialogFooter className="flex items-center justify-between gap-2">
-          {!showCompleted && completedItems.length > 0 ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowCompleted(true)}
-              buttonName="Select Test Run Dialog - Toggle Completed"
-            >
-              完了済みも表示 ({completedItems.length})
-            </Button>
-          ) : (
-            <span />
-          )}
+        <DialogFooter>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}

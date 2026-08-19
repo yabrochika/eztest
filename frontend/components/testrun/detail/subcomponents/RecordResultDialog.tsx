@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   Dialog,
   DialogContent,
@@ -74,6 +75,8 @@ interface RecordResultDialogProps {
   testRunEnvironment?: string; // Environment from test run
   testRunPlatform?: string;
   testRunDevice?: string;
+  /** テストケース画面からの実行時など、対象テストラン名を明示したい場合に渡す */
+  testRunName?: string;
   /**
    * テストランへの追加時点で取られたテストケースのスナップショット。
    * 渡された場合はライブのテストケース取得 (`/api/testcases/[id]`) より
@@ -107,6 +110,7 @@ export function RecordResultDialog({
   testRunEnvironment,
   testRunPlatform,
   testRunDevice,
+  testRunName,
   testCaseSnapshot,
   formData,
   commentAttachments,
@@ -121,6 +125,9 @@ export function RecordResultDialog({
   hasPrev = false,
   hasNext = false,
 }: RecordResultDialogProps) {
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id || '';
+
   const [existingDefects, setExistingDefects] = useState<Defect[]>([]);
   const [otherDefects, setOtherDefects] = useState<Defect[]>([]);
   const [selectedDefectIds, setSelectedDefectIds] = useState<string[]>([]);
@@ -183,6 +190,14 @@ export function RecordResultDialog({
   // 実行者の選択肢（プロジェクトメンバー）
   const [executorOptions, setExecutorOptions] = useState<ExecutorOption[]>([]);
   const [loadingExecutors, setLoadingExecutors] = useState(false);
+
+  // ダイアログを開いたアカウントを実行者にする（既存の実行者がいても上書き）
+  useEffect(() => {
+    if (!open || !currentUserId) return;
+    onFormChange({ executedById: currentUserId });
+    // 手動変更を上書きしないよう、open / currentUserId の変化時だけ実行する
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, currentUserId]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -542,7 +557,12 @@ export function RecordResultDialog({
 
         <DialogHeader className="mb-4 flex-shrink-0">
           <DialogTitle>テスト結果を記録</DialogTitle>
-          <DialogDescription>{testCaseName}</DialogDescription>
+          <DialogDescription>
+            {testCaseName}
+            {testRunName ? (
+              <span className="block mt-1 text-white/50">テストラン: {testRunName}</span>
+            ) : null}
+          </DialogDescription>
           {timerStartTime && (
             <div className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
               <Timer className="w-4 h-4 text-blue-400" />

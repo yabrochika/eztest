@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { Calendar, CalendarRange, Folder, GanttChart, Layers, PlayCircle } from 'lucide-react';
 import { GlassPanel } from '@/frontend/reusable-components/layout/GlassPanel';
 import { Input } from '@/frontend/reusable-elements/inputs/Input';
 import type { TimelineRun } from './types';
+import { LabelWithIcon, PanelHeading } from './PanelHeading';
 
 interface TimelineProject {
   id: string;
@@ -17,7 +19,9 @@ interface ScheduleTimelineProps {
   projects?: TimelineProject[];
   weekStart?: string;
   weekEnd?: string;
+  canUpdate?: boolean;
   onOpenRun: (projectId: string, runId: string) => void;
+  onScheduleChange?: (projectId: string, runId: string, scheduledStartAt: string, scheduledEndAt: string) => Promise<void>;
 }
 
 function pad(value: number): string {
@@ -181,8 +185,50 @@ function overlapsRange(run: TimelineRun, rangeStart: Date, rangeEnd: Date): bool
   return end >= rangeStart.getTime() && start <= rangeEnd.getTime();
 }
 
-export function ScheduleTimeline({ items, projects = [], onOpenRun }: ScheduleTimelineProps) {
+function toDateKey(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function startOfLocalDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function applyDelta(origin: Date, deltaMs: number, rangeStart: Date, rangeEnd: Date): Date {
+  const next = startOfLocalDay(new Date(origin.getTime() + deltaMs));
+  const min = startOfLocalDay(rangeStart);
+  const max = startOfLocalDay(rangeEnd);
+  if (next < min) return min;
+  if (next > max) return max;
+  return next;
+}
+
+type DragMode = 'move' | 'start' | 'end';
+
+interface DragState {
+  run: TimelineRun;
+  mode: DragMode;
+  originX: number;
+  trackWidth: number;
+  originStart: Date;
+  originEnd: Date;
+  previewStart: Date;
+  previewEnd: Date;
+}
+
+export function ScheduleTimeline({
+  items,
+  projects = [],
+  canUpdate = false,
+  onOpenRun,
+  onScheduleChange,
+}: ScheduleTimelineProps) {
   const [range, setRange] = useState(() => centeredRange());
+  const [overrides, setOverrides] = useState<Record<string, { startAt: string; endAt: string }>>({});
+  const [drag, setDrag] = useState<DragState | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const movedRef = useRef(false);
 
   const rangeStart = fromDateTimeLocal(range.start);
   const rangeEnd = fromDateTimeLocal(range.end);
@@ -193,10 +239,122 @@ export function ScheduleTimeline({ items, projects = [], onOpenRun }: ScheduleTi
   const todayLeft = validRange ? clamp(((now - rangeStart!.getTime()) / span) * 100, 0, 100) : null;
   const showToday = validRange && now >= rangeStart!.getTime() && now <= rangeEnd!.getTime();
 
+  const displayItems = useMemo(
+    () => items.map((item) => (overrides[item.id] ? { ...item, ...overrides[item.id] } : item)),
+    [items, overrides]
+  );
+
   const visibleItems = useMemo(() => {
     if (!validRange) return [];
-    return items.filter((item) => overlapsRange(item, rangeStart!, rangeEnd!));
-  }, [items, rangeStart, rangeEnd, validRange]);
+    return displayItems.filter((item) => overlapsRange(item, rangeStart!, rangeEnd!));
+  }, [displayItems, rangeStart, rangeEnd, validRange]);
+
+  const previewTimes = (item: TimelineRun) => {
+    if (drag?.run.id === item.id) {
+      return { start: drag.previewStart.getTime(), end: drag.previewEnd.getTime() };
+    }
+    return { start: new Date(item.startAt).getTime(), end: new Date(item.endAt).getTime() };
+  };
+
+  const updatePreview = (current: DragState, clientX: number): DragState => {
+    const deltaMs = ((clientX - current.originX) / Math.max(1, current.trackWidth)) * span;
+    const duration = Math.max(0, startOfLocalDay(current.originEnd).getTime() - startOfLocalDay(current.originStart).getTime());
+    if (current.mode === 'move') {
+      const previewStart = applyDelta(current.originStart, deltaMs, rangeStart!, rangeEnd!);
+      let previewEnd = new Date(previewStart.getTime() + duration);
+      const maxEnd = startOfLocalDay(rangeEnd!);
+      if (previewEnd > maxEnd) {
+        previewEnd = maxEnd;
+        return {
+          ...current,
+          previewStart: new Date(previewEnd.getTime() - duration),
+          previewEnd,
+        };
+      }
+      return { ...current, previewStart, previewEnd };
+    }
+    if (current.mode === 'start') {
+      const previewStart = applyDelta(current.originStart, deltaMs, rangeStart!, current.originEnd);
+      return { ...current, previewStart, previewEnd: startOfLocalDay(current.originEnd) };
+    }
+    const previewEnd = applyDelta(current.originEnd, deltaMs, current.originStart, rangeEnd!);
+    return { ...current, previewStart: startOfLocalDay(current.originStart), previewEnd };
+  };
+
+  const beginDrag = (
+    event: ReactPointerEvent<HTMLElement>,
+    run: TimelineRun,
+    mode: DragMode,
+    track: HTMLElement | null
+  ) => {
+    if (!canUpdate || !onScheduleChange || !validRange || !track) return;
+    event.preventDefault();
+    event.stopPropagation();
+    movedRef.current = false;
+    const times = previewTimes(run);
+    const next: DragState = {
+      run,
+      mode,
+      originX: event.clientX,
+      trackWidth: track.getBoundingClientRect().width,
+      originStart: new Date(times.start),
+      originEnd: new Date(times.end),
+      previewStart: startOfLocalDay(new Date(times.start)),
+      previewEnd: startOfLocalDay(new Date(times.end)),
+    };
+    setError(null);
+    dragRef.current = next;
+    setDrag(next);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const onDragMove = (event: ReactPointerEvent<HTMLElement>) => {
+    const current = dragRef.current;
+    if (!current) return;
+    if (Math.abs(event.clientX - current.originX) > 4) movedRef.current = true;
+    const next = updatePreview(current, event.clientX);
+    dragRef.current = next;
+    setDrag(next);
+  };
+
+  const finishDrag = async () => {
+    const current = dragRef.current;
+    dragRef.current = null;
+    setDrag(null);
+    if (!current || !onScheduleChange) return;
+    const startKey = toDateKey(current.previewStart);
+    const endKey = toDateKey(current.previewEnd);
+    const same =
+      toDateKey(startOfLocalDay(current.originStart)) === startKey &&
+      toDateKey(startOfLocalDay(current.originEnd)) === endKey;
+    if (same || !movedRef.current) return;
+
+    const startAt = current.previewStart.toISOString();
+    const endAt = new Date(
+      current.previewEnd.getFullYear(),
+      current.previewEnd.getMonth(),
+      current.previewEnd.getDate(),
+      23,
+      59,
+      0,
+      0
+    ).toISOString();
+    setOverrides((existing) => ({ ...existing, [current.run.id]: { startAt, endAt } }));
+    setSavingId(current.run.id);
+    setError(null);
+    try {
+      await onScheduleChange(current.run.projectId, current.run.id, startKey, endKey);
+    } catch (saveError) {
+      setOverrides((existing) => {
+        const next = { ...existing };
+        delete next[current.run.id];
+        return next;
+      });
+      setError(saveError instanceof Error ? saveError.message : '日付の保存に失敗しました');
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   const runsByProject = new Map<string, TimelineRun[]>();
   for (const item of visibleItems) {
@@ -247,13 +405,16 @@ export function ScheduleTimeline({ items, projects = [], onOpenRun }: ScheduleTi
 
   return (
     <GlassPanel
-      heading="📅 タイムライン"
-      subheading="開始・終了の日時を指定して、その期間に重なるテストランを表示します"
+      heading={<PanelHeading icon={GanttChart}>タイムライン</PanelHeading>}
+      subheading="バーをドラッグすると予定日を変更して登録します。端をつまむと開始日・終了日だけ変えられます"
       contentClassName="pt-2"
     >
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <label className="min-w-[200px] flex-1 space-y-1">
-          <span className="text-[11px] text-white/50">開始</span>
+          <span className="inline-flex items-center gap-1 text-[11px] text-white/50">
+            <Calendar className="h-3 w-3" />
+            開始
+          </span>
           <Input
             type="datetime-local"
             variant="glass"
@@ -264,7 +425,10 @@ export function ScheduleTimeline({ items, projects = [], onOpenRun }: ScheduleTi
           />
         </label>
         <label className="min-w-[200px] flex-1 space-y-1">
-          <span className="text-[11px] text-white/50">終了</span>
+          <span className="inline-flex items-center gap-1 text-[11px] text-white/50">
+            <CalendarRange className="h-3 w-3" />
+            終了
+          </span>
           <Input
             type="datetime-local"
             variant="glass"
@@ -287,6 +451,8 @@ export function ScheduleTimeline({ items, projects = [], onOpenRun }: ScheduleTi
           ))}
         </div>
       </div>
+
+      {error ? <p className="mb-3 text-xs text-red-300">{error}</p> : null}
 
       {!validRange ? (
         <p className="py-6 text-center text-sm text-white/45">開始日時は終了日時より前にしてください</p>
@@ -324,32 +490,74 @@ export function ScheduleTimeline({ items, projects = [], onOpenRun }: ScheduleTi
                 return (
                   <div key={project.id} className="flex items-stretch gap-2">
                     <div className="flex w-36 shrink-0 flex-col justify-center" title={project.name}>
-                      <span className="font-mono text-[10px] text-white/40">{project.key}</span>
+                      <span className="inline-flex items-center gap-1 font-mono text-[10px] text-white/40">
+                        <Folder className="h-3 w-3" />
+                        {project.key}
+                      </span>
                       <span className="truncate text-xs text-white/80">{project.name}</span>
                       {typeof project.suiteCount === 'number' ? (
-                        <span className="text-[10px] text-white/40">スイート {project.suiteCount}</span>
+                        <LabelWithIcon icon={Layers} className="text-[10px] text-white/40">スイート {project.suiteCount}</LabelWithIcon>
                       ) : null}
                     </div>
                     <div className="relative flex-1 rounded bg-white/[0.03]" style={{ height: rowHeight }}>
                       {packed.map((item) => {
-                        const width = Math.max(2.5, item.end - item.start);
+                        const times = previewTimes(item.run);
+                        const left = clamp(((times.start - rangeStart!.getTime()) / span) * 100, 0, 100);
+                        const right = clamp(((times.end - rangeStart!.getTime()) / span) * 100, 0, 100);
+                        const width = Math.max(2.5, right - left);
+                        const dragging = drag?.run.id === item.run.id;
+                        const saving = savingId === item.run.id;
                         return (
-                          <button
+                          <div
                             key={item.run.id}
-                            type="button"
-                            title={`${item.run.name}（${item.run.status}）`}
-                            onClick={() => onOpenRun(item.run.projectId, item.run.id)}
-                            className="absolute truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium text-white shadow-sm"
+                            title={`${item.run.name}（${toDateKey(new Date(times.start))}〜${toDateKey(new Date(times.end))}）`}
+                            className={`absolute truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium text-white shadow-sm ${canUpdate ? 'cursor-grab' : 'cursor-pointer'} ${dragging ? 'z-20 cursor-grabbing ring-2 ring-white/50' : ''} ${saving ? 'opacity-70' : ''}`}
                             style={{
-                              left: `${item.start}%`,
+                              left: `${left}%`,
                               width: `${width}%`,
                               top: 4 + item.lane * 28,
                               height: 22,
                               backgroundColor: color,
                             }}
+                            onPointerDown={(event) => {
+                              const track = event.currentTarget.parentElement;
+                              beginDrag(event, item.run, 'move', track);
+                            }}
+                            onPointerMove={onDragMove}
+                            onPointerUp={() => void finishDrag()}
+                            onPointerCancel={() => setDrag(null)}
+                            onClick={() => {
+                              if (movedRef.current) return;
+                              onOpenRun(item.run.projectId, item.run.id);
+                            }}
                           >
-                            {item.run.name}
-                          </button>
+                            {canUpdate ? (
+                              <>
+                                <span
+                                  className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize rounded-l"
+                                  onPointerDown={(event) => {
+                                    const track = event.currentTarget.parentElement?.parentElement ?? null;
+                                    beginDrag(event, item.run, 'start', track);
+                                  }}
+                                  onPointerMove={onDragMove}
+                                  onPointerUp={() => void finishDrag()}
+                                />
+                                <span
+                                  className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize rounded-r"
+                                  onPointerDown={(event) => {
+                                    const track = event.currentTarget.parentElement?.parentElement ?? null;
+                                    beginDrag(event, item.run, 'end', track);
+                                  }}
+                                  onPointerMove={onDragMove}
+                                  onPointerUp={() => void finishDrag()}
+                                />
+                              </>
+                            ) : null}
+                            <span className="inline-flex max-w-full items-center gap-1 pl-1">
+                              <PlayCircle className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{item.run.name}</span>
+                            </span>
+                          </div>
                         );
                       })}
                     </div>

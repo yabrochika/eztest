@@ -1,6 +1,7 @@
 'use client';
 
-import { Folder, Settings, Trash2, Users } from 'lucide-react';
+import { Bug, CircleDot, Clock, FileText, Folder, Layers, PieChart, Play, Settings, Trash2, TrendingUp, Trophy, Users } from 'lucide-react';
+import { LabelWithIcon } from './PanelHeading';
 import { Badge } from '@/frontend/reusable-elements/badges/Badge';
 import { ActionMenu } from '@/frontend/reusable-components/menus/ActionMenu';
 import type { DashboardProject } from './types';
@@ -8,6 +9,8 @@ import { formatRelativeActivity, totalCounts } from './resultStatus';
 import { WeeklyTrend } from './WeeklyTrend';
 import { TestRunStatusCard } from './TestRunStatusCard';
 import { ExecutorBreakdown } from './ExecutorBreakdown';
+import { StatBar } from './StatBar';
+import { levelFromXp, xpFromCounts } from './gameStats';
 
 interface ProjectActivityRowProps {
   project: DashboardProject;
@@ -30,6 +33,8 @@ export function ProjectActivityRow({
 }: ProjectActivityRowProps) {
   const hasActions = canUpdate || canDelete || canManageMembers;
   const recentTotal = project.recentActivity.reduce((sum, day) => sum + totalCounts(day.counts), 0);
+  const xp = xpFromCounts(project.resultCounts);
+  const progress = levelFromXp(xp);
 
   return (
     <article className="rounded-lg border border-white/10 bg-white/[0.03] px-5 py-5">
@@ -39,12 +44,24 @@ export function ProjectActivityRow({
           onClick={() => onNavigate(`/projects/${project.id}`)}
           className="min-w-0 text-left"
         >
-          <p className="mb-1 font-mono text-[11px] tracking-wide text-primary/80">
+          <p className="mb-1 inline-flex items-center gap-1 font-mono text-[11px] tracking-wide text-primary/80">
+            <Folder className="h-3.5 w-3.5" />
             PROJECT · {project.key}
           </p>
           <h3 className="text-xl font-bold text-white hover:text-primary">
             {project.name}
           </h3>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-amber-200/80">
+            <Trophy className="h-3.5 w-3.5" />
+            Lv.{progress.level} · {xp} XP
+          </p>
+          <StatBar
+            className="mt-2 max-w-sm"
+            label="XP"
+            value={progress.current}
+            max={progress.next}
+            barClassName="bg-gradient-to-r from-amber-300 to-orange-400"
+          />
           {project.tags && project.tags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {project.tags.map((tag) => (
@@ -61,19 +78,14 @@ export function ProjectActivityRow({
           <p className="mt-2 text-sm leading-relaxed text-white/65">
             {project.description || 'このプロジェクトの説明はまだありません。設定から追加できます。'}
           </p>
-          <p className="mt-2 text-xs text-white/45">
-            テストケース {project._count?.testCases ?? 0}
-            {' · '}
-            テストスイート {project._count?.testSuites ?? 0}
-            {' · '}
-            テストラン {project._count?.testRuns ?? 0}
-            {' · '}
-            未完了ラン {project.openTestRuns}
-            {' · '}
-            Defect {project._count?.defects ?? 0}
-            {' · '}
-            最終実行 {formatRelativeActivity(project.lastActivityAt)}
-            {recentTotal > 0 ? ` · 直近14日 ${recentTotal}件` : ''}
+          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/45">
+            <LabelWithIcon icon={FileText}>テストケース {project._count?.testCases ?? 0}</LabelWithIcon>
+            <LabelWithIcon icon={Layers}>テストスイート {project._count?.testSuites ?? 0}</LabelWithIcon>
+            <LabelWithIcon icon={Play}>テストラン {project._count?.testRuns ?? 0}</LabelWithIcon>
+            <LabelWithIcon icon={CircleDot}>未完了ラン {project.openTestRuns}</LabelWithIcon>
+            <LabelWithIcon icon={Bug}>Defect {project._count?.defects ?? 0}</LabelWithIcon>
+            <LabelWithIcon icon={Clock}>最終実行 {formatRelativeActivity(project.lastActivityAt)}</LabelWithIcon>
+            {recentTotal > 0 ? <LabelWithIcon icon={TrendingUp}>直近14日 {recentTotal}件</LabelWithIcon> : null}
           </p>
         </button>
 
@@ -112,7 +124,10 @@ export function ProjectActivityRow({
 
       <div className="mt-5">
         <div className="mb-2 flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-white">テストラン</h4>
+          <h4 className="inline-flex items-center gap-1.5 text-sm font-semibold text-white">
+            <PieChart className="h-4 w-4 text-primary" />
+            テストラン
+          </h4>
           <span className="text-[11px] text-white/40">結果内訳と明細</span>
         </div>
         {project.recentRuns?.length ? (
@@ -149,7 +164,15 @@ export function ProjectActivityRow({
       </div>
 
       <div className="mt-5">
-        <p className="mb-2 text-[11px] text-white/40">金曜始まりの週次推移（金〜木 / JST・直近8週）</p>
+        <div className="mb-2">
+          <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-white">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            テスト資産と実施件数の推移
+          </p>
+          <p className="mt-0.5 text-[11px] text-white/40">
+            金曜始まり（金〜木）の直近8週。TC・スイートは累計、ラン実行・実施結果はその週の件数です。
+          </p>
+        </div>
         <WeeklyTrend
           weeks={project.weeklyTrend ?? []}
           onOpenRun={(runId) => onNavigate(`/projects/${project.id}/testruns/${runId}`)}

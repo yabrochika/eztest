@@ -1,6 +1,8 @@
 'use client';
 
+import { BarChart3, CalendarDays, Folder, Layers } from 'lucide-react';
 import { GlassPanel } from '@/frontend/reusable-components/layout/GlassPanel';
+import { LabelWithIcon, PanelHeading } from './PanelHeading';
 import type { DashboardProject, WeeklyTrendPoint } from './types';
 import { PIE_STATUSES } from './types';
 import { PIE_STATUS_META, formatChartDate, pieTotal, weekStatusCounts } from './resultStatus';
@@ -23,8 +25,8 @@ export function WeeklyProjectActivity({ projects, onOpenProject }: WeeklyProject
 
   return (
     <GlassPanel
-      heading="週次アクティビティ"
-      subheading="金曜始まり（金〜木 / JST）。プロジェクトごとのテストラン実施結果です"
+      heading={<PanelHeading icon={BarChart3}>週次アクティビティ</PanelHeading>}
+      subheading="プロジェクトごとに、金曜日から始まる1週間の実施結果を表示します"
       contentClassName="pt-2"
     >
       {weeks.length === 0 ? (
@@ -35,7 +37,10 @@ export function WeeklyProjectActivity({ projects, onOpenProject }: WeeklyProject
             <div className="flex items-end gap-2 pl-36 text-[11px] text-white/40">
               {weeks.map((week) => (
                 <div key={week.weekStart} className="min-w-0 flex-1 text-center">
-                  {formatWeekRange(week.weekStart, week.weekEnd)}
+                  <span className="inline-flex items-center justify-center gap-1">
+                    <CalendarDays className="h-3 w-3 shrink-0" />
+                    {formatWeekRange(week.weekStart, week.weekEnd)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -48,9 +53,12 @@ export function WeeklyProjectActivity({ projects, onOpenProject }: WeeklyProject
                   className="flex w-36 shrink-0 flex-col text-left"
                   title={project.name}
                 >
-                  <span className="font-mono text-[10px] text-white/40">{project.key}</span>
+                  <span className="inline-flex items-center gap-1 font-mono text-[10px] text-white/40">
+                    <Folder className="h-3 w-3" />
+                    {project.key}
+                  </span>
                   <span className="truncate text-xs text-white/80 hover:text-primary">{project.name}</span>
-                  <span className="text-[10px] text-white/40">スイート {project._count?.testSuites ?? 0}</span>
+                  <LabelWithIcon icon={Layers} className="text-[10px] text-white/40">スイート {project._count?.testSuites ?? 0}</LabelWithIcon>
                 </button>
                 <div className="flex min-w-0 flex-1 items-end gap-1.5">
                   {(project.weeklyTrend ?? weeks).map((week) => {

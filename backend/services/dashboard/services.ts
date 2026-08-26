@@ -7,6 +7,7 @@ import {
   weekIndexFor,
   type WeekWindow,
 } from '@/backend/services/dashboard/weeks';
+import { extractEpicId } from '@/lib/shortcut/ids';
 
 export const DASHBOARD_RANGE_DAYS = 14;
 export { DASHBOARD_WEEK_COUNT };
@@ -41,6 +42,8 @@ export interface WeeklyTrendPoint {
   testCasesAdded: number;
   testSuites: number;
   testSuitesAdded: number;
+  suiteItems: number;
+  suiteItemsAdded: number;
   testRuns: number;
   testRunSuites: number;
   resultCounts: PieStatusCounts;
@@ -55,6 +58,8 @@ function emptyWeeklyPoint(week: WeekWindow): WeeklyTrendPoint {
     testCasesAdded: 0,
     testSuites: 0,
     testSuitesAdded: 0,
+    suiteItems: 0,
+    suiteItemsAdded: 0,
     testRuns: 0,
     testRunSuites: 0,
     resultCounts: emptyPieCounts(),
@@ -70,8 +75,8 @@ function applyCreatedCounts(
   series: WeeklyTrendPoint[],
   weeks: WeekWindow[],
   items: Array<{ createdAt: Date }>,
-  field: 'testCases' | 'testSuites',
-  addedField: 'testCasesAdded' | 'testSuitesAdded'
+  field: 'testCases' | 'testSuites' | 'suiteItems',
+  addedField: 'testCasesAdded' | 'testSuitesAdded' | 'suiteItemsAdded'
 ) {
   const added = weeks.map(() => 0);
   let beforeRange = 0;
@@ -109,6 +114,54 @@ function emptyPieCounts(): PieStatusCounts {
   return {
     ...emptyCounts(),
     NOT_STARTED: 0,
+  };
+}
+
+type DashboardShortcutLink = {
+  storyId: number | null;
+  storyUrl: string | null;
+  epicId: number | null;
+  epicName: string | null;
+};
+
+function emptyShortcut(): DashboardShortcutLink {
+  return {
+    storyId: null,
+    storyUrl: null,
+    epicId: null,
+    epicName: null,
+  };
+}
+
+function hasShortcutLink(link: DashboardShortcutLink): boolean {
+  return !!(link.storyId || link.storyUrl || link.epicId);
+}
+
+function shortcutFromDefect(defect: {
+  shortcutStoryId?: number | null;
+  shortcutStoryUrl?: string | null;
+  shortcutEpicId?: number | null;
+  shortcutEpicName?: string | null;
+}): DashboardShortcutLink {
+  return {
+    storyId: defect.shortcutStoryId ?? null,
+    storyUrl: defect.shortcutStoryUrl ?? null,
+    epicId: defect.shortcutEpicId ?? null,
+    epicName: defect.shortcutEpicName ?? null,
+  };
+}
+
+function shortcutFromRunTexts(
+  name: string,
+  suites: Array<{ name: string; tsId?: string | null }>
+): DashboardShortcutLink {
+  const epicId = extractEpicId(name, ...suites.flatMap((suite) => [suite.name, suite.tsId]));
+  if (!epicId) return emptyShortcut();
+  return {
+    storyId: null,
+    storyUrl: null,
+    epicId,
+    epicName: null,
   };
 }
 
@@ -210,6 +263,7 @@ export class DashboardService {
         inProgressRuns: [],
         projects: [],
         todos: { testRuns: [], defects: [] },
+        shortcuts: [],
       };
     }
 
@@ -219,7 +273,7 @@ export class DashboardService {
       AND: [{ status: 'SKIPPED' }, { comment: null }],
     };
 
-    const [recentResults, lastActivityRows, openRunCounts, assignedRuns, assignedDefects, testCases, testSuites, testRuns, runResultGroups, executorGroups] =
+    const [recentResults, lastActivityRows, openRunCounts, assignedRuns, assignedDefects, testCases, testSuites, suiteLinks, testRuns, runResultGroups, executorGroups] =
       await Promise.all([
         prisma.testResult.findMany({
           where: {
@@ -265,6 +319,11 @@ export class DashboardService {
             assignedToId: true,
             assignedToIds: true,
             project: { select: { id: true, name: true, key: true } },
+            suites: {
+              select: {
+                testSuite: { select: { name: true, tsId: true } },
+              },
+            },
           },
           orderBy: { updatedAt: 'desc' },
           take: 50,
@@ -281,6 +340,10 @@ export class DashboardService {
             title: true,
             status: true,
             priority: true,
+            shortcutStoryId: true,
+            shortcutStoryUrl: true,
+            shortcutEpicId: true,
+            shortcutEpicName: true,
             project: { select: { id: true, name: true, key: true } },
           },
           orderBy: { updatedAt: 'desc' },
@@ -288,11 +351,20 @@ export class DashboardService {
         }),
         prisma.testCase.findMany({
           where: { projectId: { in: projectIds } },
-          select: { projectId: true, createdAt: true },
+          select: { id: true, projectId: true, suiteId: true, createdAt: true },
         }),
         prisma.testSuite.findMany({
           where: { projectId: { in: projectIds } },
           select: { projectId: true, createdAt: true },
+        }),
+        prisma.testCaseSuite.findMany({
+          where: { testSuite: { projectId: { in: projectIds } } },
+          select: {
+            addedAt: true,
+            testCaseId: true,
+            testSuiteId: true,
+            testSuite: { select: { projectId: true } },
+          },
         }),
         prisma.testRun.findMany({
           where: { projectId: { in: projectIds } },
@@ -306,6 +378,8 @@ export class DashboardService {
             completedAt: true,
             scheduledStartAt: true,
             scheduledEndAt: true,
+            assignedToId: true,
+            assignedToIds: true,
             updatedAt: true,
             suites: {
               select: {
@@ -432,6 +506,25 @@ export class DashboardService {
       weeklyByProject.set(projectId, emptyWeeklySeries(weeks));
     }
 
+    const suiteItemKeys = new Set<string>();
+    const suiteItemsByProject = new Map<string, Array<{ createdAt: Date }>>();
+    for (const projectId of projectIds) {
+      suiteItemsByProject.set(projectId, []);
+    }
+    for (const link of suiteLinks) {
+      const key = `${link.testCaseId}:${link.testSuiteId}`;
+      if (suiteItemKeys.has(key)) continue;
+      suiteItemKeys.add(key);
+      suiteItemsByProject.get(link.testSuite.projectId)?.push({ createdAt: link.addedAt });
+    }
+    for (const testCase of testCases) {
+      if (!testCase.suiteId) continue;
+      const key = `${testCase.id}:${testCase.suiteId}`;
+      if (suiteItemKeys.has(key)) continue;
+      suiteItemKeys.add(key);
+      suiteItemsByProject.get(testCase.projectId)?.push({ createdAt: testCase.createdAt });
+    }
+
     for (const projectId of projectIds) {
       const series = weeklyByProject.get(projectId)!;
       applyCreatedCounts(
@@ -447,6 +540,13 @@ export class DashboardService {
         testSuites.filter((item) => item.projectId === projectId),
         'testSuites',
         'testSuitesAdded'
+      );
+      applyCreatedCounts(
+        series,
+        weeks,
+        suiteItemsByProject.get(projectId) ?? [],
+        'suiteItems',
+        'suiteItemsAdded'
       );
     }
 
@@ -541,6 +641,10 @@ export class DashboardService {
         scheduledStartAt: run.scheduledStartAt?.toISOString() ?? null,
         scheduledEndAt: run.scheduledEndAt?.toISOString() ?? null,
         resultCounts: pieByRun.get(run.id) ?? emptyPieCounts(),
+        shortcut: shortcutFromRunTexts(
+          run.name,
+          run.suites.map((link) => link.testSuite)
+        ),
       }];
     }).sort((a, b) => {
       const projectDiff = a.projectKey.localeCompare(b.projectKey, 'ja');
@@ -676,7 +780,26 @@ export class DashboardService {
       executorAcc.set(projectId, byUser);
     }
 
-    const executorUserIds = [...new Set([...executorAcc.values()].flatMap((byUser) => [...byUser.keys()]))];
+    const assignedIdsForInProgress = [
+      ...new Set(
+        testRuns.flatMap((run) => {
+          if (run.status !== 'IN_PROGRESS') return [];
+          const ids = parseAssignedIds(run.assignedToIds);
+          if (run.assignedToId) ids.push(run.assignedToId);
+          return ids;
+        })
+      ),
+    ];
+    const executedIdsByRun = new Map<string, string[]>();
+    for (const row of executorGroups) {
+      const list = executedIdsByRun.get(row.testRunId) ?? [];
+      if (!list.includes(row.executedById)) list.push(row.executedById);
+      executedIdsByRun.set(row.testRunId, list);
+    }
+    const executorUserIds = [...new Set([
+      ...[...executorAcc.values()].flatMap((byUser) => [...byUser.keys()]),
+      ...assignedIdsForInProgress,
+    ])];
     const executorUsers = executorUserIds.length > 0
       ? await prisma.user.findMany({
           where: { id: { in: executorUserIds } },
@@ -739,6 +862,10 @@ export class DashboardService {
           projectId: run.project.id,
           projectName: run.project.name,
           projectKey: run.project.key,
+          shortcut: shortcutFromRunTexts(
+            run.name,
+            run.suites.map((link) => link.testSuite)
+          ),
         })),
       defects: assignedDefects.map((defect) => ({
         id: defect.id,
@@ -749,8 +876,123 @@ export class DashboardService {
         projectId: defect.project.id,
         projectName: defect.project.name,
         projectKey: defect.project.key,
+        shortcut: shortcutFromDefect(defect),
       })),
     };
+
+    const inProgressRunIds = testRuns
+      .filter((run) => run.status === 'IN_PROGRESS')
+      .map((run) => run.id);
+
+    const linkedShortcutDefects = await prisma.defect.findMany({
+      where: {
+        projectId: { in: projectIds },
+        status: { not: 'CLOSED' },
+        OR: [
+          { shortcutStoryId: { not: null } },
+          { shortcutEpicId: { not: null } },
+        ],
+        AND: [
+          {
+            OR: [
+              { assignedToId: userId },
+              ...(inProgressRunIds.length > 0
+                ? [{ testRunId: { in: inProgressRunIds } }]
+                : []),
+            ],
+          },
+        ],
+      },
+      select: {
+        id: true,
+        defectId: true,
+        title: true,
+        status: true,
+        shortcutStoryId: true,
+        shortcutStoryUrl: true,
+        shortcutEpicId: true,
+        shortcutEpicName: true,
+        project: { select: { id: true, name: true, key: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 80,
+    });
+
+    const shortcutSeen = new Set<string>();
+    const shortcuts: Array<{
+      workType: 'defect' | 'testrun';
+      workId: string;
+      workLabel: string;
+      workTitle: string;
+      status: string;
+      projectId: string;
+      projectName: string;
+      projectKey: string;
+      shortcut: DashboardShortcutLink;
+    }> = [];
+
+    const pushShortcutWork = (work: (typeof shortcuts)[number]) => {
+      const key = `${work.workType}:${work.workId}`;
+      if (shortcutSeen.has(key) || !hasShortcutLink(work.shortcut)) return;
+      shortcutSeen.add(key);
+      shortcuts.push(work);
+    };
+
+    for (const defect of linkedShortcutDefects) {
+      pushShortcutWork({
+        workType: 'defect',
+        workId: defect.id,
+        workLabel: defect.defectId,
+        workTitle: defect.title,
+        status: defect.status,
+        projectId: defect.project.id,
+        projectName: defect.project.name,
+        projectKey: defect.project.key,
+        shortcut: shortcutFromDefect(defect),
+      });
+    }
+
+    for (const defect of todos.defects) {
+      pushShortcutWork({
+        workType: 'defect',
+        workId: defect.id,
+        workLabel: defect.defectId,
+        workTitle: defect.title,
+        status: defect.status,
+        projectId: defect.projectId,
+        projectName: defect.projectName,
+        projectKey: defect.projectKey,
+        shortcut: defect.shortcut,
+      });
+    }
+
+    for (const run of inProgressRuns) {
+      pushShortcutWork({
+        workType: 'testrun',
+        workId: run.id,
+        workLabel: run.name,
+        workTitle: run.name,
+        status: run.status,
+        projectId: run.projectId,
+        projectName: run.projectName,
+        projectKey: run.projectKey,
+        shortcut: run.shortcut,
+      });
+    }
+
+    for (const run of todos.testRuns) {
+      pushShortcutWork({
+        workType: 'testrun',
+        workId: run.id,
+        workLabel: run.name,
+        workTitle: run.name,
+        status: run.status,
+        projectId: run.projectId,
+        projectName: run.projectName,
+        projectKey: run.projectKey,
+        shortcut: run.shortcut,
+      });
+    }
 
     return {
       rangeDays,
@@ -764,9 +1006,27 @@ export class DashboardService {
         totals: sumCounts(activityDays),
       },
       timeline,
-      inProgressRuns,
+      inProgressRuns: inProgressRuns.map((run) => {
+        const source = testRuns.find((item) => item.id === run.id);
+        const assignedIds = parseAssignedIds(source?.assignedToIds);
+        if (source?.assignedToId) assignedIds.push(source.assignedToId);
+        const uniqueAssigned = [...new Set(assignedIds)];
+        const executedIds = executedIdsByRun.get(run.id) ?? [];
+        const ids = [...uniqueAssigned];
+        for (const id of executedIds) {
+          if (!ids.includes(id)) ids.push(id);
+        }
+        return {
+          ...run,
+          executors: ids.map((id) => ({
+            id,
+            name: executorUserMap.get(id)?.name || '不明な実施者',
+          })),
+        };
+      }),
       projects: dashboardProjects,
       todos,
+      shortcuts,
     };
   }
 }

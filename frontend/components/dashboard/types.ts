@@ -30,6 +30,8 @@ export interface WeeklyTrendPoint {
   testCasesAdded: number;
   testSuites: number;
   testSuitesAdded: number;
+  suiteItems: number;
+  suiteItemsAdded: number;
   testRuns: number;
   testRunSuites: number;
   resultCounts: PieStatusCounts;
@@ -86,6 +88,25 @@ export interface DashboardProject extends Project {
   executors: DashboardExecutor[];
 }
 
+export interface DashboardShortcutLink {
+  storyId: number | null;
+  storyUrl: string | null;
+  epicId: number | null;
+  epicName: string | null;
+}
+
+export interface DashboardShortcutWork {
+  workType: 'defect' | 'testrun';
+  workId: string;
+  workLabel: string;
+  workTitle: string;
+  status: string;
+  projectId: string;
+  projectName: string;
+  projectKey: string;
+  shortcut: DashboardShortcutLink;
+}
+
 export interface DashboardTodoTestRun {
   id: string;
   name: string;
@@ -93,6 +114,7 @@ export interface DashboardTodoTestRun {
   projectId: string;
   projectName: string;
   projectKey: string;
+  shortcut: DashboardShortcutLink;
 }
 
 export interface DashboardTodoDefect {
@@ -104,6 +126,12 @@ export interface DashboardTodoDefect {
   projectId: string;
   projectName: string;
   projectKey: string;
+  shortcut: DashboardShortcutLink;
+}
+
+export interface InProgressExecutor {
+  id: string;
+  name: string;
 }
 
 export interface InProgressRun {
@@ -117,6 +145,8 @@ export interface InProgressRun {
   scheduledStartAt: string | null;
   scheduledEndAt: string | null;
   resultCounts: PieStatusCounts;
+  executors: InProgressExecutor[];
+  shortcut: DashboardShortcutLink;
 }
 
 export interface DashboardData {
@@ -137,4 +167,5 @@ export interface DashboardData {
     testRuns: DashboardTodoTestRun[];
     defects: DashboardTodoDefect[];
   };
+  shortcuts: DashboardShortcutWork[];
 }

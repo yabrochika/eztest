@@ -3,7 +3,7 @@ import { hasPermission } from '@/lib/rbac';
 
 /**
  * GET /api/dashboard
- * TestRail-style home dashboard: activity, projects, and assigned work
+ * Home dashboard: activity, projects, and assigned work
  * Required permission: projects:read
  */
 export const GET = hasPermission(

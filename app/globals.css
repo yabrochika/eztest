@@ -457,3 +457,41 @@ select,
   }
 }
 
+@keyframes game-stat-shine {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes game-danger-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(248, 113, 113, 0); }
+}
+
+.game-stat-fill {
+  background-size: 200% 100%;
+  animation: game-stat-shine 2.4s linear infinite;
+}
+
+.game-danger {
+  animation: game-danger-pulse 1.8s ease-out infinite;
+}
+
+.game-hud {
+  position: relative;
+}
+
+.game-hud::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.015) 0px,
+    rgba(255, 255, 255, 0.015) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  border-radius: inherit;
+}
+

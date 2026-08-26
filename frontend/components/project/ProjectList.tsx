@@ -10,12 +10,17 @@ import { CreateProjectDialog } from './subcomponents/CreateProjectDialog';
 import { DeleteProjectDialog } from './subcomponents/DeleteProjectDialog';
 import { EmptyProjectsState } from './subcomponents/EmptyProjectsState';
 import { WeeklyProjectActivity } from '@/frontend/components/dashboard/WeeklyProjectActivity';
+import { ProjectInventoryTrend } from '@/frontend/components/dashboard/ProjectInventoryTrend';
 import { InProgressRuns } from '@/frontend/components/dashboard/InProgressRuns';
 import { ScheduleTimeline } from '@/frontend/components/dashboard/ScheduleTimeline';
 import { ProjectActivityRow } from '@/frontend/components/dashboard/ProjectActivityRow';
+import { ProjectSidebar } from '@/frontend/components/dashboard/ProjectSidebar';
 import { TodoSidebar } from '@/frontend/components/dashboard/TodoSidebar';
+import { ShortcutSidebar } from '@/frontend/components/dashboard/ShortcutSidebar';
+import { GameHud } from '@/frontend/components/dashboard/GameHud';
 import type { DashboardData } from '@/frontend/components/dashboard/types';
 import { usePermissions } from '@/hooks/usePermissions';
+import { LayoutDashboard, FolderKanban } from 'lucide-react';
 
 const EMPTY_DASHBOARD: DashboardData = {
   rangeDays: 14,
@@ -29,6 +34,7 @@ const EMPTY_DASHBOARD: DashboardData = {
   },
   projects: [],
   todos: { testRuns: [], defects: [] },
+  shortcuts: [],
 };
 
 export default function ProjectList() {
@@ -166,7 +172,11 @@ export default function ProjectList() {
 
       <div className="mx-auto max-w-7xl px-8 py-6 pt-12">
         <div className="mb-6">
-          <h1 className="mb-1 text-3xl font-bold text-white">ダッシュボード</h1>
+          <h1 className="mb-1 inline-flex items-center gap-2 whitespace-nowrap text-3xl font-bold text-white">
+            <LayoutDashboard className="h-8 w-8 shrink-0 text-primary" />
+            ダッシュボード
+          </h1>
+          <p className="text-sm text-white/45">実施結果が XP・レベル・実績になります</p>
         </div>
 
         <CreateProjectDialog
@@ -180,6 +190,7 @@ export default function ProjectList() {
         ) : (
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
             <div className="space-y-6">
+              <GameHud dashboard={dashboard} />
               <InProgressRuns
                 runs={dashboard.inProgressRuns || []}
                 projects={projects.map((project) => ({
@@ -201,7 +212,20 @@ export default function ProjectList() {
                 }))}
                 weekStart={dashboard.weekRange?.start || ''}
                 weekEnd={dashboard.weekRange?.end || ''}
+                canUpdate={hasPermissionCheck('testruns:update')}
                 onOpenRun={(projectId, runId) => router.push(`/projects/${projectId}/testruns/${runId}`)}
+                onScheduleChange={async (projectId, runId, scheduledStartAt, scheduledEndAt) => {
+                  const response = await fetch(`/api/projects/${projectId}/testruns/${runId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scheduledStartAt, scheduledEndAt }),
+                  });
+                  if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.message || data.error || '日付の保存に失敗しました');
+                  }
+                  await fetchDashboard();
+                }}
               />
 
               <WeeklyProjectActivity
@@ -209,16 +233,24 @@ export default function ProjectList() {
                 onOpenProject={(projectId) => router.push(`/projects/${projectId}`)}
               />
 
+              <ProjectInventoryTrend
+                projects={projects}
+                onOpenProject={(projectId) => router.push(`/projects/${projectId}`)}
+              />
+
               <section>
                 <div className="mb-3 flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-white">プロジェクト概要</h2>
+                  <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
+                    <FolderKanban className="h-5 w-5 text-primary" />
+                    プロジェクト概要
+                  </h2>
                   <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-white/50">
                     {projects.length}
                   </span>
                   <div className="h-px flex-1 bg-white/10" />
                 </div>
                 <p className="mb-3 text-xs text-white/40">
-                  TestRail のプロジェクトダッシュボードと同様に、プロジェクト名・目的・テストラン結果を一覧します。週次は金曜始まり（金〜木、JST）です。
+                  各プロジェクトの説明と、テストランの結果・週ごとの推移を一覧します。
                 </p>
                 <div className="space-y-3">
                   {projects.map((project) => (
@@ -237,12 +269,21 @@ export default function ProjectList() {
               </section>
             </div>
 
-            <TodoSidebar
-              projects={projects}
-              testRuns={dashboard.todos.testRuns}
-              defects={dashboard.todos.defects}
-              onNavigate={(path) => router.push(path)}
-            />
+            <div className="space-y-6 xl:sticky xl:top-24">
+              <ProjectSidebar
+                projects={projects}
+                onNavigate={(path) => router.push(path)}
+              />
+              <TodoSidebar
+                testRuns={dashboard.todos.testRuns}
+                defects={dashboard.todos.defects}
+                onNavigate={(path) => router.push(path)}
+              />
+              <ShortcutSidebar
+                items={dashboard.shortcuts || []}
+                onNavigate={(path) => router.push(path)}
+              />
+            </div>
           </div>
         )}
       </div>

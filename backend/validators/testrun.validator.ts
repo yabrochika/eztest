@@ -2,6 +2,14 @@ import { z } from 'zod';
 
 const stringOrStringArraySchema = z.union([z.string(), z.array(z.string().min(1))]);
 
+const scheduleDateSchema = z
+  .union([
+    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD'),
+    z.string().datetime(),
+    z.null(),
+  ])
+  .optional();
+
 /**
  * Create Test Run Schema
  */
@@ -27,6 +35,8 @@ export const createTestRunSchema = z.object({
   status: z.string().optional(),
   testCaseIds: z.array(z.string().min(1)).optional(),
   testSuiteIds: z.array(z.string().min(1)).optional(),
+  scheduledStartAt: scheduleDateSchema,
+  scheduledEndAt: scheduleDateSchema,
 });
 
 /**
@@ -53,6 +63,8 @@ export const updateTestRunSchema = z.object({
   version: z.string().max(100, 'Version must not exceed 100 characters').optional(),
   platform: stringOrStringArraySchema.optional(),
   device: stringOrStringArraySchema.optional(),
+  scheduledStartAt: scheduleDateSchema,
+  scheduledEndAt: scheduleDateSchema,
 });
 
 /**

@@ -362,6 +362,8 @@ model TestRun {
   device        String?  // iPhone, Android, PC
   startedAt     DateTime?
   completedAt   DateTime?
+  scheduledStartAt DateTime?
+  scheduledEndAt   DateTime?
   createdById   String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

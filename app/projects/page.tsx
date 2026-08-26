@@ -3,8 +3,8 @@ import CONFIG_SEO from '@/config/seo.config';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: CONFIG_SEO.Projects.title,
-  description: CONFIG_SEO.Projects.description,
+  title: CONFIG_SEO.Dashboard.title,
+  description: CONFIG_SEO.Dashboard.description,
 };
 
 const ProjectsPage = () => {

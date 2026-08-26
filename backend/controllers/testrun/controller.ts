@@ -23,6 +23,17 @@ function normalizeMultiSelectInput(value?: string | string[]): string | undefine
   return normalized.length > 0 ? normalized : undefined;
 }
 
+function parseScheduleInput(value: string | null | undefined, endOfDay = false): Date | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day, endOfDay ? 23 : 0, endOfDay ? 59 : 0, 0, 0);
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function normalizeIdArray(value?: string[]): string[] | undefined {
   if (!value || value.length === 0) {
     return undefined;
@@ -111,6 +122,12 @@ export class TestRunController {
       assignedToId = undefined;
     }
 
+    const scheduledStartAt = parseScheduleInput(validatedData.scheduledStartAt);
+    const scheduledEndAt = parseScheduleInput(validatedData.scheduledEndAt, true);
+    if (scheduledStartAt && scheduledEndAt && scheduledStartAt > scheduledEndAt) {
+      throw new ValidationException('予定開始日は予定終了日以前にしてください');
+    }
+
     const testRun = await testRunService.createTestRun({
       projectId,
       name: validatedData.name,
@@ -127,6 +144,8 @@ export class TestRunController {
       status: validatedData.status,
       testCaseIds: validatedData.testCaseIds,
       testSuiteIds: validatedData.testSuiteIds,
+      scheduledStartAt: scheduledStartAt ?? undefined,
+      scheduledEndAt: scheduledEndAt ?? undefined,
       createdById: userId,
     });
 
@@ -163,6 +182,12 @@ export class TestRunController {
     const platform = normalizeMultiSelectInput(validatedData.platform);
     const device = normalizeMultiSelectInput(validatedData.device);
 
+    const scheduledStartAt = parseScheduleInput(validatedData.scheduledStartAt);
+    const scheduledEndAt = parseScheduleInput(validatedData.scheduledEndAt, true);
+    if (scheduledStartAt && scheduledEndAt && scheduledStartAt > scheduledEndAt) {
+      throw new ValidationException('予定開始日は予定終了日以前にしてください');
+    }
+
     const testRun = await testRunService.updateTestRun(testRunId, {
       ...validatedData,
       assignedToId: validatedData.assignedToId || assignedToIds?.[0],
@@ -172,6 +197,8 @@ export class TestRunController {
       verificationEnvironmentNote,
       platform,
       device,
+      scheduledStartAt,
+      scheduledEndAt,
     });
 
     return { data: testRun };

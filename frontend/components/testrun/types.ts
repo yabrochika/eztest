@@ -36,6 +36,8 @@ export interface TestRun {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  scheduledStartAt?: string | null;
+  scheduledEndAt?: string | null;
 }
 
 export interface Project {

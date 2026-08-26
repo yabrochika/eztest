@@ -342,6 +342,8 @@ interface CreateTestRunInput {
   status?: string;
   testCaseIds?: string[];
   testSuiteIds?: string[];
+  scheduledStartAt?: Date | null;
+  scheduledEndAt?: Date | null;
   createdById: string;
 }
 
@@ -360,6 +362,8 @@ interface UpdateTestRunInput {
   device?: string;
   startedAt?: Date;
   completedAt?: Date;
+  scheduledStartAt?: Date | null;
+  scheduledEndAt?: Date | null;
 }
 
 interface TestRunFilters {
@@ -708,6 +712,8 @@ export class TestRunService {
         device: data.device || null,
         status,
         completedAt: status === 'COMPLETED' ? new Date() : null,
+        scheduledStartAt: data.scheduledStartAt ?? null,
+        scheduledEndAt: data.scheduledEndAt ?? null,
         createdById: data.createdById,
       },
       include: {

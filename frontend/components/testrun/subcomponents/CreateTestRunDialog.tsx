@@ -365,6 +365,18 @@ export function CreateTestRunDialog({
       cols: 2,
     },
     {
+      name: 'scheduledStartAt',
+      label: '予定開始日',
+      type: 'date',
+      cols: 1,
+    },
+    {
+      name: 'scheduledEndAt',
+      label: '予定終了日',
+      type: 'date',
+      cols: 1,
+    },
+    {
       name: 'description',
       label: '説明',
       placeholder: 'テストランの説明を入力',
@@ -407,6 +419,8 @@ export function CreateTestRunDialog({
         device: selectedDevices.length > 0 ? selectedDevices : undefined,
         executionType: 'MANUAL',
         testSuiteIds: testSuiteIds && testSuiteIds.length > 0 ? testSuiteIds : undefined,
+        scheduledStartAt: formData.scheduledStartAt || undefined,
+        scheduledEndAt: formData.scheduledEndAt || undefined,
       }),
     });
 

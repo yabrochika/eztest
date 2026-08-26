@@ -14,6 +14,16 @@ interface ProjectMember {
   };
 }
 
+function toDateInputValue(value?: string | null): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 interface EditTestRunDialogProps {
   projectId: string;
   testRun: {
@@ -36,6 +46,8 @@ interface EditTestRunDialogProps {
     assignedTo?: {
       id: string;
     };
+    scheduledStartAt?: string | null;
+    scheduledEndAt?: string | null;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -231,6 +243,20 @@ export function EditTestRunDialog({
       defaultValue: testRun?.version || '',
     },
     {
+      name: 'scheduledStartAt',
+      label: '予定開始日',
+      type: 'date',
+      cols: 1,
+      defaultValue: toDateInputValue(testRun?.scheduledStartAt),
+    },
+    {
+      name: 'scheduledEndAt',
+      label: '予定終了日',
+      type: 'date',
+      cols: 1,
+      defaultValue: toDateInputValue(testRun?.scheduledEndAt),
+    },
+    {
       name: 'description',
       label: '説明',
       placeholder: 'テストランの説明を入力',
@@ -275,6 +301,8 @@ export function EditTestRunDialog({
         assignedToIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
         platform: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,
         device: selectedDevices.length > 0 ? selectedDevices : undefined,
+        scheduledStartAt: formData.scheduledStartAt || null,
+        scheduledEndAt: formData.scheduledEndAt || null,
       }),
     });
 

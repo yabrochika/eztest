@@ -1,172 +1,139 @@
 'use client';
 
-import { FileText, Folder, Layers, Sparkles } from 'lucide-react';
+import { Area, AreaChart } from 'recharts';
+import { Sparkles } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/frontend/reusable-components/charts/Chart';
 import { GlassPanel } from '@/frontend/reusable-components/layout/GlassPanel';
-import { LabelWithIcon, PanelHeading } from './PanelHeading';
+import { PanelHeading } from './PanelHeading';
 import type { DashboardProject, WeeklyTrendPoint } from './types';
 import { formatChartDate } from './resultStatus';
 
-const TC_COLOR = '#38bdf8';
+const TC_COLOR = '#0b72ff';
 const SUITE_COLOR = '#c084fc';
+
+const tcChartConfig: ChartConfig = {
+  value: { label: 'TC数', color: TC_COLOR },
+};
+
+const suiteChartConfig: ChartConfig = {
+  value: { label: 'スイート内件数', color: SUITE_COLOR },
+};
 
 interface ProjectInventoryTrendProps {
   projects: DashboardProject[];
-  onOpenProject: (projectId: string) => void;
-}
-
-function formatWeekRange(weekStart: string, weekEnd: string): string {
-  return `${formatChartDate(weekStart)}–${formatChartDate(weekEnd)}`;
 }
 
 function suiteItemCount(week?: Pick<WeeklyTrendPoint, 'suiteItems'> | null): number {
   return week?.suiteItems ?? 0;
 }
 
-function pointX(index: number, count: number, width: number): number {
-  if (count <= 1) return width / 2;
-  return ((index + 0.5) / count) * width;
+function formatCount(value: number): string {
+  return value.toLocaleString('ja-JP');
 }
 
-function toPoints(values: number[], max: number, width: number, height: number): string {
-  if (values.length === 0) return '';
-  return values
-    .map((value, index) => {
-      const x = pointX(index, values.length, width);
-      const y = height - 4 - (value / max) * (height - 10);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
+function eightWeekDelta(values: number[]): number {
+  if (values.length === 0) return 0;
+  return (values.at(-1) ?? 0) - (values[0] ?? 0);
 }
 
-function DualLineChart({
-  testCases,
-  suiteItems,
+function DeltaLine({ value }: { value: number }) {
+  if (value > 0) {
+    return <p className="text-[11px] tabular-nums text-emerald-400">▲ +{formatCount(value)}（過去8週）</p>;
+  }
+  if (value < 0) {
+    return <p className="text-[11px] tabular-nums text-red-400">▼ {formatCount(value)}（過去8週）</p>;
+  }
+  return <p className="text-[11px] tabular-nums text-white/40">±0（過去8週）</p>;
+}
+
+function TrendCard({
+  label,
+  values,
+  weeks,
+  color,
+  config,
 }: {
-  testCases: number[];
-  suiteItems: number[];
+  label: string;
+  values: number[];
+  weeks: WeeklyTrendPoint[];
+  color: string;
+  config: ChartConfig;
 }) {
-  const width = 320;
-  const height = 56;
-  const max = Math.max(1, ...testCases, ...suiteItems);
-  const tcPoints = toPoints(testCases, max, width, height);
-  const suitePoints = toPoints(suiteItems, max, width, height);
-  const lastTc = testCases.at(-1) ?? 0;
-  const lastSuite = suiteItems.at(-1) ?? 0;
+  const latest = values.at(-1) ?? 0;
+  const data = weeks.map((week, index) => ({
+    week: formatChartDate(week.weekStart),
+    value: values[index] ?? 0,
+  }));
+  const gradientId = `fill-${label.replace(/\s+/g, '')}`;
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="h-14 w-full" role="img" aria-label={`TC ${lastTc}、スイート内 ${lastSuite}`}>
-      {[0.25, 0.5, 0.75].map((ratio) => (
-        <line
-          key={ratio}
-          x1="0"
-          x2={width}
-          y1={height - 4 - ratio * (height - 10)}
-          y2={height - 4 - ratio * (height - 10)}
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth="1"
-        />
-      ))}
-      <polyline fill="none" stroke={SUITE_COLOR} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" points={suitePoints} />
-      <polyline fill="none" stroke={TC_COLOR} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" points={tcPoints} />
-      {testCases.map((value, index) => {
-        const x = pointX(index, testCases.length, width);
-        const y = height - 4 - (value / max) * (height - 10);
-        return (
-          <circle key={`tc-${index}`} cx={x} cy={y} r="2.5" fill={TC_COLOR}>
-            <title>{`TC ${value}`}</title>
-          </circle>
-        );
-      })}
-      {suiteItems.map((value, index) => {
-        const x = pointX(index, suiteItems.length, width);
-        const y = height - 4 - (value / max) * (height - 10);
-        return (
-          <circle key={`suite-${index}`} cx={x} cy={y} r="2.5" fill={SUITE_COLOR}>
-            <title>{`スイート内 ${value}`}</title>
-          </circle>
-        );
-      })}
-    </svg>
+    <div className="min-w-0 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-3">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[11px] text-white/45">{label}</p>
+        <p className="text-2xl font-semibold leading-none tabular-nums text-white">{formatCount(latest)}</p>
+      </div>
+      <ChartContainer config={config} className="mt-3 h-16 w-full min-w-0">
+        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <Area
+            type="monotone"
+            dataKey="value"
+            stroke={color}
+            strokeWidth={2}
+            fill={`url(#${gradientId})`}
+            dot={false}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ChartContainer>
+      <div className="mt-2">
+        <DeltaLine value={eightWeekDelta(values)} />
+      </div>
+    </div>
   );
 }
 
-export function ProjectInventoryTrend({ projects, onOpenProject }: ProjectInventoryTrendProps) {
+export function ProjectInventoryTrend({ projects }: ProjectInventoryTrendProps) {
   const weeks: WeeklyTrendPoint[] = projects[0]?.weeklyTrend ?? [];
-  const latestTc = projects.reduce((sum, project) => sum + (project.weeklyTrend.at(-1)?.testCases ?? 0), 0);
-  const latestSuiteItems = projects.reduce((sum, project) => sum + suiteItemCount(project.weeklyTrend.at(-1)), 0);
+  const testCases = weeks.map((_, index) => (
+    projects.reduce((sum, project) => sum + (project.weeklyTrend[index]?.testCases ?? 0), 0)
+  ));
+  const suiteItems = weeks.map((_, index) => (
+    projects.reduce((sum, project) => sum + suiteItemCount(project.weeklyTrend[index]), 0)
+  ));
 
   return (
     <GlassPanel
       heading={<PanelHeading icon={Sparkles}>TC・スイート内件数の推移</PanelHeading>}
-      subheading="プロジェクトごとに、テストケース数とスイートに入っている件数の週次推移を表示します"
+      subheading="折れ線・最新値・過去8週の増減を表示します"
       contentClassName="pt-2"
     >
       {weeks.length === 0 ? (
         <p className="py-8 text-center text-sm text-white/45">週次データがありません</p>
       ) : (
-        <div className="overflow-x-auto">
-          <div className="min-w-[720px] space-y-4">
-            <div className="flex items-end gap-2 pl-36 text-[11px] text-white/40">
-              {weeks.map((week) => (
-                <div key={week.weekStart} className="min-w-0 flex-1 text-center">
-                  {formatWeekRange(week.weekStart, week.weekEnd)}
-                </div>
-              ))}
-            </div>
-
-            {projects.map((project) => {
-              const series = project.weeklyTrend ?? weeks;
-              const currentTc = series.at(-1)?.testCases ?? 0;
-              const currentSuiteItems = suiteItemCount(series.at(-1));
-              return (
-                <div key={project.id} className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onOpenProject(project.id)}
-                    className="flex w-36 shrink-0 flex-col text-left"
-                    title={project.name}
-                  >
-                    <span className="inline-flex items-center gap-1 font-mono text-[10px] text-white/40">
-                      <Folder className="h-3 w-3" />
-                      {project.key}
-                    </span>
-                    <span className="truncate text-xs text-white/80 hover:text-primary">{project.name}</span>
-                    <LabelWithIcon icon={FileText} className="text-[10px] text-sky-300/80">TC {currentTc}</LabelWithIcon>
-                    <LabelWithIcon icon={Layers} className="text-[10px] text-purple-300/80">スイート内 {currentSuiteItems}</LabelWithIcon>
-                  </button>
-                  <div className="min-w-0 flex-1 rounded-md border border-white/8 bg-white/[0.02] px-2 py-1">
-                    <DualLineChart
-                      testCases={series.map((week) => week.testCases)}
-                      suiteItems={series.map((week) => suiteItemCount(week))}
-                    />
-                    <div className="mt-1 flex text-[10px] tabular-nums">
-                      {series.map((week) => (
-                        <div key={`${project.id}-${week.weekStart}-n`} className="min-w-0 flex-1 text-center leading-tight">
-                          <p className="text-sky-300/90">{week.testCases}</p>
-                          <p className="text-purple-300/80">{suiteItemCount(week)}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <TrendCard
+            label="TC数"
+            values={testCases}
+            weeks={weeks}
+            color={TC_COLOR}
+            config={tcChartConfig}
+          />
+          <TrendCard
+            label="スイート内件数"
+            values={suiteItems}
+            weeks={weeks}
+            color={SUITE_COLOR}
+            config={suiteChartConfig}
+          />
         </div>
       )}
-
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/10 pt-3 text-xs text-white/70">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: TC_COLOR }} />
-          <FileText className="h-3.5 w-3.5 text-sky-300" />
-          TC数 {latestTc}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: SUITE_COLOR }} />
-          <Layers className="h-3.5 w-3.5 text-purple-300" />
-          スイート内件数 {latestSuiteItems}
-        </span>
-      </div>
     </GlassPanel>
   );
 }

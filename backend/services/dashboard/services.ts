@@ -4,6 +4,8 @@ import { projectService } from '@/backend/services/project/services';
 import {
   DASHBOARD_WEEK_COUNT,
   buildFridayWeeks,
+  eachJstDayKeys,
+  toJstDateKey,
   weekIndexFor,
   type WeekWindow,
 } from '@/backend/services/dashboard/weeks';
@@ -239,6 +241,7 @@ function emptyActivity(rangeDays: number) {
   }));
   return {
     days,
+    heatmapDays: [] as ActivityDay[],
     totals: emptyCounts(),
   };
 }
@@ -460,6 +463,10 @@ export class DashboardService {
     }
 
     const dayKeys = eachDayKeys(rangeDays);
+    const heatmapKeys = eachJstDayKeys(weeks[0].start, weeks[weeks.length - 1].end);
+    const heatmapByDay = new Map<string, ResultStatusCounts>(
+      heatmapKeys.map((date) => [date, emptyCounts()])
+    );
     const globalByDay = new Map<string, ResultStatusCounts>(
       dayKeys.map((date) => [date, emptyCounts()])
     );
@@ -476,8 +483,12 @@ export class DashboardService {
 
     for (const result of recentResults) {
       const dateKey = toDateKey(result.executedAt);
+      const heatmapKey = toJstDateKey(result.executedAt);
       const projectId = result.testRun.projectId;
       incrementCount(globalByDay.get(dateKey) ?? emptyCounts(), result.status);
+      if (heatmapByDay.has(heatmapKey)) {
+        incrementCount(heatmapByDay.get(heatmapKey)!, result.status);
+      }
 
       const projectDays = projectByDay.get(projectId);
       if (projectDays?.has(dateKey)) {
@@ -640,6 +651,7 @@ export class DashboardService {
         startedAt: run.startedAt?.toISOString() ?? null,
         scheduledStartAt: run.scheduledStartAt?.toISOString() ?? null,
         scheduledEndAt: run.scheduledEndAt?.toISOString() ?? null,
+        dueDate: run.scheduledEndAt?.toISOString() ?? null,
         resultCounts: pieByRun.get(run.id) ?? emptyPieCounts(),
         shortcut: shortcutFromRunTexts(
           run.name,
@@ -1003,6 +1015,10 @@ export class DashboardService {
       },
       activity: {
         days: activityDays,
+        heatmapDays: heatmapKeys.map((date) => ({
+          date,
+          counts: heatmapByDay.get(date) ?? emptyCounts(),
+        })),
         totals: sumCounts(activityDays),
       },
       timeline,

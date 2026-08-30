@@ -120,44 +120,56 @@ export function WeeklyTrend({ weeks, onOpenRun }: WeeklyTrendProps) {
       </div>
 
       <div className="overflow-x-auto rounded-md border border-white/10">
-        <table className="w-full min-w-[640px] text-left text-xs">
-          <thead className="bg-white/[0.04] text-white/50">
+        <table className="w-max min-w-full text-left text-xs">
+          <thead className="bg-white/[0.04] text-white/75">
             <tr>
-              <th className="px-2.5 py-1.5 font-medium">
-                <span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" />週（金〜木）</span>
+              <th className="whitespace-nowrap px-3 py-2 font-medium">
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <CalendarDays className="h-3.5 w-3.5 shrink-0" />週（金〜木）
+                </span>
               </th>
-              <th className="px-2.5 py-1.5 font-medium">
-                <span className="inline-flex items-center gap-1"><FileText className="h-3 w-3" />TC</span>
+              <th className="whitespace-nowrap px-3 py-2 font-medium">
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <FileText className="h-3.5 w-3.5 shrink-0" />TC
+                </span>
               </th>
-              <th className="px-2.5 py-1.5 font-medium">
-                <span className="inline-flex items-center gap-1"><Layers className="h-3 w-3" />スイート</span>
+              <th className="whitespace-nowrap px-3 py-2 font-medium">
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <Layers className="h-3.5 w-3.5 shrink-0" />スイート
+                </span>
               </th>
-              <th className="px-2.5 py-1.5 font-medium">
-                <span className="inline-flex items-center gap-1"><Play className="h-3 w-3" />ラン実行</span>
+              <th className="whitespace-nowrap px-3 py-2 font-medium">
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <Play className="h-3.5 w-3.5 shrink-0" />ラン実行
+                </span>
               </th>
-              <th className="px-2.5 py-1.5 font-medium">実施状態</th>
-              <th className="px-2.5 py-1.5 font-medium">
-                <span className="inline-flex items-center gap-1"><Layers className="h-3 w-3" />実行スイート</span>
+              <th className="min-w-[8rem] whitespace-nowrap px-3 py-2 font-medium">実施状態</th>
+              <th className="whitespace-nowrap px-3 py-2 font-medium">
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <Layers className="h-3.5 w-3.5 shrink-0" />実行スイート
+                </span>
               </th>
-              <th className="px-2.5 py-1.5 font-medium">
-                <span className="inline-flex items-center gap-1"><PlayCircle className="h-3 w-3" />内容</span>
+              <th className="whitespace-nowrap px-3 py-2 font-medium">
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <PlayCircle className="h-3.5 w-3.5 shrink-0" />内容
+                </span>
               </th>
             </tr>
           </thead>
           <tbody>
             {newestFirst.map((week) => (
               <tr key={week.weekStart} className="border-t border-white/8 text-white/80">
-                <td className="whitespace-nowrap px-2.5 py-1.5 text-white/60">
+                <td className="whitespace-nowrap px-3 py-2 text-white/60">
                   {formatWeekRange(week.weekStart, week.weekEnd)}
                 </td>
-                <td className="px-2.5 py-1.5">
+                <td className="whitespace-nowrap px-3 py-2">
                   <CountWithDelta value={week.testCases} added={week.testCasesAdded} />
                 </td>
-                <td className="px-2.5 py-1.5">
+                <td className="whitespace-nowrap px-3 py-2">
                   <CountWithDelta value={week.testSuites} added={week.testSuitesAdded} />
                 </td>
-                <td className="px-2.5 py-1.5 tabular-nums">{week.testRuns}</td>
-                <td className="min-w-[120px] px-2.5 py-1.5">
+                <td className="whitespace-nowrap px-3 py-2 tabular-nums">{week.testRuns}</td>
+                <td className="min-w-[8rem] px-3 py-2">
                   <StatusStackedBar counts={weekStatusCounts(week)} height={12} />
                   <p className="mt-0.5 text-[10px] tabular-nums text-white/40">
                     {pieTotal(week.resultCounts) > 0
@@ -167,8 +179,8 @@ export function WeeklyTrend({ weeks, onOpenRun }: WeeklyTrendProps) {
                         : '実施なし'}
                   </p>
                 </td>
-                <td className="px-2.5 py-1.5 tabular-nums">{week.testRunSuites}</td>
-                <td className="px-2.5 py-1.5">
+                <td className="whitespace-nowrap px-3 py-2 tabular-nums">{week.testRunSuites}</td>
+                <td className="px-3 py-2">
                   {week.runs.length === 0 ? (
                     <span className="text-white/35">実行なし</span>
                   ) : (

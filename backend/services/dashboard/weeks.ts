@@ -55,3 +55,11 @@ export function weekIndexFor(date: Date, weeks: WeekWindow[]): number {
   const time = date.getTime();
   return weeks.findIndex((week) => time >= week.start.getTime() && time < week.end.getTime());
 }
+
+export function eachJstDayKeys(start: Date, endExclusive: Date): string[] {
+  const keys: string[] = [];
+  for (let time = start.getTime(); time < endExclusive.getTime(); time += 24 * 60 * 60 * 1000) {
+    keys.push(toJstDateKey(new Date(time)));
+  }
+  return keys;
+}

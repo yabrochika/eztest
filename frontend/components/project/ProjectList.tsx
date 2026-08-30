@@ -30,6 +30,7 @@ const EMPTY_DASHBOARD: DashboardData = {
   inProgressRuns: [],
   activity: {
     days: [],
+    heatmapDays: [],
     totals: { PASSED: 0, FAILED: 0, BLOCKED: 0, RETEST: 0, SKIPPED: 0 },
   },
   projects: [],
@@ -189,16 +190,10 @@ export default function ProjectList() {
           <EmptyProjectsState onCreateProject={handleCreateProject} canCreateProject={canCreateProject} />
         ) : (
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="space-y-6">
+            <div className="min-w-0 space-y-6">
               <GameHud dashboard={dashboard} />
               <InProgressRuns
                 runs={dashboard.inProgressRuns || []}
-                projects={projects.map((project) => ({
-                  id: project.id,
-                  name: project.name,
-                  key: project.key,
-                  suiteCount: project._count?.testSuites ?? 0,
-                }))}
                 onOpenRun={(projectId, runId) => router.push(`/projects/${projectId}/testruns/${runId}`)}
               />
 
@@ -229,14 +224,11 @@ export default function ProjectList() {
               />
 
               <WeeklyProjectActivity
-                projects={projects}
-                onOpenProject={(projectId) => router.push(`/projects/${projectId}`)}
+                days={dashboard.activity.heatmapDays || []}
+                weeks={projects[0]?.weeklyTrend ?? []}
               />
 
-              <ProjectInventoryTrend
-                projects={projects}
-                onOpenProject={(projectId) => router.push(`/projects/${projectId}`)}
-              />
+              <ProjectInventoryTrend projects={projects} />
 
               <section>
                 <div className="mb-3 flex items-center gap-3">

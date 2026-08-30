@@ -144,6 +144,7 @@ export interface InProgressRun {
   startedAt: string | null;
   scheduledStartAt: string | null;
   scheduledEndAt: string | null;
+  dueDate: string | null;
   resultCounts: PieStatusCounts;
   executors: InProgressExecutor[];
   shortcut: DashboardShortcutLink;
@@ -160,6 +161,7 @@ export interface DashboardData {
   inProgressRuns: InProgressRun[];
   activity: {
     days: ActivityDay[];
+    heatmapDays: ActivityDay[];
     totals: ResultStatusCounts;
   };
   projects: DashboardProject[];
